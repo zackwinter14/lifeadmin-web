@@ -116,15 +116,17 @@ export default function Dashboard() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [plaidConnected, setPlaidConnected] = useState(false);
   const [detectingIncome, setDetectingIncome] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const loadData = useCallback(async (userId: string) => {
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("monthly_income, full_name")
+      .select("monthly_income, full_name, is_pro")
       .eq("id", userId)
       .single();
 
     if (profileData?.full_name) setProfileName(profileData.full_name);
+    if (profileData?.is_pro) setIsPro(true);
     if (profileData?.monthly_income) {
       setIncome(profileData.monthly_income);
       setIncomeInput(String(profileData.monthly_income));
@@ -289,7 +291,6 @@ export default function Dashboard() {
   const allFiltered = filterType === "all" ? items : items.filter(i => i.type === filterType);
   const manualItems = allFiltered.filter(i => !i.source || i.source === "manual");
   const bankItems   = allFiltered.filter(i => i.source && i.source !== "manual");
-  const isPro       = plaidConnected || bankItems.length > 0;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
