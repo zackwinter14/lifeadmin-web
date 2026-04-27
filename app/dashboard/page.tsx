@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Landmark, Loader2 } from "lucide-react";
+import { usePlaidLink } from "react-plaid-link";
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
 
@@ -74,6 +75,9 @@ export default function Dashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const [filterType, setFilterType] = useState<ItemType | "all">("all");
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [plaidConnected, setPlaidConnected] = useState(false);
+  const [detectingIncome, setDetectingIncome] = useState(false);
 
   const loadData = useCallback(async (userId: string) => {
     const { data: profileData } = await supabase
@@ -114,6 +118,40 @@ export default function Dashboard() {
     setIncome(v);
     setEditingIncome(false);
     await supabase.from("profiles").upsert({ id: user.id, monthly_income: v });
+  }
+
+  async function createLinkToken() {
+    if (!user) return;
+    const res = await fetch("/api/plaid/create-link-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    const data = await res.json();
+    if (data.link_token) setLinkToken(data.link_token);
+  }
+
+  async function onPlaidSuccess(publicToken: string) {
+    if (!user) return;
+    setDetectingIncome(true);
+    await fetch("/api/plaid/exchange-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicToken, userId: user.id }),
+    });
+    const res = await fetch("/api/plaid/income", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    const data = await res.json();
+    if (data.income > 0) {
+      setIncome(data.income);
+      setIncomeInput(String(data.income));
+    }
+    setPlaidConnected(true);
+    setDetectingIncome(false);
+    setLinkToken(null);
   }
 
   function openAdd() {
@@ -177,6 +215,12 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     router.push("/");
   }
+
+  // Plaid Link hook — must be called unconditionally
+  const { open: openPlaid, ready: plaidReady } = usePlaidLink({
+    token: linkToken || "",
+    onSuccess: (public_token) => onPlaidSuccess(public_token),
+  });
 
   if (loading) {
     return (
@@ -264,6 +308,34 @@ export default function Dashboard() {
               </p>
             </div>
           )}
+
+          {/* Connect Bank / Auto-detect income */}
+          <div className="mt-4 border-t border-white/5 pt-4">
+            {detectingIncome ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Loader2 size={14} className="animate-spin text-brand" />
+                Detecting your income…
+              </div>
+            ) : plaidConnected ? (
+              <div className="flex items-center gap-2 text-sm text-brand">
+                <Check size={14} /> Bank connected · Income auto-detected
+              </div>
+            ) : linkToken && plaidReady ? (
+              <button
+                onClick={() => openPlaid()}
+                className="flex items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2 text-sm font-bold text-black hover:opacity-90"
+              >
+                <Landmark size={14} /> Open Bank Login
+              </button>
+            ) : (
+              <button
+                onClick={createLinkToken}
+                className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-semibold text-brand hover:bg-brand/15"
+              >
+                <Landmark size={14} /> Auto-detect income from bank
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Donut card */}
