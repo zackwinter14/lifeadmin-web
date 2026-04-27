@@ -49,8 +49,8 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl font-bold leading-tight tracking-tight md:text-7xl"
           >
-            Stop bleeding money <br />
-            on subscriptions you <span className="gradient-text">forgot</span>.
+            Know exactly where <br />
+            every dollar <span className="gradient-text">goes</span>.
           </motion.h1>
 
           <motion.p
@@ -59,9 +59,9 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            Life Admin connects to your bank, finds every recurring charge, and
-            cancels what you don&apos;t use. The average user saves{" "}
-            <span className="font-semibold text-white">$240+ a month</span>.
+            Life Admin is free to use. Manually track every subscription, bill, trial,
+            and expense in one place. Want it done automatically?{" "}
+            <span className="font-semibold text-white">Upgrade to connect your bank.</span>
           </motion.p>
 
           <motion.div
@@ -91,22 +91,20 @@ export default function Home() {
             className="mt-16 flex justify-center gap-12 text-center"
           >
             <div>
-              <div className="text-4xl font-bold gradient-text">
-                <CountUp end={240} prefix="$" />
-              </div>
-              <div className="text-sm text-gray-500">avg saved/month</div>
+              <div className="text-4xl font-bold gradient-text">Free</div>
+              <div className="text-sm text-gray-500">forever, no credit card</div>
             </div>
             <div>
               <div className="text-4xl font-bold gradient-text">
-                <CountUp end={11} />
+                <CountUp end={4} />
               </div>
-              <div className="text-sm text-gray-500">avg subs found</div>
+              <div className="text-sm text-gray-500">item types tracked</div>
             </div>
             <div>
               <div className="text-4xl font-bold gradient-text">
-                <CountUp end={73} suffix="%" />
+                <CountUp end={1} />
               </div>
-              <div className="text-sm text-gray-500">have a forgotten sub</div>
+              <div className="text-sm text-gray-500">account, app + web</div>
             </div>
           </motion.div>
         </div>
@@ -127,13 +125,13 @@ export default function Home() {
           <div className="grid gap-6 md:grid-cols-3">
             <Feature
               icon={<Zap className="text-brand" />}
-              title="Auto-detect every sub"
-              body="We scan your bank statements with bank-grade Plaid security and surface every recurring charge, no matter how small."
+              title="Free manual tracking"
+              body="Add every subscription, bill, trial, and expense yourself. No bank connection needed. Always free."
             />
             <Feature
               icon={<TrendingDown className="text-brand" />}
-              title="One-tap cancel"
-              body="Spot a zombie sub? Tap cancel and we'll walk you through canceling — even with companies that try to make it impossible."
+              title="One dashboard"
+              body="See your full spending breakdown in a donut chart — subscriptions, bills, trials, and expenses all in one view."
             />
             <Feature
               icon={<Bell className="text-brand" />}
@@ -142,13 +140,13 @@ export default function Home() {
             />
             <Feature
               icon={<ShieldCheck className="text-brand" />}
-              title="Bank-grade security"
-              body="256-bit encryption. Read-only access via Plaid. We can't move money. Your credentials never touch our servers."
+              title="App + web, in sync"
+              body="Your account works on iOS and the web. Add something in the app and it shows up on the website instantly."
             />
             <Feature
               icon={<TrendingDown className="text-brand" />}
-              title="Spending insights"
-              body="See where your money's actually going every month. Catch creeping fees before they cost you a vacation."
+              title="Auto-import with Plaid"
+              body="Upgrade to Pro and connect your bank. We find every recurring charge automatically — no manual entry needed."
             />
             <Feature
               icon={<Lock className="text-brand" />}
