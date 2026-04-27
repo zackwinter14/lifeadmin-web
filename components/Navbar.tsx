@@ -73,18 +73,10 @@ export default function Navbar() {
               <Link href="/dashboard" className="text-sm text-gray-300 transition hover:text-white">
                 Dashboard
               </Link>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                  <User size={14} className="text-brand" />
-                  <span className="text-sm font-medium">{displayName}</span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white"
-                >
-                  Log out
-                </button>
-              </div>
+              <Link href="/profile" className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:bg-white/10">
+                <User size={14} className="text-brand" />
+                <span className="text-sm font-medium">{displayName}</span>
+              </Link>
             </>
           ) : (
             <>
@@ -120,7 +112,9 @@ export default function Navbar() {
                 <Link href="/dashboard" onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
                   Dashboard
                 </Link>
-                <div className="text-sm text-gray-400">Signed in as <span className="text-white">{displayName}</span></div>
+                <Link href="/profile" onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
+                  Profile ({displayName})
+                </Link>
                 <button onClick={handleLogout} className="rounded-lg border border-white/10 py-2 text-sm text-gray-400 hover:text-white">
                   Log out
                 </button>
