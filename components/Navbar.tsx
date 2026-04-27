@@ -1,15 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { Menu, X, User } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
+const MENU_ITEMS = [
+  { href: "/expenses",    label: "Add Expense",  icon: DollarSign,   color: "#007AFF" },
+  { href: "/networth",    label: "Net Worth",    icon: TrendingUp,   color: "#34C759" },
+  { href: "/calendar",    label: "Calendar",     icon: Calendar,     color: "#FF9500" },
+  { href: "/autoai",      label: "AutoAI",       icon: Bot,          color: "#AF52DE" },
+  { href: "/school",      label: "School",       icon: GraduationCap,color: "#38BDF8" },
+  { href: "/negotiation", label: "Negotiation",  icon: Handshake,    color: "#FF6B35" },
+  { href: "/rewards",     label: "Rewards",      icon: Trophy,       color: "#F5C518" },
+];
+
 export default function Navbar() {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -18,22 +30,27 @@ export default function Navbar() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .single();
+        const { data } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
         if (data?.full_name) setProfileName(data.full_name);
       }
     }
     loadUser();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) setProfileName(null);
     });
-
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   async function handleLogout() {
@@ -45,38 +62,31 @@ export default function Navbar() {
 
   const displayName = profileName || user?.email?.split("@")[0] || null;
 
-  const navLinks = [
+  const publicLinks = [
     { href: "/features", label: "Features" },
-    { href: "/pricing", label: "Pricing" },
+    { href: "/pricing",  label: "Pricing"  },
   ];
 
   const appLinks = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/upcoming", label: "Upcoming" },
-    { href: "/expenses", label: "Expenses" },
-    { href: "/budget", label: "Budget" },
-    { href: "/save", label: "Save" },
-    { href: "/gas", label: "Gas" },
+    { href: "/upcoming",  label: "Upcoming"  },
+    { href: "/budget",    label: "Budget"    },
+    { href: "/save",      label: "Save"      },
+    { href: "/gas",       label: "Gas"       },
   ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-black/70 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient font-bold text-black">
-            $
-          </div>
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient font-bold text-black">$</div>
           <span className="text-lg font-semibold">Life Admin</span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden items-center gap-8 md:flex">
-          {navLinks.map((l) => (
-            <Link key={l.href} href={l.href} className="text-sm text-gray-300 transition hover:text-white">
-              {l.label}
-            </Link>
-          ))}
-
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-6 md:flex">
           {user ? (
             <>
               {appLinks.map(l => (
@@ -84,6 +94,42 @@ export default function Navbar() {
                   {l.label}
                 </Link>
               ))}
+
+              {/* Menu button + dropdown */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setMenuOpen(o => !o)}
+                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${menuOpen ? "border-brand/50 bg-brand/10 text-brand" : "border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"}`}
+                >
+                  <LayoutGrid size={14} />
+                  Menu
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute right-0 top-10 z-50 w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
+                    <div className="p-2">
+                      {MENU_ITEMS.map(item => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5"
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
+                              <Icon size={15} style={{ color: item.color }} />
+                            </div>
+                            <span className="text-sm font-medium text-gray-200">{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Profile */}
               <Link href="/profile" className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:bg-white/10">
                 <User size={14} className="text-brand" />
                 <span className="text-sm font-medium">{displayName}</span>
@@ -91,51 +137,66 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm text-gray-300 transition hover:text-white">
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-lg bg-brand-gradient px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-              >
+              {publicLinks.map(l => (
+                <Link key={l.href} href={l.href} className="text-sm text-gray-300 transition hover:text-white">
+                  {l.label}
+                </Link>
+              ))}
+              <Link href="/login" className="text-sm text-gray-300 transition hover:text-white">Login</Link>
+              <Link href="/signup" className="rounded-lg bg-brand-gradient px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90">
                 Sign up free
               </Link>
             </>
           )}
         </div>
 
-        <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="menu">
-          {open ? <X size={24} /> : <Menu size={24} />}
+        {/* Mobile hamburger */}
+        <button className="md:hidden" onClick={() => setMobileOpen(o => !o)} aria-label="menu">
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </nav>
 
       {/* Mobile menu */}
-      {open && (
+      {mobileOpen && (
         <div className="border-t border-white/5 bg-black/95 md:hidden">
-          <div className="flex flex-col gap-4 p-6">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
-                {l.label}
-              </Link>
-            ))}
+          <div className="flex flex-col gap-1 p-4">
             {user ? (
               <>
+                <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Main</p>
                 {appLinks.map(l => (
-                  <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
+                  <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">
                     {l.label}
                   </Link>
                 ))}
-                <Link href="/profile" onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
+                <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Menu</p>
+                {MENU_ITEMS.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
+                        <Icon size={13} style={{ color: item.color }} />
+                      </div>
+                      <span className="text-sm text-gray-300">{item.label}</span>
+                    </Link>
+                  );
+                })}
+                <div className="my-2 border-t border-white/5" />
+                <Link href="/profile" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5">
                   Profile ({displayName})
                 </Link>
-                <button onClick={handleLogout} className="rounded-lg border border-white/10 py-2 text-sm text-gray-400 hover:text-white">
+                <button onClick={handleLogout} className="rounded-xl border border-white/10 px-3 py-2.5 text-left text-sm text-gray-400 hover:bg-white/5">
                   Log out
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" onClick={() => setOpen(false)}>Login</Link>
-                <Link href="/signup" onClick={() => setOpen(false)} className="rounded-lg bg-brand-gradient px-4 py-2 text-center font-semibold text-black">
+                {publicLinks.map(l => (
+                  <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5">
+                    {l.label}
+                  </Link>
+                ))}
+                <Link href="/login" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5">Login</Link>
+                <Link href="/signup" onClick={() => setMobileOpen(false)} className="mt-1 rounded-xl bg-brand-gradient px-3 py-2.5 text-center text-sm font-semibold text-black">
                   Sign up free
                 </Link>
               </>
