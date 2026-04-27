@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid } from "lucide-react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -19,6 +19,8 @@ const MENU_ITEMS = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dashOpen, setDashOpen] = useState(false);
+  const dashRef = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<any>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
@@ -44,12 +46,11 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Close menu on outside click
+  // Close menus on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (dashRef.current && !dashRef.current.contains(e.target as Node)) setDashOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -70,11 +71,10 @@ export default function Navbar() {
   ];
 
   const appLinks = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/upcoming",  label: "Upcoming"  },
-    { href: "/budget",    label: "Budget"    },
-    { href: "/save",      label: "Save"      },
-    { href: "/gas",       label: "Gas"       },
+    { href: "/upcoming", label: "Upcoming" },
+    { href: "/budget",   label: "Budget"   },
+    { href: "/save",     label: "Save"     },
+    { href: "/gas",      label: "Gas"      },
   ];
 
   return (
@@ -91,6 +91,34 @@ export default function Navbar() {
         <div className="hidden items-center gap-6 md:flex">
           {user ? (
             <>
+              {/* Dashboard dropdown */}
+              <div className="relative" ref={dashRef}>
+                <button
+                  onClick={() => setDashOpen(o => !o)}
+                  className={`flex items-center gap-1 text-sm transition ${dashOpen ? "text-white" : "text-gray-300 hover:text-white"}`}
+                >
+                  Dashboard <ChevronDown size={13} className={`transition-transform ${dashOpen ? "rotate-180" : ""}`} />
+                </button>
+                {dashOpen && (
+                  <div className="absolute left-0 top-8 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
+                    <div className="p-2">
+                      <Link href="/dashboard" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/15"><LayoutGrid size={13} className="text-brand" /></div>
+                        <span className="text-sm font-medium text-gray-200">Overview</span>
+                      </Link>
+                      <Link href="/manual" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-green-500/15"><Repeat size={13} className="text-green-400" /></div>
+                        <span className="text-sm font-medium text-gray-200">Manual Entries</span>
+                      </Link>
+                      <Link href="/bank" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15"><Landmark size={13} className="text-blue-400" /></div>
+                        <span className="text-sm font-medium text-gray-200">Bank Connected</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {appLinks.map(l => (
                 <Link key={l.href} href={l.href} className="text-sm text-gray-300 transition hover:text-white">
                   {l.label}
@@ -188,7 +216,11 @@ export default function Navbar() {
           <div className="flex flex-col gap-1 p-4">
             {user ? (
               <>
-                <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Main</p>
+                <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Dashboard</p>
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Overview</Link>
+                <Link href="/manual" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Manual Entries</Link>
+                <Link href="/bank" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Bank Connected</Link>
+                <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Main</p>
                 {appLinks.map(l => (
                   <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">
                     {l.label}
