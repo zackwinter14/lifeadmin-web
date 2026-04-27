@@ -21,6 +21,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [isPro, setIsPro] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -30,8 +31,9 @@ export default function Navbar() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
-        const { data } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+        const { data } = await supabase.from("profiles").select("full_name, is_pro").eq("id", user.id).single();
         if (data?.full_name) setProfileName(data.full_name);
+        if (data?.is_pro) setIsPro(true);
       }
     }
     loadUser();
@@ -130,9 +132,33 @@ export default function Navbar() {
               </div>
 
               {/* Profile */}
-              <Link href="/profile" className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:bg-white/10">
-                <User size={14} className="text-brand" />
-                <span className="text-sm font-medium">{displayName}</span>
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-full px-3 py-1.5 transition hover:opacity-90"
+                style={isPro ? {
+                  background: "linear-gradient(135deg, #1a1200, #2a1f00)",
+                  border: "1px solid #F5C51860",
+                } : {
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                {isPro ? (
+                  <span className="text-base leading-none">👑</span>
+                ) : (
+                  <User size={14} className="text-brand" />
+                )}
+                <span
+                  className="text-sm font-semibold"
+                  style={isPro ? { color: "#F5C518" } : {}}
+                >
+                  {displayName}
+                </span>
+                {isPro && (
+                  <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-yellow-400">
+                    Pro
+                  </span>
+                )}
               </Link>
             </>
           ) : (

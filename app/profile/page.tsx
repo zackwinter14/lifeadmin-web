@@ -416,6 +416,7 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [income, setIncome] = useState("");
   const [accountCode, setAccountCode] = useState("");
+  const [isPro, setIsPro] = useState(false);
   const [editField, setEditField] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -427,12 +428,13 @@ export default function ProfilePage() {
       setUser(user);
       setEmail(user.email || "");
 
-      const { data } = await supabase.from("profiles").select("full_name, phone, monthly_income, account_code").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("full_name, phone, monthly_income, account_code, is_pro").eq("id", user.id).single();
       if (data) {
         setName(data.full_name || "");
         setPhone(data.phone || "");
         setIncome(data.monthly_income ? String(data.monthly_income) : "");
         setAccountCode(data.account_code || "");
+        if (data.is_pro) setIsPro(true);
       }
       setLoading(false);
     }
@@ -470,11 +472,27 @@ export default function ProfilePage() {
 
       {/* Avatar + name */}
       <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-bold text-black">
-          {name ? name.charAt(0).toUpperCase() : email.charAt(0).toUpperCase()}
+        <div className="relative">
+          {isPro && (
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg leading-none">👑</span>
+          )}
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold text-black"
+            style={isPro ? {
+              background: "linear-gradient(135deg, #F5C518, #f0a500)",
+              boxShadow: "0 0 20px #F5C51850",
+            } : { background: "linear-gradient(135deg, #3EA758, #2ecc71)" }}
+          >
+            {name ? name.charAt(0).toUpperCase() : email.charAt(0).toUpperCase()}
+          </div>
         </div>
         <div>
-          <h1 className="text-2xl font-bold">{name || email.split("@")[0]}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold" style={isPro ? { color: "#F5C518" } : {}}>{name || email.split("@")[0]}</h1>
+            {isPro && (
+              <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-yellow-400">Pro</span>
+            )}
+          </div>
           <p className="text-sm text-gray-400">{email}</p>
         </div>
       </div>
