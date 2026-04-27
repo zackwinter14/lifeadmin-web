@@ -53,6 +53,7 @@ export default function Navbar() {
   const appLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/upcoming", label: "Upcoming" },
+    { href: "/expenses", label: "Expenses" },
     { href: "/budget", label: "Budget" },
     { href: "/save", label: "Save" },
     { href: "/gas", label: "Gas" },
