@@ -474,7 +474,9 @@ export default function ProfilePage() {
       <div className="mb-6 flex items-center gap-4">
         <div className="relative">
           {isPro && (
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg leading-none">👑</span>
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5C518"><path d="M2 19h20v2H2v-2zM2 6l5 7 5-7 5 7 5-7v11H2V6z"/></svg>
+            </div>
           )}
           <div
             className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold text-black"

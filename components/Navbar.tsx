@@ -144,7 +144,7 @@ export default function Navbar() {
                 }}
               >
                 {isPro ? (
-                  <span className="text-base leading-none">👑</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#F5C518"><path d="M2 19h20v2H2v-2zM2 6l5 7 5-7 5 7 5-7v11H2V6z"/></svg>
                 ) : (
                   <User size={14} className="text-brand" />
                 )}
