@@ -50,6 +50,14 @@ export default function Navbar() {
     { href: "/pricing", label: "Pricing" },
   ];
 
+  const appLinks = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/upcoming", label: "Upcoming" },
+    { href: "/budget", label: "Budget" },
+    { href: "/save", label: "Save" },
+    { href: "/gas", label: "Gas" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-black/70 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -70,9 +78,11 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <Link href="/dashboard" className="text-sm text-gray-300 transition hover:text-white">
-                Dashboard
-              </Link>
+              {appLinks.map(l => (
+                <Link key={l.href} href={l.href} className="text-sm text-gray-300 transition hover:text-white">
+                  {l.label}
+                </Link>
+              ))}
               <Link href="/profile" className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:bg-white/10">
                 <User size={14} className="text-brand" />
                 <span className="text-sm font-medium">{displayName}</span>
@@ -109,9 +119,11 @@ export default function Navbar() {
             ))}
             {user ? (
               <>
-                <Link href="/dashboard" onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
-                  Dashboard
-                </Link>
+                {appLinks.map(l => (
+                  <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
+                    {l.label}
+                  </Link>
+                ))}
                 <Link href="/profile" onClick={() => setOpen(false)} className="text-gray-300 hover:text-white">
                   Profile ({displayName})
                 </Link>
