@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send } from "lucide-react";
+import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash } from "lucide-react";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,29 @@ function generateCode(userId: string) {
   let code = "";
   for (let i = 0; i < 6; i++) { code += chars[seed % chars.length]; seed = (seed * 31 + 7) % 997; }
   return code;
+}
+
+function generateAccountNumber(userId: string): string {
+  if (!userId) return "LA-00000000";
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash + userId.charCodeAt(i)) >>> 0;
+  }
+  return "LA-" + String(hash).padStart(8, "0").slice(-8);
+}
+
+function AccountCopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard?.writeText(value).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <button onClick={copy} className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-white/5 hover:text-white">
+      {copied ? <><Check size={11} className="text-brand" /> Copied</> : <><Copy size={11} /> Copy</>}
+    </button>
+  );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -452,7 +475,7 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-2xl px-4 py-10">
 
       {/* Avatar + name */}
-      <div className="mb-8 flex items-center gap-4">
+      <div className="mb-6 flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-bold text-black">
           {name ? name.charAt(0).toUpperCase() : email.charAt(0).toUpperCase()}
         </div>
@@ -460,6 +483,20 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold">{name || email.split("@")[0]}</h1>
           <p className="text-sm text-gray-400">{email}</p>
         </div>
+      </div>
+
+      {/* Account number */}
+      <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 border border-brand/20">
+            <Hash size={15} className="text-brand" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Account Number</p>
+            <p className="font-mono text-sm font-bold tracking-widest">{generateAccountNumber(user?.id || "")}</p>
+          </div>
+        </div>
+        <AccountCopyButton value={generateAccountNumber(user?.id || "")} />
       </div>
 
       {/* Profile info */}
