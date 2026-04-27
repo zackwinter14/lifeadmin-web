@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Pencil, Trash2, X, Check, Landmark, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Landmark, Loader2, Lock } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
@@ -21,6 +21,7 @@ interface Item {
   autopay: boolean;
   status: string;
   trial_days: number | null;
+  source: string | null;
 }
 
 const TYPE_COLORS: Record<ItemType, string> = {
@@ -54,6 +55,43 @@ const EMPTY_FORM = {
 
 function fmt(n: number) {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function ItemRow({ item, onEdit, onDelete, deleteConfirm, onConfirmDelete, onCancelDelete }: {
+  item: any; onEdit: (i: any) => void; onDelete: (id: string) => void;
+  deleteConfirm: string | null; onConfirmDelete: (id: string) => void; onCancelDelete: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02]">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-black" style={{ background: item.color || TYPE_COLORS[item.type as ItemType] }}>
+          {item.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p className="font-semibold">{item.name}</p>
+          <p className="text-xs text-gray-500">
+            <span className="capitalize" style={{ color: TYPE_COLORS[item.type as ItemType] }}>{item.type}</span>
+            {item.category ? ` · ${item.category}` : ""}
+            {item.due_date ? ` · Due ${item.due_date}` : ""}
+            {item.autopay ? " · Autopay" : ""}
+            {item.trial_days ? ` · ${item.trial_days}d left` : ""}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="font-bold">${item.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <button onClick={() => onEdit(item)} className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-white"><Pencil size={14} /></button>
+        {deleteConfirm === item.id ? (
+          <div className="flex items-center gap-1">
+            <button onClick={() => onConfirmDelete(item.id)} className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"><Check size={14} /></button>
+            <button onClick={onCancelDelete} className="rounded-lg p-2 text-gray-500 hover:bg-white/10"><X size={14} /></button>
+          </div>
+        ) : (
+          <button onClick={() => onDelete(item.id)} className="rounded-lg p-2 text-gray-500 hover:bg-red-500/10 hover:text-red-400"><Trash2 size={14} /></button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -248,7 +286,10 @@ export default function Dashboard() {
     { name: "Expenses", value: expensesTotal, color: TYPE_COLORS.expense },
   ].filter(d => d.value > 0);
 
-  const filtered = filterType === "all" ? items : items.filter(i => i.type === filterType);
+  const allFiltered = filterType === "all" ? items : items.filter(i => i.type === filterType);
+  const manualItems = allFiltered.filter(i => !i.source || i.source === "manual");
+  const bankItems   = allFiltered.filter(i => i.source && i.source !== "manual");
+  const isPro       = plaidConnected || bankItems.length > 0;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -402,7 +443,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {filtered.length === 0 ? (
+        {allFiltered.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-gray-500">No items yet.</p>
             <button onClick={openAdd} className="mt-4 rounded-lg bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-black hover:opacity-90">
@@ -410,46 +451,56 @@ export default function Dashboard() {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
-            {filtered.map(item => (
-              <div key={item.id} className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02]">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-black" style={{ background: item.color || TYPE_COLORS[item.type] }}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-xs text-gray-500">
-                      <span className="capitalize" style={{ color: TYPE_COLORS[item.type] }}>{item.type}</span>
-                      {item.category ? ` · ${item.category}` : ""}
-                      {item.due_date ? ` · Due ${item.due_date}` : ""}
-                      {item.autopay ? " · Autopay" : ""}
-                      {item.trial_days ? ` · ${item.trial_days}d left` : ""}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-bold">{fmt(item.amount)}</span>
-                  <button onClick={() => openEdit(item)} className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-white">
-                    <Pencil size={14} />
-                  </button>
-                  {deleteConfirm === item.id ? (
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => deleteItem(item.id)} className="rounded-lg p-2 text-red-400 hover:bg-red-500/10">
-                        <Check size={14} />
-                      </button>
-                      <button onClick={() => setDeleteConfirm(null)} className="rounded-lg p-2 text-gray-500 hover:bg-white/10">
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setDeleteConfirm(item.id)} className="rounded-lg p-2 text-gray-500 hover:bg-red-500/10 hover:text-red-400">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+          <div className="space-y-6">
+            {/* Manual entries */}
+            {manualItems.length > 0 && (
+              <div>
+                <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Manual Entries</p>
+                <div className="divide-y divide-white/5">
+                  {manualItems.map(item => <ItemRow key={item.id} item={item} onEdit={openEdit} onDelete={setDeleteConfirm} deleteConfirm={deleteConfirm} onConfirmDelete={deleteItem} onCancelDelete={() => setDeleteConfirm(null)} />)}
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Bank-connected entries */}
+            <div>
+              <div className="mb-2 flex items-center gap-2 px-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Bank Connected</p>
+                <span className="rounded-full bg-brand/20 px-2 py-0.5 text-[10px] font-bold text-brand">Pro</span>
+              </div>
+              {isPro ? (
+                bankItems.length > 0 ? (
+                  <div className="divide-y divide-white/5">
+                    {bankItems.map(item => <ItemRow key={item.id} item={item} onEdit={openEdit} onDelete={setDeleteConfirm} deleteConfirm={deleteConfirm} onConfirmDelete={deleteItem} onCancelDelete={() => setDeleteConfirm(null)} />)}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-brand/20 bg-brand/5 py-8 text-center">
+                    <Landmark size={24} className="mx-auto mb-2 text-brand/50" />
+                    <p className="text-sm text-gray-400">Connect your bank to auto-import subscriptions and bills.</p>
+                  </div>
+                )
+              ) : (
+                <div className="relative overflow-hidden rounded-2xl border border-white/10">
+                  <div className="pointer-events-none select-none divide-y divide-white/5 opacity-30 blur-[2px]">
+                    {["Netflix", "Spotify", "Amazon Prime"].map(n => (
+                      <div key={n} className="flex items-center gap-3 px-6 py-4">
+                        <div className="h-10 w-10 rounded-xl bg-white/10" />
+                        <div className="flex-1 space-y-1.5"><div className="h-3 w-24 rounded bg-white/10" /><div className="h-2 w-16 rounded bg-white/5" /></div>
+                        <div className="h-3 w-12 rounded bg-white/10" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <Lock size={20} className="mb-2 text-brand" />
+                    <p className="font-semibold text-white">Pro Feature</p>
+                    <p className="mt-1 text-xs text-gray-400">Connect your bank to auto-import entries</p>
+                    <button className="mt-3 rounded-xl bg-brand-gradient px-5 py-2 text-sm font-bold text-black hover:opacity-90">
+                      Upgrade to Pro
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

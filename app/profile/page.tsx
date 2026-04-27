@@ -15,14 +15,6 @@ function generateCode(userId: string) {
   return code;
 }
 
-function generateAccountNumber(userId: string): string {
-  if (!userId) return "LA-00000000";
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = ((hash << 5) - hash + userId.charCodeAt(i)) >>> 0;
-  }
-  return "LA-" + String(hash).padStart(8, "0").slice(-8);
-}
 
 function AccountCopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -423,6 +415,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [income, setIncome] = useState("");
+  const [accountCode, setAccountCode] = useState("");
   const [editField, setEditField] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -434,11 +427,12 @@ export default function ProfilePage() {
       setUser(user);
       setEmail(user.email || "");
 
-      const { data } = await supabase.from("profiles").select("full_name, phone, monthly_income").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("full_name, phone, monthly_income, account_code").eq("id", user.id).single();
       if (data) {
         setName(data.full_name || "");
         setPhone(data.phone || "");
         setIncome(data.monthly_income ? String(data.monthly_income) : "");
+        setAccountCode(data.account_code || "");
       }
       setLoading(false);
     }
@@ -486,18 +480,20 @@ export default function ProfilePage() {
       </div>
 
       {/* Account number */}
-      <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 border border-brand/20">
-            <Hash size={15} className="text-brand" />
+      {accountCode && (
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 border border-brand/20">
+              <Hash size={15} className="text-brand" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Account Number</p>
+              <p className="font-mono text-sm font-bold tracking-widest">{accountCode}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Account Number</p>
-            <p className="font-mono text-sm font-bold tracking-widest">{generateAccountNumber(user?.id || "")}</p>
-          </div>
+          <AccountCopyButton value={accountCode} />
         </div>
-        <AccountCopyButton value={generateAccountNumber(user?.id || "")} />
-      </div>
+      )}
 
       {/* Profile info */}
       <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
