@@ -60,6 +60,7 @@ export default function Dashboard() {
   const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [income, setIncome] = useState(0);
   const [incomeInput, setIncomeInput] = useState("");
@@ -77,10 +78,11 @@ export default function Dashboard() {
   const loadData = useCallback(async (userId: string) => {
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("monthly_income")
+      .select("monthly_income, full_name")
       .eq("id", userId)
       .single();
 
+    if (profileData?.full_name) setProfileName(profileData.full_name);
     if (profileData?.monthly_income) {
       setIncome(profileData.monthly_income);
       setIncomeInput(String(profileData.monthly_income));
@@ -211,7 +213,7 @@ export default function Dashboard() {
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">
-            Hey, <span className="gradient-text">{user?.email?.split("@")[0]}</span>
+            Hey, <span className="gradient-text">{profileName || user?.email?.split("@")[0]}</span>
           </h1>
           <p className="mt-1 text-gray-400 text-sm">Your money at a glance.</p>
         </div>
