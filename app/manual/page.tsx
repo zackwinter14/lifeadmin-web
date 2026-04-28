@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, Pencil, Trash2, X, Check } from "lucide-react";
 
-type ItemType = "subscription" | "bill" | "trial";
+type ItemType = "subscription" | "bill" | "trial" | "expense";
 
 interface Item {
   id: string;
@@ -26,6 +26,7 @@ const TYPE_COLORS: Record<string, string> = {
   subscription: "#3EA758",
   bill: "#FFB300",
   trial: "#38BDF8",
+  expense: "#FF9500",
 };
 
 const CATEGORIES = [
@@ -67,8 +68,7 @@ export default function ManualPage() {
       .from("items")
       .select("*")
       .eq("user_id", userId)
-      .neq("type", "expense")
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
     if (data) setItems((data as Item[]).filter(i => !i.source || i.source === "manual"));
   }, [supabase]);
 
@@ -96,7 +96,8 @@ export default function ManualPage() {
     const payload = {
       user_id: user.id, name: form.name, amount: parseFloat(form.amount),
       type: form.type, category: form.category, due_date: form.due_date || null,
-      autopay: form.autopay, status: "active", color: form.color,
+      autopay: form.type === "expense" ? false : form.autopay,
+      status: "active", color: form.color,
       trial_days: form.type === "trial" ? (parseInt(form.trial_days) || null) : null,
       source: "manual",
     };
@@ -105,7 +106,7 @@ export default function ManualPage() {
       setItems(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...payload } as Item : i));
     } else {
       const { data } = await supabase.from("items").insert(payload).select().single();
-      if (data) setItems(prev => [...prev, data as Item]);
+      if (data) setItems(prev => [data as Item, ...prev]);
     }
     setSaving(false);
     setModalOpen(false);
@@ -120,14 +121,20 @@ export default function ManualPage() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
 
   const filtered = filterType === "all" ? items : items.filter(i => i.type === filterType);
-  const total = items.reduce((a, b) => a + b.amount, 0);
+  const total = items.filter(i => i.type !== "expense").reduce((a, b) => a + b.amount, 0);
+  const expenseTotal = items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">Manual Entries</h1>
-          <p className="mt-1 text-sm text-gray-400">{items.length} items · {fmt(total)}/mo</p>
+          <p className="mt-1 text-sm text-gray-400">
+            {items.filter(i => i.type !== "expense").length} payables · {fmt(total)}/mo
+            {items.filter(i => i.type === "expense").length > 0 && (
+              <span className="ml-2 text-gray-600">· {items.filter(i => i.type === "expense").length} expenses · {fmt(expenseTotal)}</span>
+            )}
+          </p>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-bold text-black hover:opacity-90">
           <Plus size={15} /> Add
@@ -135,8 +142,8 @@ export default function ManualPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="mb-4 flex gap-2">
-        {(["all", "subscription", "bill", "trial"] as const).map(t => (
+      <div className="mb-4 flex gap-2 flex-wrap">
+        {(["all", "subscription", "bill", "trial", "expense"] as const).map(t => (
           <button
             key={t}
             onClick={() => setFilterType(t)}
@@ -167,7 +174,7 @@ export default function ManualPage() {
                     <p className="text-xs text-gray-500">
                       <span className="capitalize" style={{ color: TYPE_COLORS[item.type] }}>{item.type}</span>
                       {item.category ? ` · ${item.category}` : ""}
-                      {item.due_date ? ` · Due ${item.due_date}` : ""}
+                      {item.due_date ? ` · ${item.type === "expense" ? item.due_date : `Due ${item.due_date}`}` : ""}
                       {item.autopay ? " · Autopay" : ""}
                       {item.trial_days ? ` · ${item.trial_days}d left` : ""}
                     </p>
@@ -202,11 +209,11 @@ export default function ManualPage() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm text-gray-400">Name</label>
-                <input autoFocus value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Netflix, Rent, Gym..." className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2.5 outline-none focus:border-brand" />
+                <input autoFocus value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Netflix, Rent, Groceries..." className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2.5 outline-none focus:border-brand" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm text-gray-400">Amount / mo</label>
+                  <label className="mb-1.5 block text-sm text-gray-400">Amount</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                     <input type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full rounded-lg border border-white/10 bg-black/40 py-2.5 pl-7 pr-3 outline-none focus:border-brand" />
@@ -218,6 +225,7 @@ export default function ManualPage() {
                     <option value="subscription">Subscription</option>
                     <option value="bill">Bill</option>
                     <option value="trial">Trial</option>
+                    <option value="expense">Expense</option>
                   </select>
                 </div>
               </div>
@@ -229,8 +237,8 @@ export default function ManualPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm text-gray-400">Due date</label>
-                  <input value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} placeholder="Apr 30" className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2.5 outline-none focus:border-brand" />
+                  <label className="mb-1.5 block text-sm text-gray-400">{form.type === "expense" ? "Date" : "Due date"}</label>
+                  <input value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} placeholder={form.type === "expense" ? "Apr 27" : "Apr 30"} className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2.5 outline-none focus:border-brand" />
                 </div>
                 {form.type === "trial" && (
                   <div>
@@ -247,10 +255,12 @@ export default function ManualPage() {
                   ))}
                 </div>
               </div>
-              <label className="flex cursor-pointer items-center gap-2">
-                <input type="checkbox" checked={form.autopay} onChange={e => setForm(f => ({ ...f, autopay: e.target.checked }))} className="h-4 w-4 accent-brand" />
-                <span className="text-sm text-gray-300">Autopay</span>
-              </label>
+              {form.type !== "expense" && (
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input type="checkbox" checked={form.autopay} onChange={e => setForm(f => ({ ...f, autopay: e.target.checked }))} className="h-4 w-4 accent-brand" />
+                  <span className="text-sm text-gray-300">Autopay</span>
+                </label>
+              )}
             </div>
             <div className="mt-6 flex gap-3">
               <button onClick={() => setModalOpen(false)} className="flex-1 rounded-lg border border-white/10 py-2.5 text-sm hover:bg-white/5">Cancel</button>
