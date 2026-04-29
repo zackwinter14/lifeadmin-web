@@ -556,7 +556,7 @@ export default function ProfilePage() {
           disabled={saving}
           className="mt-5 w-full rounded-xl bg-brand-gradient py-2.5 font-semibold text-black hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : saved ? "✓ Saved" : "Save Changes"}
+          {saving ? "Saving…" : saved ? "Saved" : "Save Changes"}
         </button>
       </div>
 

@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, ShieldCheck, Zap, TrendingDown, Bell, Lock } from "lucide-react";
+import {
+  CheckCircle2,
+  ShieldCheck,
+  Zap,
+  TrendingDown,
+  Bell,
+  Lock,
+  Wallet,
+  Fuel,
+  Receipt,
+  Calendar,
+  Bot,
+  PiggyBank,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 function CountUp({ end, duration = 2000, prefix = "", suffix = "" }: { end: number; duration?: number; prefix?: string; suffix?: string }) {
@@ -40,7 +53,7 @@ export default function Home() {
             className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs"
           >
             <span className="h-2 w-2 animate-pulse rounded-full bg-brand"></span>
-            <span className="text-gray-300">Live on the App Store · 4.8★ rating</span>
+            <span className="text-gray-300">Live on the App Store · 4.8 star rating</span>
           </motion.div>
 
           <motion.h1
@@ -59,9 +72,9 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            Life Admin is free to use. Manually track every subscription, bill, trial,
-            and expense in one place. Want it done automatically?{" "}
-            <span className="font-semibold text-white">Upgrade to connect your bank.</span>
+            Life Admin tracks subscriptions, bills, trials, expenses, gas, income, and net worth — all in one place.
+            Free to use manually.{" "}
+            <span className="font-semibold text-white">Upgrade to connect your bank and let AI organize everything for you.</span>
           </motion.p>
 
           <motion.div
@@ -74,7 +87,7 @@ export default function Home() {
               href="/signup"
               className="rounded-xl bg-brand-gradient px-8 py-4 font-semibold text-black transition hover:opacity-90"
             >
-              Start saving free →
+              Start saving free
             </Link>
             <a
               href="https://apps.apple.com/app/id6762589970"
@@ -88,23 +101,29 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-16 flex justify-center gap-12 text-center"
+            className="mt-16 flex flex-wrap justify-center gap-x-12 gap-y-8 text-center"
           >
             <div>
+              <div className="text-4xl font-bold gradient-text">
+                $<CountUp end={240} />+
+              </div>
+              <div className="text-sm text-gray-500">average monthly savings</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold gradient-text">
+                <CountUp end={7} />
+              </div>
+              <div className="text-sm text-gray-500">money areas tracked</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold gradient-text">
+                <CountUp end={30} />s
+              </div>
+              <div className="text-sm text-gray-500">to find every charge</div>
+            </div>
+            <div>
               <div className="text-4xl font-bold gradient-text">Free</div>
-              <div className="text-sm text-gray-500">forever, no credit card</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold gradient-text">
-                <CountUp end={4} />
-              </div>
-              <div className="text-sm text-gray-500">item types tracked</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold gradient-text">
-                <CountUp end={1} />
-              </div>
-              <div className="text-sm text-gray-500">account, app + web</div>
+              <div className="text-sm text-gray-500">forever, no card needed</div>
             </div>
           </motion.div>
         </div>
@@ -125,33 +144,63 @@ export default function Home() {
           <div className="grid gap-6 md:grid-cols-3">
             <Feature
               icon={<Zap className="text-brand" />}
-              title="Free manual tracking"
-              body="Add every subscription, bill, trial, and expense yourself. No bank connection needed. Always free."
+              title="Auto-detect every subscription"
+              body="Connect your bank in 30 seconds via Plaid. Our AI scans 90 days of transactions and surfaces every recurring charge — even the annual ones you forgot about."
             />
             <Feature
               icon={<TrendingDown className="text-brand" />}
-              title="One dashboard"
-              body="See your full spending breakdown in a donut chart — subscriptions, bills, trials, and expenses all in one view."
+              title="One-tap cancellation"
+              body="See a sub you don't want? One tap. Life Admin handles the cancel flow, including the companies that bury cancel buttons six pages deep."
+            />
+            <Feature
+              icon={<Wallet className="text-brand" />}
+              title="Income tracking, automatic"
+              body="Every paycheck and deposit is detected and categorized. See your monthly income at a glance, broken down by source. No spreadsheet required."
+            />
+            <Feature
+              icon={<Fuel className="text-brand" />}
+              title="Gas tracker built in"
+              body="We recognize 150+ gas stations across the US, Canada, UK, EU, and beyond. Every fill-up logged automatically with merchant, amount, and date."
+            />
+            <Feature
+              icon={<Receipt className="text-brand" />}
+              title="Receipt scanning with AI"
+              body="Snap a photo of any receipt or invoice. Claude Vision reads the merchant, amount, and date automatically and adds it to your expenses."
+            />
+            <Feature
+              icon={<PiggyBank className="text-brand" />}
+              title="Net worth tracker"
+              body="Add your assets and liabilities. See your full financial picture grow over time — accounts, investments, debts, and equity all in one view."
+            />
+            <Feature
+              icon={<Calendar className="text-brand" />}
+              title="Bill calendar"
+              body="See every upcoming charge laid out by day. Plan your cash flow. Avoid overdrafts before they happen."
             />
             <Feature
               icon={<Bell className="text-brand" />}
-              title="Bill reminders"
-              body="Never get hit with a surprise charge again. We notify you before any bill hits, so you can pause or cancel in time."
+              title="Push reminders"
+              body="Get notified before any bill or trial hits. No more surprise renewals. No more 'I thought I cancelled that.'"
+            />
+            <Feature
+              icon={<Bot className="text-brand" />}
+              title="AI auto-organize"
+              body="Hit Scan Bank and AI sorts every charge into subscription, bill, gas, or one-time expense. Your organization stays put across app restarts."
             />
             <Feature
               icon={<ShieldCheck className="text-brand" />}
-              title="App + web, in sync"
-              body="Your account works on iOS and the web. Add something in the app and it shows up on the website instantly."
-            />
-            <Feature
-              icon={<TrendingDown className="text-brand" />}
-              title="Auto-import with Plaid"
-              body="Upgrade to Pro and connect your bank. We find every recurring charge automatically — no manual entry needed."
+              title="Bank-grade security"
+              body="256-bit AES encryption. Read-only Plaid access. Your bank credentials never touch our servers — we can't move your money even if we tried."
             />
             <Feature
               icon={<Lock className="text-brand" />}
               title="Privacy first"
-              body="We don't sell your data. Ever. We make money one way: from people who choose to upgrade. That's it."
+              body="We don't sell your data. Period. We make money one way: from people who choose to upgrade. That's the entire business model."
+            />
+            <Feature
+              icon={<TrendingDown className="text-brand" />}
+              title="Manual + bank, side by side"
+              body="Track manually for free, or connect your bank. Both views live next to each other so you always see the full picture."
             />
           </div>
         </div>
@@ -181,13 +230,17 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="text-sm">
-                <Row label="Free tier" us="✓" them1="Limited" them2="✓" />
-                <Row label="Auto-cancel subs" us="✓" them1="✓" them2="✗" />
-                <Row label="Bill reminders" us="✓" them1="✓" them2="✗" />
+                <Row label="Free tier" us="Yes" them1="Limited" them2="Yes" />
+                <Row label="Auto-detect subs" us="Yes" them1="Yes" them2="No" />
+                <Row label="Income tracking" us="Yes" them1="Yes" them2="No" />
+                <Row label="Gas tracker" us="Yes" them1="No" them2="No" />
+                <Row label="Net worth tracker" us="Yes" them1="Limited" them2="No" />
+                <Row label="Receipt AI scan" us="Yes" them1="No" them2="No" />
+                <Row label="Bill reminders" us="Yes" them1="Yes" them2="No" />
                 <Row label="Monthly cost" us="$10" them1="$12" them2="$3" />
-                <Row label="Yearly special" us="$49.99" them1="$72" them2="$36" />
-                <Row label="No data selling" us="✓" them1="✗" them2="✓" />
-                <Row label="iOS + Web" us="✓" them1="✓" them2="iOS only" />
+                <Row label="Yearly price" us="$99.99" them1="$72" them2="$36" />
+                <Row label="No data selling" us="Yes" them1="No" them2="Yes" />
+                <Row label="iOS + Web" us="Yes" them1="Yes" them2="iOS only" />
               </tbody>
             </table>
           </div>
@@ -207,7 +260,7 @@ export default function Home() {
             href="/signup"
             className="mt-8 inline-block rounded-xl bg-brand-gradient px-10 py-5 text-lg font-semibold text-black transition hover:opacity-90"
           >
-            Start free →
+            Start free
           </Link>
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
             <CheckCircle2 size={16} className="text-brand" />

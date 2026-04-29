@@ -14,9 +14,11 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="mb-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand/10 px-6 py-3 text-sm">
-          🎉 <strong className="gradient-text">Launch Special:</strong>
-          <span>Save 50% on yearly — $49.99 (normally $99.99)</span>
+        <div className="mb-8 flex w-full items-center justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-6 py-3 text-sm">
+            <span className="gradient-text font-bold">Launch Special:</span>
+            <span>Save 50% on yearly — $49.99 (normally $99.99)</span>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-4">
@@ -25,10 +27,11 @@ export default function Pricing() {
             price="$0"
             period="forever"
             features={[
-              "Connect 1 bank account",
-              "See up to 5 subscriptions",
-              "Basic bill reminders",
-              "Cancel via support tickets",
+              "Track manually — unlimited entries",
+              "Subscriptions, bills, trials, expenses",
+              "Net worth tracker",
+              "Bill calendar",
+              "Push reminders before due dates",
             ]}
             cta="Start free"
             href="/signup"
@@ -38,12 +41,13 @@ export default function Pricing() {
             price="$10"
             period="/month"
             features={[
-              "Unlimited bank accounts",
-              "All subscriptions tracked",
+              "Everything in Free",
+              "Connect unlimited banks via Plaid",
+              "Auto-detect every recurring charge",
+              "AI organize subs, bills, gas, expenses",
+              "Income tracking from deposits",
+              "Receipt scanning with AI Vision",
               "One-tap cancellation",
-              "Smart bill reminders",
-              "Spending insights",
-              "Priority support",
             ]}
             cta="Start monthly"
             href="/signup?plan=monthly"
@@ -54,8 +58,8 @@ export default function Pricing() {
             period="/3 months"
             features={[
               "Everything in Monthly",
-              "Save $5",
-              "30-day money back",
+              "Save $5 vs paying monthly",
+              "30-day money-back guarantee",
             ]}
             cta="Start 3 months"
             href="/signup?plan=3months"
@@ -69,11 +73,11 @@ export default function Pricing() {
             badge="50% OFF · LAUNCH"
             features={[
               "Everything in Monthly",
-              "Save $70 vs monthly",
-              "60-day money back",
+              "Save $70 vs paying monthly",
+              "60-day money-back guarantee",
               "Web exclusive features",
-              "Net worth tracker",
               "Monthly PDF reports",
+              "Priority support",
             ]}
             cta="Get yearly deal"
             href="/signup?plan=yearly"
@@ -81,10 +85,16 @@ export default function Pricing() {
         </div>
 
         <div className="mt-16 rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center">
-          <h2 className="text-2xl font-bold">Money back guarantee</h2>
+          <h2 className="text-2xl font-bold">Money-back guarantee</h2>
           <p className="mt-2 text-gray-400">
-            Try Life Admin risk-free. If we don&apos;t find at least one subscription you forgot about, we&apos;ll refund you.
+            Try Life Admin risk-free. If we don&apos;t find at least one subscription you forgot about, we&apos;ll refund you in full.
           </p>
+        </div>
+
+        <div className="mt-8 grid gap-6 md:grid-cols-3">
+          <Note title="No hidden upcharges" body="The price you see is the price you pay. No paywall mid-feature. No surprise tier. Cancel inside the app any time." />
+          <Note title="Cancel any time" body="Manage your subscription from your Apple ID or Life Admin profile. Two taps, you're out. We don't try to stop you." />
+          <Note title="Same plan everywhere" body="Pay once, use the iOS app and the web app with the same account. Both stay in sync automatically." />
         </div>
       </div>
     </div>
@@ -121,7 +131,7 @@ function Plan({
       }`}
     >
       {badge && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-bold text-black">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-gradient px-3 py-1 text-xs font-bold text-black">
           {badge}
         </div>
       )}
@@ -153,6 +163,15 @@ function Plan({
       >
         {cta}
       </Link>
+    </div>
+  );
+}
+
+function Note({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+      <h3 className="font-bold">{title}</h3>
+      <p className="mt-2 text-sm text-gray-400">{body}</p>
     </div>
   );
 }
