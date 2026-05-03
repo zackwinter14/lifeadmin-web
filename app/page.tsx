@@ -15,6 +15,13 @@ import {
   Calendar,
   Bot,
   PiggyBank,
+  Users,
+  History,
+  Target,
+  Handshake,
+  Trophy,
+  Palette,
+  BookOpen,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -111,7 +118,7 @@ export default function Home() {
             </div>
             <div>
               <div className="text-4xl font-bold gradient-text">
-                <CountUp end={7} />
+                <CountUp end={10} />+
               </div>
               <div className="text-sm text-gray-500">money areas tracked</div>
             </div>
@@ -202,6 +209,36 @@ export default function Home() {
               title="Manual + bank, side by side"
               body="Track manually for free, or connect your bank. Both views live next to each other so you always see the full picture."
             />
+            <Feature
+              icon={<Users className="text-brand" />}
+              title="Household sharing"
+              body="Create or join a household to see everyone's subscriptions together. Life Admin automatically detects overlapping services so you stop paying twice for the same thing."
+            />
+            <Feature
+              icon={<History className="text-brand" />}
+              title="Full spending history"
+              body="Every transaction, bill, and expense grouped by day. Scroll back through your entire financial history and see exactly where money went and when."
+            />
+            <Feature
+              icon={<Target className="text-brand" />}
+              title="Budget goals"
+              body="Set a monthly spending target and track your progress in real time. See the percentage of income going to recurring costs and how much is left to breathe."
+            />
+            <Feature
+              icon={<Handshake className="text-brand" />}
+              title="Bill negotiation scripts"
+              body="Get AI-generated negotiation scripts for your actual bills. Know exactly what to say to lower your cable, insurance, or phone bill before you call."
+            />
+            <Feature
+              icon={<Trophy className="text-brand" />}
+              title="Rewards and milestones"
+              body="Earn milestones as you build better money habits. Track your streak, hit goals, and see your financial progress turn into something you can feel proud of."
+            />
+            <Feature
+              icon={<Palette className="text-brand" />}
+              title="Custom themes"
+              body="Choose from multiple visual themes including Default, Dark, Glass, Mint, Forest, Ocean, and Sunset. Your money app should feel like yours."
+            />
           </div>
         </div>
       </section>
@@ -237,8 +274,11 @@ export default function Home() {
                 <Row label="Net worth tracker" us="Yes" them1="Limited" them2="No" />
                 <Row label="Receipt AI scan" us="Yes" them1="No" them2="No" />
                 <Row label="Bill reminders" us="Yes" them1="Yes" them2="No" />
-                <Row label="Monthly cost" us="$10" them1="$12" them2="$3" />
-                <Row label="Yearly price" us="$99.99" them1="$72" them2="$36" />
+                <Row label="Household sharing" us="Yes" them1="No" them2="No" />
+                <Row label="Bill negotiation scripts" us="Yes" them1="No" them2="No" />
+                <Row label="Spending history" us="Yes" them1="Yes" them2="Limited" />
+                <Row label="Monthly cost" us="$9.99" them1="$12" them2="$3" />
+                <Row label="Yearly price" us="$49.99" them1="$72" them2="$36" />
                 <Row label="No data selling" us="Yes" them1="No" them2="Yes" />
                 <Row label="iOS + Web" us="Yes" them1="Yes" them2="iOS only" />
               </tbody>
