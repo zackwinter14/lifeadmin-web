@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash } from "lucide-react";
+import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash, Sparkles } from "lucide-react";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -417,11 +417,17 @@ export default function ProfilePage() {
   const [income, setIncome] = useState("");
   const [accountCode, setAccountCode] = useState("");
   const [isPro, setIsPro] = useState(false);
+  const [bgEnabled, setBgEnabled] = useState(true);
   const [editField, setEditField] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem("bg_enabled");
+      if (stored !== null) setBgEnabled(stored === "true");
+    } catch {}
+
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
@@ -440,6 +446,13 @@ export default function ProfilePage() {
     }
     load();
   }, []);
+
+  function toggleBg() {
+    const next = !bgEnabled;
+    setBgEnabled(next);
+    try { localStorage.setItem("bg_enabled", String(next)); } catch {}
+    window.dispatchEvent(new CustomEvent("bg_change", { detail: next }));
+  }
 
   async function saveProfile() {
     setSaving(true);
@@ -559,6 +572,31 @@ export default function ProfilePage() {
           {saving ? "Saving…" : saved ? "Saved" : "Save Changes"}
         </button>
       </div>
+
+      {/* Appearance */}
+      <Section title="Appearance">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+              <Sparkles size={15} className="text-brand" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Animated Background</p>
+              <p className="text-xs text-gray-500">Moving orbs and particles on all pages</p>
+            </div>
+          </div>
+          <button
+            onClick={toggleBg}
+            className={`relative h-7 w-12 rounded-full transition-colors duration-200 ${bgEnabled ? "bg-brand" : "bg-white/10"}`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${bgEnabled ? "translate-x-6" : "translate-x-1"}`}
+            />
+          </button>
+        </div>
+      </Section>
+
+      <div className="my-4" />
 
       {/* Quick links */}
       <Section title="Account">

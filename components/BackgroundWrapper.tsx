@@ -1,32 +1,33 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import AnimatedBackground from "./AnimatedBackground";
 
-// Pages where the animated background should NOT appear (logged-in app pages)
-const APP_ROUTES = [
-  "/dashboard",
-  "/profile",
-  "/budget",
-  "/calendar",
-  "/expenses",
-  "/gas",
-  "/manual",
-  "/negotiation",
-  "/networth",
-  "/rewards",
-  "/save",
-  "/school",
-  "/upcoming",
-  "/bank",
-  "/autoai",
-  "/income",
-  "/household",
-];
-
 export default function BackgroundWrapper() {
-  const pathname = usePathname();
-  const isAppPage = APP_ROUTES.some((route) => pathname.startsWith(route));
-  if (isAppPage) return null;
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("bg_enabled");
+      if (stored !== null) setEnabled(stored === "true");
+    } catch {}
+
+    // Listen for changes from the profile settings toggle
+    function onStorage(e: StorageEvent) {
+      if (e.key === "bg_enabled") setEnabled(e.newValue === "true");
+    }
+    // Also listen for a custom event (same-tab updates)
+    function onBgChange(e: Event) {
+      setEnabled((e as CustomEvent).detail === true);
+    }
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("bg_change", onBgChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("bg_change", onBgChange);
+    };
+  }, []);
+
+  if (!enabled) return null;
   return <AnimatedBackground />;
 }
