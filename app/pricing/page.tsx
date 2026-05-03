@@ -147,13 +147,6 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="mt-16 rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center">
-          <h2 className="text-2xl font-bold">Money-back guarantee</h2>
-          <p className="mt-2 text-gray-400">
-            Try Life Admin risk-free. If we don&apos;t find at least one subscription you forgot about, we&apos;ll refund you in full.
-          </p>
-        </div>
-
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           <Note title="No hidden upcharges" body="The price you see is the price you pay. No paywall mid-feature. No surprise tier. Cancel inside the app any time." />
           <Note title="Cancel any time" body="Manage your subscription from your Apple ID or Life Admin profile. Two taps, you're out. We don't try to stop you." />
