@@ -28,6 +28,86 @@ import {
   Star,
 } from "lucide-react";
 
+// ─── Animated Background ─────────────────────────────────────────────────────
+
+function AnimatedBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = document.body.scrollHeight;
+    };
+    resize();
+
+    type Particle = { x: number; y: number; size: number; speed: number; opacity: number; drift: number };
+    const particles: Particle[] = Array.from({ length: 100 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 1.8 + 0.3,
+      speed: Math.random() * 0.4 + 0.08,
+      opacity: Math.random() * 0.35 + 0.05,
+      drift: (Math.random() - 0.5) * 0.3,
+    }));
+
+    let animId: number;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(62,167,88,${p.opacity})`;
+        ctx.fill();
+        p.y -= p.speed;
+        p.x += p.drift;
+        if (p.y < -4) {
+          p.y = canvas.height + 4;
+          p.x = Math.random() * canvas.width;
+        }
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+      });
+      animId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    window.addEventListener("resize", resize);
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return (
+    <>
+      {/* Particle canvas */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{ mixBlendMode: "screen" }}
+      />
+
+      {/* Moving gradient orbs */}
+      <div className="fixed inset-0 -z-20 overflow-hidden pointer-events-none">
+        <div className="orb-1 absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full bg-brand/[0.07] blur-[140px]" />
+        <div className="orb-2 absolute top-1/3 -right-80 h-[600px] w-[600px] rounded-full bg-brand/[0.06] blur-[120px]" />
+        <div className="orb-3 absolute top-2/3 left-1/4 h-[500px] w-[500px] rounded-full bg-brand-light/[0.05] blur-[110px]" />
+        <div className="orb-4 absolute -bottom-60 right-1/4 h-[500px] w-[500px] rounded-full bg-brand/[0.06] blur-[130px]" />
+        {/* Aurora strip at very top */}
+        <div className="aurora absolute -top-32 left-1/2 -translate-x-1/2 h-[300px] w-[900px] rounded-full bg-brand/[0.09] blur-[80px]" />
+      </div>
+
+      {/* Grid overlay */}
+      <div className="fixed inset-0 -z-10 pointer-events-none bg-grid opacity-100" />
+    </>
+  );
+}
+
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
 function CountUp({
@@ -309,10 +389,11 @@ const testimonials = [
 
 export default function Home() {
   return (
-    <>
+    <div className="relative">
+      <AnimatedBackground />
+
       {/* Hero */}
       <section className="relative overflow-hidden px-6 pb-24 pt-20 md:pt-32">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(62,167,88,0.15),transparent_50%)]" />
         <div className="mx-auto max-w-5xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -387,7 +468,7 @@ export default function Home() {
       </section>
 
       {/* Mockup trio */}
-      <section className="border-t border-white/5 px-6 py-24 bg-[radial-gradient(ellipse_at_center,rgba(62,167,88,0.06),transparent_60%)]">
+      <section className="border-t border-white/5 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -439,7 +520,7 @@ export default function Home() {
       </section>
 
       {/* Spotlight 1 — Auto detect */}
-      <section className="border-t border-white/5 px-6 py-24 bg-[radial-gradient(ellipse_at_left,rgba(62,167,88,0.07),transparent_50%)]">
+      <section className="border-t border-white/5 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn>
@@ -505,7 +586,7 @@ export default function Home() {
       </section>
 
       {/* Spotlight 3 — Net worth */}
-      <section className="border-t border-white/5 px-6 py-24 bg-[radial-gradient(ellipse_at_right,rgba(62,167,88,0.07),transparent_50%)]">
+      <section className="border-t border-white/5 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn>
@@ -571,7 +652,7 @@ export default function Home() {
       </section>
 
       {/* Features grid */}
-      <section className="border-t border-white/5 px-6 py-24 bg-[radial-gradient(ellipse_at_center,rgba(62,167,88,0.05),transparent_60%)]">
+      <section className="border-t border-white/5 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -684,6 +765,6 @@ export default function Home() {
           </FadeIn>
         </div>
       </section>
-    </>
+    </div>
   );
 }
