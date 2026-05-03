@@ -382,6 +382,12 @@ const testimonials = [
   { name: "Marcus T.", handle: "@marcust", body: "Found $127/month I was wasting in 2 minutes. Cancelled 4 subs I completely forgot about. This app paid for itself in the first day.", stars: 5 },
   { name: "Jess R.", handle: "@jessicaR", body: "Finally an app that doesn't hide everything behind a paywall. The free version alone is better than anything I've tried before.", stars: 5 },
   { name: "Daniel K.", handle: "@dk_finance", body: "The bill calendar alone is worth it. I haven't had a surprise charge hit my account since I started using Life Admin.", stars: 5 },
+  { name: "Ashley M.", handle: "@ashleym", body: "I had no idea I was still paying for a gym membership from two years ago. Life Admin found it instantly. Cancelled and got a partial refund.", stars: 5 },
+  { name: "Ryan P.", handle: "@ryanp_saves", body: "The household sharing feature is a game changer. My partner and I finally stopped paying for duplicate streaming services. Saved us $45 a month immediately.", stars: 5 },
+  { name: "Taylor S.", handle: "@taylors", body: "The net worth tracker keeps me motivated. Watching my number go up every month because I stopped wasting money on stuff I forgot I had is genuinely satisfying.", stars: 5 },
+  { name: "Chris L.", handle: "@chrisliving", body: "I've tried Rocket Money, Mint, and a few others. None of them are this clean or this fast. Life Admin is the first one I actually kept using past a week.", stars: 5 },
+  { name: "Nina B.", handle: "@ninab", body: "Receipt scanning is unreal. I just snap a photo after every grocery run and it logs everything automatically. My expense tracking is finally accurate.", stars: 5 },
+  { name: "Jordan W.", handle: "@jordanw_", body: "Set up in under 5 minutes and it found 6 subscriptions I'd completely forgotten about. $84 a month I'm now saving. Worth every penny of the upgrade.", stars: 5 },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -678,16 +684,16 @@ export default function Home() {
             </h2>
             <p className="mt-4 text-gray-400">From the App Store.</p>
           </FadeIn>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="columns-1 gap-6 md:columns-3">
             {testimonials.map((t, i) => (
-              <FadeIn key={t.name} delay={i * 0.1}>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 h-full flex flex-col">
-                  <div className="flex gap-0.5 mb-4">
+              <FadeIn key={t.name} delay={(i % 3) * 0.1} className="mb-6 break-inside-avoid">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col">
+                  <div className="flex gap-0.5 mb-3">
                     {Array.from({ length: t.stars }).map((_, j) => (
-                      <Star key={j} size={14} className="fill-brand text-brand" />
+                      <Star key={j} size={13} className="fill-brand text-brand" />
                     ))}
                   </div>
-                  <p className="text-sm text-gray-300 flex-1 mb-4">&ldquo;{t.body}&rdquo;</p>
+                  <p className="text-sm text-gray-300 mb-4">&ldquo;{t.body}&rdquo;</p>
                   <div>
                     <div className="text-sm font-semibold">{t.name}</div>
                     <div className="text-xs text-gray-500">{t.handle}</div>
