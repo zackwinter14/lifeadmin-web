@@ -73,7 +73,7 @@ body {
 
 .bg-grid {
   background-image:
-    linear-gradient(rgba(62,167,88,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(62,167,88,0.04) 1px, transparent 1px);
+    linear-gradient(rgba(62,167,88,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(62,167,88,0.08) 1px, transparent 1px);
   background-size: 72px 72px;
 }

@@ -46,13 +46,13 @@ function AnimatedBackground() {
     resize();
 
     type Particle = { x: number; y: number; size: number; speed: number; opacity: number; drift: number };
-    const particles: Particle[] = Array.from({ length: 100 }, () => ({
+    const particles: Particle[] = Array.from({ length: 150 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      size: Math.random() * 1.8 + 0.3,
-      speed: Math.random() * 0.4 + 0.08,
-      opacity: Math.random() * 0.35 + 0.05,
-      drift: (Math.random() - 0.5) * 0.3,
+      size: Math.random() * 2.5 + 0.5,
+      speed: Math.random() * 0.6 + 0.15,
+      opacity: Math.random() * 0.6 + 0.15,
+      drift: (Math.random() - 0.5) * 0.4,
     }));
 
     let animId: number;
@@ -94,16 +94,16 @@ function AnimatedBackground() {
 
       {/* Moving gradient orbs */}
       <div className="fixed inset-0 -z-20 overflow-hidden pointer-events-none">
-        <div className="orb-1 absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full bg-brand/[0.07] blur-[140px]" />
-        <div className="orb-2 absolute top-1/3 -right-80 h-[600px] w-[600px] rounded-full bg-brand/[0.06] blur-[120px]" />
-        <div className="orb-3 absolute top-2/3 left-1/4 h-[500px] w-[500px] rounded-full bg-brand-light/[0.05] blur-[110px]" />
-        <div className="orb-4 absolute -bottom-60 right-1/4 h-[500px] w-[500px] rounded-full bg-brand/[0.06] blur-[130px]" />
+        <div className="orb-1 absolute -top-60 -left-60 h-[800px] w-[800px] rounded-full bg-brand/20 blur-[100px]" />
+        <div className="orb-2 absolute top-1/3 -right-80 h-[700px] w-[700px] rounded-full bg-brand/15 blur-[90px]" />
+        <div className="orb-3 absolute top-2/3 left-1/4 h-[600px] w-[600px] rounded-full bg-brand-light/10 blur-[80px]" />
+        <div className="orb-4 absolute -bottom-60 right-1/4 h-[600px] w-[600px] rounded-full bg-brand/15 blur-[100px]" />
         {/* Aurora strip at very top */}
-        <div className="aurora absolute -top-32 left-1/2 -translate-x-1/2 h-[300px] w-[900px] rounded-full bg-brand/[0.09] blur-[80px]" />
+        <div className="aurora absolute -top-20 left-1/2 -translate-x-1/2 h-[350px] w-[1000px] rounded-full bg-brand/20 blur-[60px]" />
       </div>
 
       {/* Grid overlay */}
-      <div className="fixed inset-0 -z-10 pointer-events-none bg-grid opacity-100" />
+      <div className="fixed inset-0 -z-10 pointer-events-none bg-grid" />
     </>
   );
 }
