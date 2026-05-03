@@ -389,8 +389,6 @@ const testimonials = [
 export default function Home() {
   return (
     <div className="relative">
-      <AnimatedBackground />
-
       {/* Hero */}
       <section className="relative overflow-hidden px-6 pb-24 pt-20 md:pt-32">
         <div className="mx-auto max-w-5xl text-center">

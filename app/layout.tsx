@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BackgroundWrapper from "@/components/BackgroundWrapper";
 
 export const metadata: Metadata = {
   title: "Life Admin — Track bills. Cancel forgotten subscriptions. Save hundreds.",
@@ -32,7 +33,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="relative">
+        <BackgroundWrapper />
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />
