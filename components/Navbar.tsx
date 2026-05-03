@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark } from "lucide-react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 const MENU_ITEMS = [
   { href: "/expenses",    label: "Add Expense",  icon: DollarSign,   color: "#007AFF" },
-  { href: "/networth",    label: "Net Worth",    icon: TrendingUp,   color: "#34C759" },
+  { href: "/income",      label: "Income",       icon: Wallet,       color: "#34C759" },
+  { href: "/household",   label: "Household",    icon: Users,        color: "#30D158" },
+  { href: "/networth",    label: "Net Worth",    icon: TrendingUp,   color: "#64D2FF" },
   { href: "/calendar",    label: "Calendar",     icon: Calendar,     color: "#FF9500" },
   { href: "/autoai",      label: "AutoAI",       icon: Bot,          color: "#AF52DE" },
   { href: "/school",      label: "School",       icon: GraduationCap,color: "#38BDF8" },

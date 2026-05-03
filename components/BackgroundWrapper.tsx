@@ -20,6 +20,8 @@ const APP_ROUTES = [
   "/upcoming",
   "/bank",
   "/autoai",
+  "/income",
+  "/household",
 ];
 
 export default function BackgroundWrapper() {
