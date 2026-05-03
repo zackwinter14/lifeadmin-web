@@ -88,22 +88,21 @@ function AnimatedBackground() {
       {/* Particle canvas */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 -z-10 pointer-events-none"
-        style={{ mixBlendMode: "screen" }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: -3, mixBlendMode: "screen" }}
       />
 
       {/* Moving gradient orbs */}
-      <div className="fixed inset-0 -z-20 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -5 }}>
         <div className="orb-1 absolute -top-60 -left-60 h-[800px] w-[800px] rounded-full bg-brand/20 blur-[100px]" />
         <div className="orb-2 absolute top-1/3 -right-80 h-[700px] w-[700px] rounded-full bg-brand/15 blur-[90px]" />
         <div className="orb-3 absolute top-2/3 left-1/4 h-[600px] w-[600px] rounded-full bg-brand-light/10 blur-[80px]" />
         <div className="orb-4 absolute -bottom-60 right-1/4 h-[600px] w-[600px] rounded-full bg-brand/15 blur-[100px]" />
-        {/* Aurora strip at very top */}
         <div className="aurora absolute -top-20 left-1/2 -translate-x-1/2 h-[350px] w-[1000px] rounded-full bg-brand/20 blur-[60px]" />
       </div>
 
       {/* Grid overlay */}
-      <div className="fixed inset-0 -z-10 pointer-events-none bg-grid" />
+      <div className="fixed inset-0 pointer-events-none bg-grid" style={{ zIndex: -4 }} />
     </>
   );
 }
