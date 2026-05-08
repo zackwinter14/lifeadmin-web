@@ -75,7 +75,7 @@ async function loadTopics() {
   const list = document.getElementById('list');
   list.innerHTML = '<div class="empty">Loading…</div>';
   try {
-    const r = await fetch(FUNCTION + '?action=list', { headers: { 'x-admin-pin': pin, 'Authorization': 'Bearer ' + ANON_KEY, 'apikey': ANON_KEY } });
+    const r = await fetch(FUNCTION + '?action=list', { headers: { 'x-admin-pin': pin, 'Authorization': 'Bearer ' + ANON_KEY } });
     if (r.status === 401) { logout(); toast('Wrong pin'); return; }
     const data = await r.json();
     render(data.topics || []);
@@ -105,7 +105,7 @@ async function act(id, action, btn) {
   try {
     const r = await fetch(FUNCTION, {
       method: 'POST',
-      headers: { 'x-admin-pin': pin, 'Authorization': 'Bearer ' + ANON_KEY, 'apikey': ANON_KEY, 'content-type': 'application/json' },
+      headers: { 'x-admin-pin': pin, 'Authorization': 'Bearer ' + ANON_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({ id, action })
     });
     if (r.ok) {
