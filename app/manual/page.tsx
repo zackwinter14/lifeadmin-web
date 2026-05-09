@@ -289,15 +289,39 @@ export default function ManualPage() {
   }, [supabase]);
 
   async function moveItemType(id: string, newType: ItemType) {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
-    await supabase.from("items").update({ type: newType }).eq("id", id);
     const item = items.find(i => i.id === id);
-    if (item) {
+    if (!item) return;
+    const oldType = item.type;
+
+    // Optimistic update
+    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
+
+    // Persist
+    const { error } = await supabase.from("items").update({ type: newType }).eq("id", id);
+    if (error) {
+      console.error("Failed to move item:", error);
+      setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
+      alert("Couldn't save. Please try again.");
+      return;
+    }
+
+    // Notify other pages
+    try {
+      localStorage.setItem("items_version", String(Date.now()));
+      window.dispatchEvent(new Event("items-updated"));
+    } catch {}
+
+    // Save merchant rule (best effort)
+    try {
       const key = (item.name || "").toLowerCase().trim();
-      await supabase.from("merchant_rules").upsert(
-        { merchant_name: key, correct_type: newType, correct_category: item.category, last_updated: new Date().toISOString() },
-        { onConflict: "merchant_name" }
-      );
+      if (key) {
+        await supabase.from("merchant_rules").upsert(
+          { merchant_name: key, correct_type: newType, correct_category: item.category, last_updated: new Date().toISOString() },
+          { onConflict: "merchant_name" }
+        );
+      }
+    } catch (e) {
+      console.warn("Merchant rule save skipped:", e);
     }
   }
 
@@ -310,6 +334,21 @@ export default function ManualPage() {
       setLoading(false);
     }
     init();
+
+    // Refresh when items change elsewhere
+    const onItemsUpdated = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await loadData(user.id);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "items_version") onItemsUpdated();
+    };
+    window.addEventListener("items-updated", onItemsUpdated);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("items-updated", onItemsUpdated);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   async function saveIncome(val: string) {

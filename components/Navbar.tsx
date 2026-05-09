@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank } from "lucide-react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -18,6 +18,7 @@ const MENU_ITEMS = [
   { href: "/negotiation",   label: "Negotiation",      icon: Handshake,     color: "#FF6B35" },
   { href: "/rewards",       label: "Rewards",          icon: Trophy,        color: "#F5C518" },
   { href: "/tools",         label: "Free Tools",       icon: Calculator,    color: "#3EA758" },
+  { href: "/transparency",  label: "How We Make Money",icon: Shield,        color: "#34C759" },
 ];
 
 export default function Navbar() {

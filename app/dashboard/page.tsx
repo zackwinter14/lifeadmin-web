@@ -207,18 +207,40 @@ export default function Dashboard() {
   const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
 
   async function moveItemType(id: string, newType: ItemType) {
-    // Update local state immediately
-    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
-    // Persist to items table
-    await supabase.from("items").update({ type: newType }).eq("id", id);
-    // Save merchant rule so future syncs remember this correction
     const item = items.find(i => i.id === id);
-    if (item) {
+    if (!item) return;
+    const oldType = item.type;
+
+    // Optimistic update
+    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
+
+    // Persist to items table (the important part)
+    const { error } = await supabase.from("items").update({ type: newType }).eq("id", id);
+    if (error) {
+      console.error("Failed to move item:", error);
+      // Revert optimistic update
+      setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
+      alert("Couldn't save. Please try again.");
+      return;
+    }
+
+    // Tell other open tabs/pages to refresh
+    try {
+      localStorage.setItem("items_version", String(Date.now()));
+      window.dispatchEvent(new Event("items-updated"));
+    } catch {}
+
+    // Save merchant rule (best effort — won't fail the move if table is missing)
+    try {
       const key = (item.name || "").toLowerCase().trim();
-      await supabase.from("merchant_rules").upsert(
-        { merchant_name: key, correct_type: newType, correct_category: item.category, last_updated: new Date().toISOString() },
-        { onConflict: "merchant_name" }
-      );
+      if (key) {
+        await supabase.from("merchant_rules").upsert(
+          { merchant_name: key, correct_type: newType, correct_category: item.category, last_updated: new Date().toISOString() },
+          { onConflict: "merchant_name" }
+        );
+      }
+    } catch (e) {
+      console.warn("Merchant rule save skipped:", e);
     }
   }
 
@@ -257,6 +279,21 @@ export default function Dashboard() {
       autoSyncRecurring(user.id);
     }
     init();
+
+    // Listen for changes from other tabs/pages
+    const onItemsUpdated = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await loadData(user.id);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "items_version") onItemsUpdated();
+    };
+    window.addEventListener("items-updated", onItemsUpdated);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("items-updated", onItemsUpdated);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   async function autoSyncRecurring(userId: string) {
