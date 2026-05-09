@@ -21,16 +21,15 @@ export default function UpgradeBanner() {
         return;
       }
 
-      // Check subscription status — hide for Pro users
+      // Check Pro status from profiles.is_pro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setShow(true); return; }
       const { data } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", user.id)
-        .in("status", ["active", "trialing"])
+        .from("profiles")
+        .select("is_pro")
+        .eq("id", user.id)
         .maybeSingle();
-      if (!data) setShow(true);
+      if (!data?.is_pro) setShow(true);
     })();
   }, [supabase]);
 
