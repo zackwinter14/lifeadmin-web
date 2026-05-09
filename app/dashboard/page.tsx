@@ -208,32 +208,43 @@ export default function Dashboard() {
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
-    if (!item) return;
+    if (!item) {
+      console.error("[MOVE-DEBUG] Item not found in state:", id);
+      alert("Item not found in state. ID: " + id);
+      return;
+    }
     const oldType = item.type;
+
+    console.log("[MOVE-DEBUG] === Starting move ===");
+    console.log("[MOVE-DEBUG] Item:", { id, name: item.name, oldType, newType, source: item.source });
 
     // Optimistic update
     setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
 
     // Persist to items table (the important part)
-    const { data: updated, error } = await supabase
+    const { data: updated, error, status, statusText, count } = await supabase
       .from("items")
       .update({ type: newType })
       .eq("id", id)
       .select();
 
+    console.log("[MOVE-DEBUG] Supabase response:", { updated, error, status, statusText, count });
+
     if (error) {
-      console.error("Failed to move item:", error);
+      console.error("[MOVE-DEBUG] ERROR:", error);
       setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      alert("Couldn't save the change.\n\n" + (error.message || "Unknown error") + "\n\nThis usually means the database is missing an UPDATE policy. Open the browser console (F12) for full details.");
+      alert("DB ERROR:\n\n" + JSON.stringify(error, null, 2));
       return;
     }
 
     if (!updated || updated.length === 0) {
-      console.error("Update returned 0 rows — RLS likely blocking the write.");
+      console.error("[MOVE-DEBUG] 0 ROWS UPDATED — RLS or filter blocking");
       setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      alert("Move didn't save. The database blocked the update (no UPDATE permission). You need to run an RLS policy fix in Supabase — see the SQL Zack has.");
+      alert("Update returned 0 rows. The database accepted the request but didn't update anything. This means RLS policies are blocking the write.\n\nID: " + id + "\nNew type: " + newType);
       return;
     }
+
+    console.log("[MOVE-DEBUG] ✓ Saved successfully:", updated[0]);
 
     // Tell other open tabs/pages to refresh
     try {
