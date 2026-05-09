@@ -49,6 +49,39 @@ function StatCard({ label, value, sub, color, onClick }: { label: string; value:
   );
 }
 
+function ModalTip() {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("category_tip_dismissed")) setVisible(false);
+    } catch {}
+  }, []);
+
+  function dismiss() {
+    setVisible(false);
+    try { localStorage.setItem("category_tip_dismissed", "1"); } catch {}
+  }
+
+  if (!visible) return null;
+
+  return (
+    <div className="mx-5 mt-3 mb-1 flex items-start gap-2.5 rounded-xl border border-brand/20 bg-brand/5 px-3.5 py-2.5">
+      <Repeat size={13} className="mt-0.5 shrink-0 text-brand" />
+      <p className="flex-1 text-xs leading-relaxed text-gray-400">
+        Tap the colored pill on any item to move it to the right category. The system saves your correction for future syncs.
+      </p>
+      <button
+        onClick={dismiss}
+        className="shrink-0 rounded p-0.5 text-gray-600 hover:text-gray-300"
+        aria-label="Dismiss"
+      >
+        <X size={13} />
+      </button>
+    </div>
+  );
+}
+
 const ALL_TYPES: { type: ItemType; label: string }[] = [
   { type: "subscription", label: "Subscription" },
   { type: "bill",         label: "Bill"         },
@@ -121,7 +154,7 @@ function ItemsModal({ label, color, items, onClose, onTypeChange }: {
           <div className="py-12 text-center text-sm text-gray-500">Nothing here yet.</div>
         ) : (
           <>
-            <p className="px-5 pt-3 text-[10px] text-gray-600">Tap the category pill to move an item to a different type.</p>
+            <ModalTip />
             <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
               {items.map(item => (
                 <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">

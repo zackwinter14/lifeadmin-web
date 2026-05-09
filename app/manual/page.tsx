@@ -171,6 +171,48 @@ function ItemsModal({ label, color, items, onClose, onTypeChange }: {
   );
 }
 
+function CategoryTip() {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("category_tip_dismissed")) setVisible(false);
+    } catch {}
+  }, []);
+
+  function dismiss() {
+    setVisible(false);
+    try { localStorage.setItem("category_tip_dismissed", "1"); } catch {}
+  }
+
+  if (!visible) return null;
+
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-4 py-3.5">
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/15">
+        <ArrowRightLeft size={13} className="text-brand" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-white">Tip: Fix miscategorized items</p>
+        <p className="mt-1 text-xs leading-relaxed text-gray-400">
+          If something landed in the wrong section, tap the colored pill on any item —{" "}
+          <span className="rounded-full bg-[#3EA75825] px-1.5 py-0.5 text-[10px] font-semibold text-[#3EA758]">subscription</span>{" "}
+          <span className="rounded-full bg-[#FFB30025] px-1.5 py-0.5 text-[10px] font-semibold text-[#FFB300]">bill</span>{" "}
+          <span className="rounded-full bg-[#38BDF825] px-1.5 py-0.5 text-[10px] font-semibold text-[#38BDF8]">trial</span>{" "}
+          — and move it where it belongs. The system remembers your correction for next time.
+        </p>
+      </div>
+      <button
+        onClick={dismiss}
+        className="mt-0.5 shrink-0 rounded-lg p-1 text-gray-600 transition hover:bg-white/10 hover:text-gray-300"
+        aria-label="Dismiss tip"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
 function SectionHeader({
   icon, title, count, total, color, open, onToggle, onAdd,
 }: {
@@ -535,6 +577,9 @@ export default function ManualPage() {
           )}
         </div>
       </div>
+
+      {/* Category tip */}
+      <CategoryTip />
 
       {/* Sections */}
       <div className="space-y-4">

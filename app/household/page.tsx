@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Plus, X, Users, Trash2, AlertTriangle, Check, Copy } from "lucide-react";
+import { Plus, X, Users, Trash2, AlertTriangle, Check, Copy, Zap } from "lucide-react";
 
 interface Member {
   id: string;
@@ -36,23 +36,52 @@ export default function HouseholdPage() {
   const [copied, setCopied] = useState(false);
   const [memberForm, setMemberForm] = useState({ name: "", email: "" });
   const [subForm, setSubForm] = useState({ name: "", amount: "" });
+  const [realSubs, setRealSubs] = useState<{ name: string; amount: number }[]>([]);
 
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUserEmail(user.email || "");
+
+      // Load real subscriptions from items table for the owner
+      const { data: itemsData } = await supabase
+        .from("items")
+        .select("name, amount")
+        .eq("user_id", user.id)
+        .eq("type", "subscription")
+        .eq("status", "active");
+      if (itemsData) setRealSubs(itemsData);
+
       try {
         const stored = localStorage.getItem("household_members");
         if (stored) {
-          setMembers(JSON.parse(stored));
+          const parsed: Member[] = JSON.parse(stored);
+          // Always sync owner's subs from real items
+          const ownerIdx = parsed.findIndex(m => m.role === "owner");
+          if (ownerIdx !== -1 && itemsData && itemsData.length > 0) {
+            const ownerSubs: SharedSub[] = itemsData.map((s, i) => ({
+              id: `real_${i}`,
+              name: s.name,
+              amount: s.amount,
+              memberId: parsed[ownerIdx].id,
+            }));
+            parsed[ownerIdx].subscriptions = ownerSubs;
+          }
+          setMembers(parsed);
         } else {
+          const ownerSubs: SharedSub[] = (itemsData || []).map((s, i) => ({
+            id: `real_${i}`,
+            name: s.name,
+            amount: s.amount,
+            memberId: "owner",
+          }));
           const defaultMember: Member = {
             id: "owner",
             name: user.email?.split("@")[0] || "You",
             email: user.email || "",
             role: "owner",
-            subscriptions: [],
+            subscriptions: ownerSubs,
           };
           setMembers([defaultMember]);
           localStorage.setItem("household_members", JSON.stringify([defaultMember]));
@@ -235,8 +264,17 @@ export default function HouseholdPage() {
 
             {/* Subscriptions */}
             <div className="p-3">
+              {member.role === "owner" && realSubs.length > 0 && (
+                <div className="mb-2 flex items-center gap-1.5 text-[10px] text-brand/70">
+                  <Zap size={10} /> Synced from your subscriptions — edit them in My Finances
+                </div>
+              )}
               {member.subscriptions.length === 0 ? (
-                <p className="py-3 text-center text-xs text-gray-600">No subscriptions added yet</p>
+                <p className="py-3 text-center text-xs text-gray-600">
+                  {member.role === "owner"
+                    ? "No subscriptions found — add some in My Finances first."
+                    : "No subscriptions added yet — click below to add theirs."}
+                </p>
               ) : (
                 <div className="space-y-1.5 mb-3">
                   {member.subscriptions.map(sub => (
@@ -254,38 +292,48 @@ export default function HouseholdPage() {
               )}
 
               {showAddSub === member.id ? (
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    value={subForm.name}
-                    onChange={e => setSubForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="Subscription name"
-                    className="flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-brand"
-                  />
-                  <input
-                    type="number"
-                    value={subForm.amount}
-                    onChange={e => setSubForm(f => ({ ...f, amount: e.target.value }))}
-                    placeholder="$/mo"
-                    className="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-brand"
-                  />
-                  <button
-                    onClick={() => addSub(member.id)}
-                    disabled={!subForm.name || !subForm.amount}
-                    className="rounded-lg bg-brand-gradient px-3 py-2 text-sm font-bold text-black disabled:opacity-40"
-                  >
-                    <Check size={14} />
-                  </button>
-                  <button onClick={() => setShowAddSub(null)} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-400 hover:bg-white/5">
-                    <X size={14} />
-                  </button>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">
+                    Add a subscription this person pays for — e.g. Netflix, Spotify, Hulu.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      autoFocus
+                      value={subForm.name}
+                      onChange={e => setSubForm(f => ({ ...f, name: e.target.value }))}
+                      onKeyDown={e => { if (e.key === "Enter" && subForm.name && subForm.amount) addSub(member.id); }}
+                      placeholder="e.g. Netflix, Spotify, Rent..."
+                      className="flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-brand"
+                    />
+                    <div className="relative w-28">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">$/mo</span>
+                      <input
+                        type="number"
+                        value={subForm.amount}
+                        onChange={e => setSubForm(f => ({ ...f, amount: e.target.value }))}
+                        onKeyDown={e => { if (e.key === "Enter" && subForm.name && subForm.amount) addSub(member.id); }}
+                        placeholder="0.00"
+                        className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-9 pr-3 text-sm outline-none focus:border-brand"
+                      />
+                    </div>
+                    <button
+                      onClick={() => addSub(member.id)}
+                      disabled={!subForm.name || !subForm.amount}
+                      className="rounded-lg bg-brand-gradient px-3 py-2 text-sm font-bold text-black disabled:opacity-40"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button onClick={() => setShowAddSub(null)} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-400 hover:bg-white/5">
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button
                   onClick={() => { setShowAddSub(member.id); setSubForm({ name: "", amount: "" }); }}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2 text-xs text-gray-500 hover:border-brand/30 hover:text-brand transition"
                 >
-                  <Plus size={12} /> Add subscription
+                  <Plus size={12} /> Add their subscription
                 </button>
               )}
             </div>
