@@ -215,12 +215,23 @@ export default function Dashboard() {
     setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
 
     // Persist to items table (the important part)
-    const { error } = await supabase.from("items").update({ type: newType }).eq("id", id);
+    const { data: updated, error } = await supabase
+      .from("items")
+      .update({ type: newType })
+      .eq("id", id)
+      .select();
+
     if (error) {
       console.error("Failed to move item:", error);
-      // Revert optimistic update
       setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      alert("Couldn't save. Please try again.");
+      alert("Couldn't save the change.\n\n" + (error.message || "Unknown error") + "\n\nThis usually means the database is missing an UPDATE policy. Open the browser console (F12) for full details.");
+      return;
+    }
+
+    if (!updated || updated.length === 0) {
+      console.error("Update returned 0 rows — RLS likely blocking the write.");
+      setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
+      alert("Move didn't save. The database blocked the update (no UPDATE permission). You need to run an RLS policy fix in Supabase — see the SQL Zack has.");
       return;
     }
 

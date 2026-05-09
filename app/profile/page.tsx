@@ -789,6 +789,7 @@ export default function ProfilePage() {
 
       <Section title="Legal">
         <Row label="Privacy & Terms" onClick={() => setSubPage("privacy")} />
+        <Row label="How We Make Money" onClick={() => router.push("/transparency")} />
         <Row label="Disclaimer" onClick={() => setSubPage("disclaimer")} last />
       </Section>
 
