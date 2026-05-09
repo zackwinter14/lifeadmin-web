@@ -49,7 +49,60 @@ function StatCard({ label, value, sub, color, onClick }: { label: string; value:
   );
 }
 
-function ItemsModal({ label, color, items, onClose }: { label: string; color: string; items: Item[]; onClose: () => void }) {
+const ALL_TYPES: { type: ItemType; label: string }[] = [
+  { type: "subscription", label: "Subscription" },
+  { type: "bill",         label: "Bill"         },
+  { type: "trial",        label: "Trial"        },
+];
+
+function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType: ItemType) => void }) {
+  const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function move(newType: ItemType) {
+    setOpen(false);
+    onMove(item.id, newType);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  if (saved) return <span className="text-xs font-semibold text-brand">Saved</span>;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        className="rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize transition hover:opacity-80"
+        style={{ background: TYPE_COLORS[item.type] + "25", color: TYPE_COLORS[item.type] }}
+      >
+        {item.type}
+      </button>
+      {open && (
+        <div className="absolute bottom-7 left-0 z-50 w-40 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-2xl">
+          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">Move to</p>
+          {ALL_TYPES.filter(t => t.type !== item.type).map(t => (
+            <button
+              key={t.type}
+              onClick={e => { e.stopPropagation(); move(t.type); }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition hover:bg-white/5"
+            >
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: TYPE_COLORS[t.type] }} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItemsModal({ label, color, items, onClose, onTypeChange }: {
+  label: string;
+  color: string;
+  items: Item[];
+  onClose: () => void;
+  onTypeChange: (id: string, newType: ItemType) => void;
+}) {
   const total = items.reduce((a, b) => a + b.amount, 0);
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 pb-4 sm:pb-0"
@@ -67,25 +120,31 @@ function ItemsModal({ label, color, items, onClose }: { label: string; color: st
         {items.length === 0 ? (
           <div className="py-12 text-center text-sm text-gray-500">Nothing here yet.</div>
         ) : (
-          <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
-            {items.map(item => (
-              <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black"
-                  style={{ background: item.color || TYPE_COLORS[item.type] }}>
-                  {item.name.charAt(0).toUpperCase()}
+          <>
+            <p className="px-5 pt-3 text-[10px] text-gray-600">Tap the category pill to move an item to a different type.</p>
+            <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
+              {items.map(item => (
+                <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black"
+                    style={{ background: item.color || TYPE_COLORS[item.type] }}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{item.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {item.category}
+                      {item.due_date ? ` · Due ${item.due_date}` : ""}
+                      {item.autopay ? " · Autopay" : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <TypeMover item={item} onMove={onTypeChange} />
+                    <p className="font-bold text-sm">{fmt(item.amount)}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{item.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {item.category}
-                    {item.due_date ? ` · Due ${item.due_date}` : ""}
-                    {item.autopay ? " · Autopay" : ""}
-                  </p>
-                </div>
-                <p className="font-bold text-sm shrink-0">{fmt(item.amount)}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
         <div className="border-t border-white/5 px-5 py-3 flex justify-between items-center">
           <span className="text-xs text-gray-500">Monthly total</span>
@@ -112,7 +171,23 @@ export default function Dashboard() {
   const [plaidConnected, setPlaidConnected] = useState(false);
   const [detectingIncome, setDetectingIncome] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [activeCard, setActiveCard] = useState<{ label: string; color: string; items: Item[] } | null>(null);
+  const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
+
+  async function moveItemType(id: string, newType: ItemType) {
+    // Update local state immediately
+    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
+    // Persist to items table
+    await supabase.from("items").update({ type: newType }).eq("id", id);
+    // Save merchant rule so future syncs remember this correction
+    const item = items.find(i => i.id === id);
+    if (item) {
+      const key = (item.name || "").toLowerCase().trim();
+      await supabase.from("merchant_rules").upsert(
+        { merchant_name: key, correct_type: newType, correct_category: item.category, last_updated: new Date().toISOString() },
+        { onConflict: "merchant_name" }
+      );
+    }
+  }
 
   const loadData = useCallback(async (userId: string) => {
     const { data: profileData } = await supabase
@@ -387,13 +462,21 @@ export default function Dashboard() {
 
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, items: subs })} />
-        <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, items: bills })} />
-        <StatCard label="Trials" value={fmt(trialsTotal)} sub={`${trials.length} running`} color={TYPE_COLORS.trial} onClick={() => setActiveCard({ label: "Trials", color: TYPE_COLORS.trial, items: trials })} />
-        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", items })} />
+        <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })} />
+        <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })} />
+        <StatCard label="Trials" value={fmt(trialsTotal)} sub={`${trials.length} running`} color={TYPE_COLORS.trial} onClick={() => setActiveCard({ label: "Trials", color: TYPE_COLORS.trial, filterType: "trial" })} />
+        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
       </div>
 
-      {activeCard && <ItemsModal {...activeCard} onClose={() => setActiveCard(null)} />}
+      {activeCard && (
+        <ItemsModal
+          label={activeCard.label}
+          color={activeCard.color}
+          items={activeCard.filterType === "all" ? items : items.filter(i => i.type === activeCard.filterType)}
+          onClose={() => setActiveCard(null)}
+          onTypeChange={moveItemType}
+        />
+      )}
 
       {/* Donut + Upcoming row */}
       <div className="mb-6 grid gap-4 md:grid-cols-2">
