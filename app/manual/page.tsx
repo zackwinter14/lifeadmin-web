@@ -62,8 +62,21 @@ export default function ManualPage() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [income, setIncome] = useState(0);
+  const [editingIncome, setEditingIncome] = useState(false);
+  const [incomeInput, setIncomeInput] = useState("");
 
   const loadData = useCallback(async (userId: string) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("monthly_income")
+      .eq("id", userId)
+      .single();
+    if (profile?.monthly_income) {
+      setIncome(profile.monthly_income);
+      setIncomeInput(String(profile.monthly_income));
+    }
+
     const { data } = await supabase
       .from("items")
       .select("*")
@@ -71,6 +84,13 @@ export default function ManualPage() {
       .order("created_at", { ascending: false });
     if (data) setItems((data as Item[]).filter(i => !i.source || i.source === "manual"));
   }, [supabase]);
+
+  async function saveIncome(val: string) {
+    const v = parseFloat(val) || 0;
+    setIncome(v);
+    setEditingIncome(false);
+    if (user) await supabase.from("profiles").upsert({ id: user.id, monthly_income: v });
+  }
 
   useEffect(() => {
     async function init() {
@@ -121,24 +141,84 @@ export default function ManualPage() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
 
   const filtered = filterType === "all" ? items : items.filter(i => i.type === filterType);
-  const total = items.filter(i => i.type !== "expense").reduce((a, b) => a + b.amount, 0);
-  const expenseTotal = items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0);
+  const subs = items.filter(i => i.type === "subscription");
+  const bills = items.filter(i => i.type === "bill");
+  const trials = items.filter(i => i.type === "trial");
+  const subsTotal = subs.reduce((a, b) => a + b.amount, 0);
+  const billsTotal = bills.reduce((a, b) => a + b.amount, 0);
+  const trialsTotal = trials.reduce((a, b) => a + b.amount, 0);
+  const total = subsTotal + billsTotal + trialsTotal;
+  const remaining = income - total;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">Manual Entries</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            {items.filter(i => i.type !== "expense").length} payables · {fmt(total)}/mo
-            {items.filter(i => i.type === "expense").length > 0 && (
-              <span className="ml-2 text-gray-600">· {items.filter(i => i.type === "expense").length} expenses · {fmt(expenseTotal)}</span>
-            )}
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Track your bills, subscriptions and income manually.</p>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-bold text-black hover:opacity-90">
           <Plus size={15} /> Add
         </button>
+      </div>
+
+      {/* Income hero */}
+      <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Monthly Income</p>
+            {editingIncome ? (
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-gray-400">$</span>
+                <input
+                  autoFocus
+                  type="number"
+                  value={incomeInput}
+                  onChange={e => setIncomeInput(e.target.value)}
+                  onBlur={() => saveIncome(incomeInput)}
+                  onKeyDown={e => { if (e.key === "Enter") saveIncome(incomeInput); if (e.key === "Escape") setEditingIncome(false); }}
+                  className="w-40 bg-transparent text-3xl font-bold outline-none border-b border-[#3EA758]"
+                />
+              </div>
+            ) : (
+              <button onClick={() => { setEditingIncome(true); setIncomeInput(income ? String(income) : ""); }} className="text-left group">
+                <span className="text-3xl font-black">{income > 0 ? fmt(income) : <span className="text-gray-500">Set income</span>}</span>
+                <span className="ml-2 text-xs text-[#3EA758] opacity-0 group-hover:opacity-100 transition">edit</span>
+              </button>
+            )}
+          </div>
+          {income > 0 && (
+            <div className="text-right">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">After bills</p>
+              <p className={`text-2xl font-mono font-black ${remaining >= 0 ? "text-[#3EA758]" : "text-red-400"}`}>{fmt(remaining)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: TYPE_COLORS.subscription }}>Subscriptions</p>
+          <p className="font-mono text-2xl font-black text-white">{fmt(subsTotal)}</p>
+          <p className="mt-0.5 text-xs text-gray-500">{subs.length} active</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: TYPE_COLORS.bill }}>Bills</p>
+          <p className="font-mono text-2xl font-black text-white">{fmt(billsTotal)}</p>
+          <p className="mt-0.5 text-xs text-gray-500">{bills.length} tracked</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: TYPE_COLORS.trial }}>Trials</p>
+          <p className="font-mono text-2xl font-black text-white">{fmt(trialsTotal)}</p>
+          <p className="mt-0.5 text-xs text-gray-500">{trials.length} running</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-purple-400">Monthly Total</p>
+          <p className="font-mono text-2xl font-black text-white">{fmt(total)}</p>
+          <p className="mt-0.5 text-xs text-gray-500">{items.length} items</p>
+        </div>
       </div>
 
       {/* Filter tabs */}
