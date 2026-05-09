@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { Repeat, Calendar, AlertCircle, RefreshCw } from "lucide-react";
+import { Repeat, Calendar, AlertCircle, RefreshCw, Plus } from "lucide-react";
+import AddItemModal from "@/components/AddItemModal";
 
 interface RecurringItem {
   id: string;
@@ -52,6 +53,7 @@ export default function UpcomingCharges() {
   const [items, setItems] = useState<RecurringItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
 
   async function refresh() {
     setRefreshing(true);
@@ -62,17 +64,9 @@ export default function UpcomingCharges() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.id }),
-      });
-      const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("recurring_transactions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .gte("next_predicted_date", today)
-        .order("next_predicted_date", { ascending: true })
-        .limit(50);
-      setItems(data || []);
+      }).catch(() => {});
+      // Reload via the main effect logic
+      window.location.reload();
     } finally {
       setRefreshing(false);
     }
@@ -84,22 +78,63 @@ export default function UpcomingCharges() {
       if (!user) { setLoading(false); return; }
 
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+
+      // Pull Plaid recurring
+      const { data: plaidData } = await supabase
         .from("recurring_transactions")
-        .select("*")
+        .select("id, clean_merchant_name, merchant_name, category, frequency, last_amount, average_amount, next_predicted_date, is_active")
         .eq("user_id", user.id)
         .eq("is_active", true)
         .gte("next_predicted_date", today)
-        .order("next_predicted_date", { ascending: true })
         .limit(50);
 
-      setItems(data || []);
+      // Pull manual items with due dates
+      const { data: manualData } = await supabase
+        .from("items")
+        .select("id, name, type, amount, due_date, status, source")
+        .eq("user_id", user.id)
+        .neq("type", "expense")
+        .not("due_date", "is", null)
+        .gte("due_date", today)
+        .or("status.eq.active,status.is.null");
+
+      const plaid = (plaidData || []).map((p: any) => ({
+        id: "p_" + p.id,
+        clean_merchant_name: p.clean_merchant_name,
+        merchant_name: p.merchant_name,
+        category: p.category,
+        frequency: p.frequency,
+        last_amount: p.last_amount,
+        average_amount: p.average_amount,
+        next_predicted_date: p.next_predicted_date,
+        is_active: true,
+      }));
+
+      // Don't double-count: skip manual items that came from Plaid (source: plaid:*)
+      const manual = (manualData || [])
+        .filter((m: any) => !m.source || !m.source.startsWith("plaid:"))
+        .map((m: any) => ({
+          id: "m_" + m.id,
+          clean_merchant_name: m.name,
+          merchant_name: m.name,
+          category: m.type,
+          frequency: "MONTHLY",
+          last_amount: m.amount,
+          average_amount: m.amount,
+          next_predicted_date: m.due_date,
+          is_active: true,
+        }));
+
+      const all = [...plaid, ...manual].sort((a, b) =>
+        a.next_predicted_date.localeCompare(b.next_predicted_date)
+      );
+
+      setItems(all);
       setLoading(false);
     })();
   }, [supabase]);
 
   if (loading) return null;
-  if (!items.length) return null;
 
   const outflow = items.filter(i => i.category !== "income");
   const next7Days = outflow.filter(i => daysUntil(i.next_predicted_date) <= 7);
@@ -120,6 +155,12 @@ export default function UpcomingCharges() {
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
           </button>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-lg bg-[#3EA758]/15 hover:bg-[#3EA758]/25 text-[#3EA758] text-xs font-semibold transition"
+          >
+            <Plus size={12}/> Add
+          </button>
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500 uppercase tracking-widest">Next 30 days</p>
@@ -127,7 +168,14 @@ export default function UpcomingCharges() {
         </div>
       </div>
 
-      {next7Days.length === 0 ? (
+      <AddItemModal open={showAdd} onClose={() => setShowAdd(false)} onAdded={() => window.location.reload()} />
+
+      {items.length === 0 ? (
+        <div className="py-6 text-center">
+          <p className="text-sm text-gray-500 mb-2">No upcoming charges yet.</p>
+          <p className="text-xs text-gray-600">Connect your bank for auto-detection, or tap <span className="text-[#3EA758]">+ Add</span> to enter one manually.</p>
+        </div>
+      ) : next7Days.length === 0 ? (
         <p className="text-sm text-gray-500 py-4 text-center">No charges in the next 7 days.</p>
       ) : (
         <>
