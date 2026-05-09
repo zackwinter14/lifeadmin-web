@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
+import UpgradeBanner from "@/components/UpgradeBanner";
+import UpcomingCharges from "@/components/UpcomingCharges";
 
 type ItemType = "subscription" | "bill" | "trial";
 
@@ -264,6 +266,12 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Upcoming recurring charges from Plaid */}
+      <UpcomingCharges />
+
+      {/* Upgrade banner — hidden for Pro users */}
+      <UpgradeBanner />
 
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
