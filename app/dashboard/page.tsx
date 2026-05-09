@@ -300,8 +300,17 @@ export default function Dashboard() {
       setUser(user);
       await loadData(user.id);
       setLoading(false);
-      // Auto-sync Plaid recurring on every dashboard load (fire and forget)
-      autoSyncRecurring(user.id);
+      // Auto-sync only once per day so it doesn't overwrite manual category corrections
+      try {
+        const lastSync = parseInt(localStorage.getItem("last_plaid_sync") || "0");
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (Date.now() - lastSync > oneDay) {
+          localStorage.setItem("last_plaid_sync", String(Date.now()));
+          autoSyncRecurring(user.id);
+        }
+      } catch {
+        // If localStorage fails, skip the sync rather than overwrite changes
+      }
     }
     init();
 
