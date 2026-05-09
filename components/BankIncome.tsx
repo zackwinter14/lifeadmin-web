@@ -28,12 +28,16 @@ export default function BankIncome() {
   const [items, setItems] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [days, setDays] = useState(30);
+  const [months, setMonths] = useState(1);
 
-  async function load(d: number = days) {
+  async function load(m: number = months) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
-    const since = new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const start = new Date();
+    start.setMonth(start.getMonth() - (m - 1));
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    const since = start.toISOString().slice(0, 10);
     const { data } = await supabase
       .from("transactions")
       .select("id, clean_merchant_name, merchant_name, description, amount, date, category")
@@ -41,7 +45,7 @@ export default function BankIncome() {
       .gt("amount", 0)
       .gte("date", since)
       .order("date", { ascending: false })
-      .limit(200);
+      .limit(500);
     setItems(data || []);
     setLoading(false);
   }
@@ -82,22 +86,34 @@ export default function BankIncome() {
           </button>
         </div>
         <div className="flex gap-1">
-          {[7, 30, 90].map(d => (
+          {[
+            { v: 1, label: "This mo" },
+            { v: 3, label: "3 mo" },
+            { v: 6, label: "6 mo" },
+            { v: 12, label: "12 mo" },
+          ].map(opt => (
             <button
-              key={d}
-              onClick={() => { setDays(d); load(d); }}
-              className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition ${days === d ? "bg-[#3EA758] text-white" : "text-gray-400 hover:bg-white/5"}`}
+              key={opt.v}
+              onClick={() => { setMonths(opt.v); load(opt.v); }}
+              className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition ${months === opt.v ? "bg-[#3EA758] text-white" : "text-gray-400 hover:bg-white/5"}`}
             >
-              {d}d
+              {opt.label}
             </button>
           ))}
         </div>
       </div>
 
       <div className="mb-4 rounded-xl border border-[#3EA758]/20 bg-[#3EA758]/5 p-4">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="text-[#3EA758]" size={16} />
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#3EA758]">Last {days} days</p>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="text-[#3EA758]" size={16} />
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#3EA758]">
+              {months === 1 ? "This month" : `Last ${months} months`}
+            </p>
+          </div>
+          {months > 1 && (
+            <p className="text-xs text-gray-500">avg <span className="font-bold text-white">{fmt(total / months)}</span>/mo</p>
+          )}
         </div>
         <p className="text-3xl font-mono font-black text-white mt-1">{fmt(total)}</p>
         <p className="text-xs text-gray-500 mt-1">{items.length} deposits</p>
