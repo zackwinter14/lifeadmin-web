@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, X, Trash2, Wallet, TrendingUp, ArrowUpRight } from "lucide-react";
+import BankIncome from "@/components/BankIncome";
 
 interface IncomeEntry {
   id: string;
@@ -121,6 +122,9 @@ export default function IncomePage() {
           <Plus size={15} /> Add Income
         </button>
       </div>
+
+      {/* Plaid-detected bank income */}
+      <BankIncome />
 
       {/* Stats */}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">

@@ -102,6 +102,12 @@ export default function Dashboard() {
 
   async function autoSyncRecurring(userId: string) {
     try {
+      // Fire transactions sync in parallel (don't await)
+      fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-transactions-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      }).catch(() => {});
       const res = await fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
