@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { Delete } from "lucide-react";
+import { Delete, Shield, X } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 function simpleHash(pin: string): string {
   let h = 5381;
@@ -33,11 +34,60 @@ export function markSessionVerified() {
   try { sessionStorage.setItem("pin_verified", "1"); } catch {}
 }
 
+function PinPromptModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-7">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10">
+            <Shield size={22} className="text-brand" />
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-gray-500 hover:bg-white/10 hover:text-white"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <h2 className="mb-2 text-2xl font-bold">Add an extra layer of security</h2>
+        <p className="mb-6 text-sm text-gray-400">
+          Set a 4-digit PIN that&apos;s required every time you open Life Admin. Even if
+          someone gets into your browser, they won&apos;t be able to see your finances
+          without your PIN. Takes 10 seconds to set up.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-gray-300 hover:bg-white/5 sm:flex-1"
+          >
+            Maybe later
+          </button>
+          <button
+            onClick={() => {
+              onClose();
+              router.push("/profile");
+            }}
+            className="rounded-xl bg-brand-gradient px-5 py-3 text-sm font-bold text-black hover:opacity-90 sm:flex-1"
+          >
+            Set up PIN now
+          </button>
+        </div>
+        <p className="mt-4 text-center text-xs text-gray-600">
+          You can always set this up later under Profile → Security.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PinGate({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<"loading" | "locked" | "open">("loading");
+  const [showPrompt, setShowPrompt] = useState(false);
   const [entered, setEntered] = useState("");
   const [shake, setShake] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const pathname = usePathname();
 
   useEffect(() => {
     async function check() {
@@ -49,13 +99,28 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
         const pinSet = !!getPinHash();
         const sessionOk = !!sessionStorage.getItem("pin_verified");
 
-        setState(pinSet && !sessionOk ? "locked" : "open");
+        if (pinSet && !sessionOk) {
+          setState("locked");
+        } else {
+          setState("open");
+          // If logged in but no PIN, prompt once per session
+          // Don't prompt while on the profile page (where they'd be setting it up)
+          const promptDismissed = sessionStorage.getItem("pin_prompt_dismissed");
+          if (!pinSet && !promptDismissed && pathname !== "/profile" && pathname !== "/login" && pathname !== "/signup") {
+            setShowPrompt(true);
+          }
+        }
       } catch {
         setState("open");
       }
     }
     check();
-  }, []);
+  }, [pathname]);
+
+  function dismissPrompt() {
+    setShowPrompt(false);
+    try { sessionStorage.setItem("pin_prompt_dismissed", "1"); } catch {}
+  }
 
   function press(digit: string) {
     if (entered.length >= 4 || shake) return;
@@ -84,7 +149,12 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
   }
 
   if (state === "loading") return null;
-  if (state === "open") return <>{children}</>;
+  if (state === "open") return (
+    <>
+      {children}
+      {showPrompt && <PinPromptModal onClose={dismissPrompt} />}
+    </>
+  );
 
   const keys = ["1","2","3","4","5","6","7","8","9","","0","back"];
 

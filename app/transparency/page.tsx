@@ -182,11 +182,12 @@ export default function TransparencyPage() {
             <h2 className="text-xl font-bold">Who built this</h2>
           </div>
           <p className="text-gray-400">
-            Life Admin is built and operated by ZZW LLC, an independent software company.
-            It&apos;s not backed by a bank, an insurance company, or a data brokerage.
-            There are no financial incentives to recommend products to you or share your
-            information with partners — because there are no partners. Our only incentive
-            is building something good enough that you keep using it.
+            Life Admin is built and operated by ZZW LLC. We&apos;re a focused team building one
+            thing — a finance tracker that respects your data. We use industry-standard
+            infrastructure (Plaid for bank connections, Supabase for secure data storage,
+            Apple for iOS payments) and we don&apos;t share your information with marketing
+            partners or data brokers. Our only revenue comes from people who choose to
+            upgrade to Pro — that&apos;s the entire model.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <Link href="/privacy" className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
