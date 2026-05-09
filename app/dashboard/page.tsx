@@ -205,46 +205,49 @@ export default function Dashboard() {
   const [detectingIncome, setDetectingIncome] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
     if (!item) {
-      console.error("[MOVE-DEBUG] Item not found in state:", id);
-      alert("Item not found in state. ID: " + id);
+      setDebugInfo("ERROR: Item not in state. ID: " + id);
       return;
     }
     const oldType = item.type;
 
-    console.log("[MOVE-DEBUG] === Starting move ===");
-    console.log("[MOVE-DEBUG] Item:", { id, name: item.name, oldType, newType, source: item.source });
-
     // Optimistic update
     setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
 
-    // Persist to items table (the important part)
-    const { data: updated, error, status, statusText, count } = await supabase
+    // Get current auth user for diagnostics
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    // Persist to items table
+    const { data: updated, error, status, statusText } = await supabase
       .from("items")
       .update({ type: newType })
       .eq("id", id)
       .select();
 
-    console.log("[MOVE-DEBUG] Supabase response:", { updated, error, status, statusText, count });
+    const debugLines = [
+      "=== MOVE DEBUG ===",
+      "Item ID: " + id,
+      "Item name: " + item.name,
+      "Old type: " + oldType + " → New type: " + newType,
+      "Item user_id: " + (item as any).user_id,
+      "Auth user_id: " + (authUser?.id || "NOT LOGGED IN"),
+      "User IDs match: " + ((item as any).user_id === authUser?.id ? "YES ✓" : "NO ✗"),
+      "Item source: " + (item.source || "null"),
+      "HTTP status: " + status + " " + (statusText || ""),
+      "Rows updated: " + (updated?.length ?? 0),
+      "Error: " + (error ? JSON.stringify(error) : "none"),
+    ];
+    const debugText = debugLines.join("\n");
 
-    if (error) {
-      console.error("[MOVE-DEBUG] ERROR:", error);
+    if (error || !updated || updated.length === 0) {
       setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      alert("DB ERROR:\n\n" + JSON.stringify(error, null, 2));
+      setDebugInfo(debugText);
       return;
     }
-
-    if (!updated || updated.length === 0) {
-      console.error("[MOVE-DEBUG] 0 ROWS UPDATED — RLS or filter blocking");
-      setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      alert("Update returned 0 rows. The database accepted the request but didn't update anything. This means RLS policies are blocking the write.\n\nID: " + id + "\nNew type: " + newType);
-      return;
-    }
-
-    console.log("[MOVE-DEBUG] ✓ Saved successfully:", updated[0]);
 
     // Tell other open tabs/pages to refresh
     try {
@@ -464,6 +467,17 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+
+      {/* DEBUG BANNER */}
+      {debugInfo && (
+        <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <p className="text-sm font-bold text-red-400">Move debug — screenshot this and send to Zack</p>
+            <button onClick={() => setDebugInfo(null)} className="text-xs text-gray-500 hover:text-white">close</button>
+          </div>
+          <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono overflow-auto max-h-96">{debugInfo}</pre>
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-8">
