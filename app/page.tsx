@@ -737,7 +737,7 @@ export default function Home() {
                 <Row label="Household sharing" us="Yes" them1="No" them2="No" />
                 <Row label="Bill negotiation scripts" us="Yes" them1="No" them2="No" />
                 <Row label="Spending history" us="Yes" them1="Yes" them2="Limited" />
-                <Row label="Monthly cost" us="$9.99" them1="$12" them2="$3" />
+                <Row label="Monthly cost" us="$6.99" them1="$12" them2="$3" />
                 <Row label="Yearly price" us="$49.99" them1="$72" them2="$36" />
                 <Row label="No data selling" us="Yes" them1="No" them2="Yes" />
                 <Row label="iOS + Web" us="Yes" them1="Yes" them2="iOS only" />

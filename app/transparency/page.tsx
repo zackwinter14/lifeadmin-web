@@ -65,7 +65,7 @@ export default function TransparencyPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
               <p className="text-xs text-gray-500 mb-1">Monthly plan</p>
-              <p className="text-2xl font-black text-brand">$9.99</p>
+              <p className="text-2xl font-black text-brand">$6.99</p>
               <p className="text-xs text-gray-500 mt-1">Cancel anytime</p>
             </div>
             <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">

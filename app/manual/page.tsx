@@ -53,12 +53,62 @@ function fmt(n: number) {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
+function StatCard({ label, value, sub, color, onClick }: { label: string; value: string; sub: string; color: string; onClick: () => void }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+    <button
+      onClick={onClick}
+      className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.04] active:scale-[0.98] w-full"
+    >
       <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color }}>{label}</p>
       <p className="font-mono text-2xl font-black text-white">{value}</p>
-      <p className="mt-0.5 text-xs text-gray-500">{sub}</p>
+      <p className="mt-0.5 text-xs text-gray-500">{sub} · tap to view</p>
+    </button>
+  );
+}
+
+function ItemsModal({ label, color, items, onClose }: { label: string; color: string; items: Item[]; onClose: () => void }) {
+  const total = items.reduce((a, b) => a + b.amount, 0);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 pb-4 sm:pb-0"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+          <div>
+            <p className="font-bold" style={{ color }}>{label}</p>
+            <p className="text-xs text-gray-500">{items.length} item{items.length !== 1 ? "s" : ""} · {fmt(total)}/mo</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-white">
+            <X size={16} />
+          </button>
+        </div>
+        {items.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-500">Nothing here yet.</div>
+        ) : (
+          <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
+            {items.map(item => (
+              <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black"
+                  style={{ background: item.color || TYPE_COLORS[item.type] }}>
+                  {item.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{item.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.category}
+                    {item.due_date ? ` · ${item.type === "expense" ? item.due_date : `Due ${item.due_date}`}` : ""}
+                    {item.autopay ? " · Autopay" : ""}
+                  </p>
+                </div>
+                <p className="font-bold text-sm shrink-0">{fmt(item.amount)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="border-t border-white/5 px-5 py-3 flex justify-between items-center">
+          <span className="text-xs text-gray-500">Total</span>
+          <span className="font-bold" style={{ color }}>{fmt(total)}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -111,6 +161,7 @@ export default function ManualPage() {
 
   // Section open/close
   const [openSections, setOpenSections] = useState({ subscription: true, bill: true, trial: false, expense: true });
+  const [activeCard, setActiveCard] = useState<{ label: string; color: string; items: Item[] } | null>(null);
 
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -324,11 +375,13 @@ export default function ManualPage() {
 
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} />
-        <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} />
-        <StatCard label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} this month`} color={TYPE_COLORS.expense} />
-        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`} color="#AF52DE" />
+        <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, items: subs })} />
+        <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, items: bills })} />
+        <StatCard label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} this month`} color={TYPE_COLORS.expense} onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, items: expenses })} />
+        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", items })} />
       </div>
+
+      {activeCard && <ItemsModal {...activeCard} onClose={() => setActiveCard(null)} />}
 
       {/* Donut + Upcoming row */}
       <div className="mb-6 grid gap-4 md:grid-cols-2">

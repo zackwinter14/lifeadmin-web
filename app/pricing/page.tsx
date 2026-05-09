@@ -52,7 +52,7 @@ export default function Pricing() {
         <div className="mb-8 flex w-full items-center justify-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-6 py-3 text-sm">
             <span className="gradient-text font-bold">Launch Special:</span>
-            <span>Save 58% on yearly — $49.99 instead of paying monthly</span>
+            <span>Save 40% on yearly — $49.99 instead of paying monthly</span>
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export default function Pricing() {
           <div className="relative rounded-2xl border border-white/10 bg-white/[0.02] p-6">
             <h3 className="text-lg font-semibold">Monthly</h3>
             <div className="mt-4 flex items-end gap-1">
-              <span className="text-4xl font-bold">$9.99</span>
+              <span className="text-4xl font-bold">$6.99</span>
               <span className="mb-1 text-sm text-gray-400">/month</span>
             </div>
             <ul className="mt-6 space-y-3">
@@ -120,7 +120,7 @@ export default function Pricing() {
           {/* Yearly */}
           <div className="relative rounded-2xl border border-brand bg-brand/5 p-6">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-gradient px-3 py-1 text-xs font-bold text-black">
-              BEST VALUE · 58% OFF
+              BEST VALUE · 40% OFF
             </div>
             <h3 className="text-lg font-semibold">Yearly</h3>
             <div className="mt-4 flex items-end gap-1">
@@ -128,12 +128,12 @@ export default function Pricing() {
               <span className="mb-1 text-sm text-gray-400">/year</span>
             </div>
             <div className="mt-1 text-sm text-gray-500">
-              Only $4.17/month — save $69.89
+              Only $4.17/month — save $33.89 vs monthly
             </div>
             <ul className="mt-6 space-y-3">
               {[
                 "Everything in Monthly",
-                "Save $69.89 vs paying monthly",
+                "Save $33.89 vs paying monthly",
                 "60-day money-back guarantee",
                 "Priority support",
               ].map((f) => (
