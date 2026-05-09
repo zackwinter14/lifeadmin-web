@@ -2,21 +2,22 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History } from "lucide-react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 const MENU_ITEMS = [
-  { href: "/expenses",    label: "Add Expense",  icon: DollarSign,   color: "#007AFF" },
-  { href: "/income",      label: "Income",       icon: Wallet,       color: "#34C759" },
-  { href: "/history",     label: "History",      icon: History,      color: "#38BDF8" },
-  { href: "/household",   label: "Household",    icon: Users,        color: "#30D158" },
-  { href: "/networth",    label: "Net Worth",    icon: TrendingUp,   color: "#64D2FF" },
-  { href: "/calendar",    label: "Calendar",     icon: Calendar,     color: "#FF9500" },
-  { href: "/autoai",      label: "AutoAI",       icon: Bot,          color: "#AF52DE" },
-  { href: "/school",      label: "School",       icon: GraduationCap,color: "#38BDF8" },
-  { href: "/negotiation", label: "Negotiation",  icon: Handshake,    color: "#FF6B35" },
-  { href: "/rewards",     label: "Rewards",      icon: Trophy,       color: "#F5C518" },
+  { href: "/expenses",      label: "Add Expense",      icon: DollarSign,    color: "#007AFF" },
+  { href: "/income",        label: "Income",           icon: Wallet,        color: "#34C759" },
+  { href: "/history",       label: "History",          icon: History,       color: "#38BDF8" },
+  { href: "/household",     label: "Household",        icon: Users,         color: "#30D158" },
+  { href: "/networth",      label: "Net Worth",        icon: TrendingUp,    color: "#64D2FF" },
+  { href: "/calendar",      label: "Calendar",         icon: Calendar,      color: "#FF9500" },
+  { href: "/autoai",        label: "AutoAI",           icon: Bot,           color: "#AF52DE" },
+  { href: "/school",        label: "School",           icon: GraduationCap, color: "#38BDF8" },
+  { href: "/negotiation",   label: "Negotiation",      icon: Handshake,     color: "#FF6B35" },
+  { href: "/rewards",       label: "Rewards",          icon: Trophy,        color: "#F5C518" },
+  { href: "/tools",         label: "Free Tools",       icon: Calculator,    color: "#3EA758" },
 ];
 
 export default function Navbar() {
@@ -69,8 +70,10 @@ export default function Navbar() {
   const displayName = profileName || user?.email?.split("@")[0] || null;
 
   const publicLinks = [
-    { href: "/features", label: "Features" },
-    { href: "/pricing",  label: "Pricing"  },
+    { href: "/features",      label: "Features"      },
+    { href: "/pricing",       label: "Pricing"       },
+    { href: "/tools",         label: "Free Tools"    },
+    { href: "/transparency",  label: "How we make money" },
   ];
 
   const appLinks = [
@@ -111,7 +114,7 @@ export default function Navbar() {
                       </Link>
                       <Link href="/manual" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-green-500/15"><Repeat size={13} className="text-green-400" /></div>
-                        <span className="text-sm font-medium text-gray-200">Manual Entries</span>
+                        <span className="text-sm font-medium text-gray-200">My Finances</span>
                       </Link>
                       <Link href="/bank" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15"><Landmark size={13} className="text-blue-400" /></div>
@@ -221,7 +224,7 @@ export default function Navbar() {
               <>
                 <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Dashboard</p>
                 <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Overview</Link>
-                <Link href="/manual" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Manual Entries</Link>
+                <Link href="/manual" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">My Finances</Link>
                 <Link href="/bank" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Bank Connected</Link>
                 <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Main</p>
                 {appLinks.map(l => (
