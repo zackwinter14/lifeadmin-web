@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
@@ -63,6 +64,45 @@ const ALL_TYPES: { type: ItemType; label: string }[] = [
 function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType: ItemType) => void }) {
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function close(e: MouseEvent) {
+      const t = e.target as Node;
+      if (buttonRef.current && !buttonRef.current.contains(t)) {
+        const popover = document.getElementById(`type-popover-${item.id}`);
+        if (!popover || !popover.contains(t)) setOpen(false);
+      }
+    }
+    function reposition() {
+      if (buttonRef.current) {
+        const r = buttonRef.current.getBoundingClientRect();
+        setPos({ top: r.bottom + 6, left: Math.max(8, r.right - 160) });
+      }
+    }
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, item.id]);
+
+  function toggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (buttonRef.current) {
+      const r = buttonRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: Math.max(8, r.right - 160) });
+    }
+    setOpen(o => !o);
+  }
 
   function move(newType: ItemType) {
     setOpen(false);
@@ -74,31 +114,37 @@ function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType:
   if (saved) return <span className="text-xs font-semibold text-brand">Saved</span>;
 
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        ref={buttonRef}
+        onClick={toggle}
         title="Move to different category"
         className="rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize transition hover:opacity-80"
         style={{ background: TYPE_COLORS[item.type] + "25", color: TYPE_COLORS[item.type] }}
       >
         {item.type}
       </button>
-      {open && (
-        <div className="absolute bottom-7 left-0 z-50 w-40 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-2xl">
+      {mounted && open && pos && createPortal(
+        <div
+          id={`type-popover-${item.id}`}
+          className="fixed z-[300] w-40 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-2xl"
+          style={{ top: pos.top, left: pos.left }}
+        >
           <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">Move to</p>
           {ALL_TYPES.filter(t => t.type !== item.type).map(t => (
             <button
               key={t.type}
               onClick={e => { e.stopPropagation(); move(t.type); }}
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition hover:bg-white/5"
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-white transition hover:bg-white/5"
             >
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: TYPE_COLORS[t.type] }} />
               {t.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
