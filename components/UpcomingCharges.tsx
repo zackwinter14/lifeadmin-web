@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { Repeat, Calendar, AlertCircle } from "lucide-react";
+import { Repeat, Calendar, AlertCircle, RefreshCw } from "lucide-react";
 
 interface RecurringItem {
   id: string;
@@ -51,6 +51,32 @@ export default function UpcomingCharges() {
   const supabase = createClient();
   const [items, setItems] = useState<RecurringItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id }),
+      });
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from("recurring_transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .gte("next_predicted_date", today)
+        .order("next_predicted_date", { ascending: true })
+        .limit(50);
+      setItems(data || []);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -86,6 +112,14 @@ export default function UpcomingCharges() {
         <div className="flex items-center gap-2">
           <Repeat className="text-[#3EA758]" size={18} />
           <h3 className="text-base font-bold text-white">Upcoming Charges</h3>
+          <button
+            onClick={refresh}
+            disabled={refreshing}
+            aria-label="Refresh"
+            className="ml-1 text-gray-500 hover:text-[#3EA758] transition disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+          </button>
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500 uppercase tracking-widest">Next 30 days</p>
