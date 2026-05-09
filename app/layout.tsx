@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackgroundWrapper from "@/components/BackgroundWrapper";
+import PinGate from "@/components/PinGate";
 
 export const metadata: Metadata = {
   title: "Life Admin — Track bills. Cancel forgotten subscriptions. Save hundreds.",
@@ -35,9 +36,11 @@ export default function RootLayout({
     <html lang="en">
       <body className="relative">
         <BackgroundWrapper />
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
+        <PinGate>
+          <Navbar />
+          <main className="min-h-screen">{children}</main>
+          <Footer />
+        </PinGate>
       </body>
     </html>
   );

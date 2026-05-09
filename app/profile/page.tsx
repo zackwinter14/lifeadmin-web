@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash, Sparkles } from "lucide-react";
+import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash, Sparkles, Shield, Delete } from "lucide-react";
+import { getPinHash, savePin, clearPin, markSessionVerified } from "@/components/PinGate";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -401,7 +402,181 @@ function ContactPage({ onBack }: { onBack: () => void }) {
 
 // ── main profile page ─────────────────────────────────────────────────────────
 
-type SubPage = "refer" | "privacy" | "disclaimer" | "contact" | null;
+type SubPage = "refer" | "privacy" | "disclaimer" | "contact" | "pin" | null;
+
+// ── PIN components ────────────────────────────────────────────────────────────
+
+function PinSection({ onSetup }: { onSetup: () => void }) {
+  const [hasPin, setHasPin] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+
+  useEffect(() => {
+    setHasPin(!!getPinHash());
+  }, []);
+
+  function remove() {
+    clearPin();
+    setHasPin(false);
+    setShowRemoveConfirm(false);
+  }
+
+  return (
+    <Section title="Security">
+      <div className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+            <Shield size={15} className="text-brand" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">App PIN</p>
+            <p className="text-xs text-gray-500">
+              {hasPin ? "PIN is enabled — required on every new session" : "Add a PIN lock after login"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!showRemoveConfirm && (
+            <button
+              onClick={onSetup}
+              className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand/15"
+            >
+              {hasPin ? "Change PIN" : "Set PIN"}
+            </button>
+          )}
+          {hasPin && !showRemoveConfirm && (
+            <button
+              onClick={() => setShowRemoveConfirm(true)}
+              className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5"
+            >
+              Remove
+            </button>
+          )}
+          {showRemoveConfirm && (
+            <div className="flex items-center gap-2">
+              <button onClick={remove} className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10">Confirm remove</button>
+              <button onClick={() => setShowRemoveConfirm(false)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-500 hover:bg-white/5">Cancel</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function PinSetupPage({ onBack }: { onBack: () => void }) {
+  const [step, setStep] = useState<"enter" | "confirm" | "done">("enter");
+  const [first, setFirst] = useState("");
+  const [entered, setEntered] = useState("");
+  const [error, setError] = useState("");
+  const [shake, setShake] = useState(false);
+  const hasPin = !!getPinHash();
+
+  const title = step === "enter" ? (hasPin ? "Enter new PIN" : "Set a PIN") : step === "confirm" ? "Confirm PIN" : "PIN set";
+  const sub = step === "enter" ? "Choose a 4-digit PIN" : step === "confirm" ? "Enter it again to confirm" : "Your app is now PIN-protected";
+
+  function press(digit: string) {
+    if (entered.length >= 4 || shake) return;
+    const next = entered + digit;
+    setEntered(next);
+    if (next.length === 4) {
+      if (step === "enter") {
+        setFirst(next);
+        setEntered("");
+        setStep("confirm");
+      } else {
+        if (next === first) {
+          savePin(next);
+          markSessionVerified();
+          setStep("done");
+        } else {
+          setError("PINs don't match. Try again.");
+          setShake(true);
+          setTimeout(() => { setShake(false); setEntered(""); setError(""); }, 700);
+        }
+      }
+    }
+  }
+
+  function backspace() {
+    if (shake) return;
+    setEntered(prev => prev.slice(0, -1));
+  }
+
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","back"];
+
+  return (
+    <div>
+      <button onClick={onBack} className="mb-6 flex items-center gap-2 text-sm text-gray-400 hover:text-white">
+        ← Back
+      </button>
+
+      <div className="flex flex-col items-center py-10">
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10">
+          <Shield size={26} className="text-brand" />
+        </div>
+
+        <p className="mb-1 text-xl font-bold">{title}</p>
+        <p className="mb-10 text-sm text-gray-500">{sub}</p>
+
+        {step === "done" ? (
+          <div className="text-center">
+            <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-brand/15">
+              <Check size={28} className="text-brand" />
+            </div>
+            <p className="text-sm text-gray-400 mb-6">You&apos;ll be asked for your PIN each time you open a new session.</p>
+            <button onClick={onBack} className="rounded-xl bg-brand-gradient px-8 py-3 font-semibold text-black hover:opacity-90">
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            <div
+              className="mb-8 flex gap-5"
+              style={{ animation: shake ? "shake 0.5s ease-in-out" : "none" }}
+            >
+              {[0, 1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className="h-4 w-4 rounded-full transition-all duration-150"
+                  style={{
+                    background: i < entered.length ? "#3EA758" : "rgba(255,255,255,0.1)",
+                    transform: i < entered.length ? "scale(1.2)" : "scale(1)",
+                  }}
+                />
+              ))}
+            </div>
+
+            {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
+
+            <div className="grid grid-cols-3 gap-3" style={{ width: 264 }}>
+              {keys.map((k, i) =>
+                k === "" ? <div key={i} /> : (
+                  <button
+                    key={i}
+                    onClick={() => k === "back" ? backspace() : press(k)}
+                    className="flex h-[72px] w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-xl font-semibold transition hover:bg-white/10 active:scale-95"
+                  >
+                    {k === "back" ? <Delete size={22} className="text-gray-400" /> : k}
+                  </button>
+                )
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes shake {
+          0%,100% { transform: translateX(0); }
+          20% { transform: translateX(-8px); }
+          40% { transform: translateX(8px); }
+          60% { transform: translateX(-6px); }
+          80% { transform: translateX(6px); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -475,6 +650,8 @@ export default function ProfilePage() {
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
 
+
+  if (subPage === "pin") return <div className="mx-auto max-w-2xl px-4 py-10"><PinSetupPage onBack={() => setSubPage(null)} /></div>;
   if (subPage === "refer") return <div className="mx-auto max-w-2xl px-4 py-10"><ReferPage onBack={() => setSubPage(null)} /></div>;
   if (subPage === "privacy") return <div className="mx-auto max-w-2xl px-4 py-10"><PrivacyPage onBack={() => setSubPage(null)} /></div>;
   if (subPage === "disclaimer") return <div className="mx-auto max-w-2xl px-4 py-10"><DisclaimerPage onBack={() => setSubPage(null)} /></div>;
@@ -603,6 +780,10 @@ export default function ProfilePage() {
         <Row label="Refer & Earn" value="Free months" onClick={() => setSubPage("refer")} />
         <Row label="Go to Dashboard" onClick={() => router.push("/dashboard")} last />
       </Section>
+
+      <div className="my-4" />
+
+      <PinSection onSetup={() => setSubPage("pin")} />
 
       <div className="my-4" />
 
