@@ -13,6 +13,8 @@ const PUBLIC_ROUTES = [
   "/privacy",
   "/terms",
   "/verify-email",
+  "/about",
+  "/contact",
 ];
 
 function isPublic(pathname: string) {
