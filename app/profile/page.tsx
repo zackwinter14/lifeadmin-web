@@ -402,27 +402,54 @@ function ContactPage({ onBack }: { onBack: () => void }) {
 
 // ── main profile page ─────────────────────────────────────────────────────────
 
-type SubPage = "refer" | "privacy" | "disclaimer" | "contact" | "pin" | null;
+type SubPage = "refer" | "privacy" | "disclaimer" | "contact" | "pin" | "mfa" | null;
 
 // ── PIN components ────────────────────────────────────────────────────────────
 
-function PinSection({ onSetup }: { onSetup: () => void }) {
+function SecuritySection({ onPinSetup, onMfaSetup }: { onPinSetup: () => void; onMfaSetup: () => void }) {
   const [hasPin, setHasPin] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [hasMfa, setHasMfa] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [showMfaRemove, setShowMfaRemove] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(true);
+  const supabase = createClient();
+
+  async function loadMfa() {
+    const { data } = await supabase.auth.mfa.listFactors();
+    const verified = data?.totp?.find((f: any) => f.status === "verified");
+    if (verified) {
+      setHasMfa(true);
+      setMfaFactorId(verified.id);
+    } else {
+      setHasMfa(false);
+      setMfaFactorId(null);
+    }
+    setMfaLoading(false);
+  }
 
   useEffect(() => {
     setHasPin(!!getPinHash());
+    loadMfa();
   }, []);
 
-  function remove() {
+  function removePin() {
     clearPin();
     setHasPin(false);
     setShowRemoveConfirm(false);
   }
 
+  async function removeMfa() {
+    if (!mfaFactorId) return;
+    await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+    setShowMfaRemove(false);
+    await loadMfa();
+  }
+
   return (
     <Section title="Security">
-      <div className="flex items-center justify-between px-5 py-4">
+      {/* App PIN row */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
             <Shield size={15} className="text-brand" />
@@ -437,7 +464,7 @@ function PinSection({ onSetup }: { onSetup: () => void }) {
         <div className="flex items-center gap-2">
           {!showRemoveConfirm && (
             <button
-              onClick={onSetup}
+              onClick={onPinSetup}
               className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand/15"
             >
               {hasPin ? "Change PIN" : "Set PIN"}
@@ -453,13 +480,205 @@ function PinSection({ onSetup }: { onSetup: () => void }) {
           )}
           {showRemoveConfirm && (
             <div className="flex items-center gap-2">
-              <button onClick={remove} className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10">Confirm remove</button>
+              <button onClick={removePin} className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10">Confirm</button>
               <button onClick={() => setShowRemoveConfirm(false)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-500 hover:bg-white/5">Cancel</button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Two-Factor Auth row */}
+      <div className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+            <Lock size={15} className="text-brand" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">
+              Two-factor authentication
+              {hasMfa && <span className="ml-2 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-bold text-brand">ON</span>}
+            </p>
+            <p className="text-xs text-gray-500">
+              {mfaLoading ? "Loading..." : hasMfa
+                ? "Authenticator app required at every login"
+                : "Use an authenticator app for an extra layer of login security"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!mfaLoading && !showMfaRemove && (
+            <button
+              onClick={onMfaSetup}
+              className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand/15"
+            >
+              {hasMfa ? "Manage" : "Set up"}
+            </button>
+          )}
+          {hasMfa && !showMfaRemove && (
+            <button
+              onClick={() => setShowMfaRemove(true)}
+              className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5"
+            >
+              Remove
+            </button>
+          )}
+          {showMfaRemove && (
+            <div className="flex items-center gap-2">
+              <button onClick={removeMfa} className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10">Confirm</button>
+              <button onClick={() => setShowMfaRemove(false)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-gray-500 hover:bg-white/5">Cancel</button>
+            </div>
+          )}
+        </div>
+      </div>
     </Section>
+  );
+}
+
+function MfaSetupPage({ onBack }: { onBack: () => void }) {
+  const supabase = createClient();
+  const [step, setStep] = useState<"loading" | "scan" | "verify" | "done">("loading");
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [factorId, setFactorId] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+
+  useEffect(() => {
+    async function start() {
+      // Clean up any unverified factors first
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const unverified = factors?.totp?.filter((f: any) => f.status !== "verified") || [];
+      for (const f of unverified) {
+        await supabase.auth.mfa.unenroll({ factorId: f.id });
+      }
+
+      const { data, error: enrollError } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+      if (enrollError || !data) {
+        setError(enrollError?.message || "Failed to start setup");
+        return;
+      }
+      setFactorId(data.id);
+      setQrCode(data.totp.qr_code);
+      setSecret(data.totp.secret);
+      setStep("scan");
+    }
+    start();
+  }, []);
+
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!factorId || code.length !== 6) return;
+    setVerifying(true);
+    setError(null);
+    const { error: vErr } = await supabase.auth.mfa.challengeAndVerify({
+      factorId,
+      code,
+    });
+    setVerifying(false);
+    if (vErr) {
+      setError(vErr.message);
+      setCode("");
+      return;
+    }
+    setStep("done");
+  }
+
+  return (
+    <div>
+      <button onClick={onBack} className="mb-6 flex items-center gap-2 text-sm text-gray-400 hover:text-white">
+        ← Back
+      </button>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-8">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10">
+            <Lock size={22} className="text-brand" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Two-factor authentication</h1>
+            <p className="text-sm text-gray-500">Extra security on every login</p>
+          </div>
+        </div>
+
+        {step === "loading" && (
+          <p className="text-center py-12 text-gray-500">Setting up...</p>
+        )}
+
+        {step === "scan" && qrCode && (
+          <>
+            <div className="mb-6 space-y-3">
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Step 1:</span> Open an authenticator app (Google Authenticator, Authy, 1Password, etc.) and scan this QR code:
+              </p>
+              <div className="flex justify-center rounded-2xl bg-white p-6">
+                <img src={qrCode} alt="2FA QR code" className="w-48 h-48" />
+              </div>
+              <p className="text-xs text-gray-500 text-center">
+                Or enter this code manually:
+              </p>
+              <div className="rounded-lg bg-black/40 p-3 text-center font-mono text-sm tracking-wider text-gray-300 break-all">
+                {secret}
+              </div>
+            </div>
+
+            <form onSubmit={verify} className="space-y-3">
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Step 2:</span> Enter the 6-digit code your app shows:
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                placeholder="000000"
+                className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono outline-none focus:border-brand"
+              />
+
+              {error && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={verifying || code.length !== 6}
+                className="w-full rounded-lg bg-brand-gradient py-3 font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
+              >
+                {verifying ? "Verifying..." : "Enable two-factor auth"}
+              </button>
+            </form>
+          </>
+        )}
+
+        {step === "done" && (
+          <div className="text-center py-6">
+            <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand/15">
+              <Check size={28} className="text-brand" />
+            </div>
+            <h2 className="mb-2 text-2xl font-bold">Two-factor enabled</h2>
+            <p className="mb-6 text-sm text-gray-400">
+              From now on, you&apos;ll need a code from your authenticator app every time you log in.
+            </p>
+            <button
+              onClick={onBack}
+              className="rounded-xl bg-brand-gradient px-8 py-3 font-semibold text-black hover:opacity-90"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
+        {step === "loading" && error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -652,6 +871,7 @@ export default function ProfilePage() {
 
 
   if (subPage === "pin") return <div className="mx-auto max-w-2xl px-4 py-10"><PinSetupPage onBack={() => setSubPage(null)} /></div>;
+  if (subPage === "mfa") return <div className="mx-auto max-w-2xl px-4 py-10"><MfaSetupPage onBack={() => setSubPage(null)} /></div>;
   if (subPage === "refer") return <div className="mx-auto max-w-2xl px-4 py-10"><ReferPage onBack={() => setSubPage(null)} /></div>;
   if (subPage === "privacy") return <div className="mx-auto max-w-2xl px-4 py-10"><PrivacyPage onBack={() => setSubPage(null)} /></div>;
   if (subPage === "disclaimer") return <div className="mx-auto max-w-2xl px-4 py-10"><DisclaimerPage onBack={() => setSubPage(null)} /></div>;
@@ -783,7 +1003,10 @@ export default function ProfilePage() {
 
       <div className="my-4" />
 
-      <PinSection onSetup={() => setSubPage("pin")} />
+      <SecuritySection
+        onPinSetup={() => setSubPage("pin")}
+        onMfaSetup={() => setSubPage("mfa")}
+      />
 
       <div className="my-4" />
 
