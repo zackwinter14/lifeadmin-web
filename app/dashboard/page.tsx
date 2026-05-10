@@ -295,6 +295,12 @@ export default function Dashboard() {
       return;
     }
 
+    // Force a fresh reload from the database to confirm save stuck
+    setTimeout(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await loadData(user.id);
+    }, 500);
+
     // Tell other open tabs/pages to refresh
     try {
       localStorage.setItem("items_version", String(Date.now()));
@@ -346,17 +352,8 @@ export default function Dashboard() {
       setUser(user);
       await loadData(user.id);
       setLoading(false);
-      // Auto-sync only once per day so it doesn't overwrite manual category corrections
-      try {
-        const lastSync = parseInt(localStorage.getItem("last_plaid_sync") || "0");
-        const oneDay = 24 * 60 * 60 * 1000;
-        if (Date.now() - lastSync > oneDay) {
-          localStorage.setItem("last_plaid_sync", String(Date.now()));
-          autoSyncRecurring(user.id);
-        }
-      } catch {
-        // If localStorage fails, skip the sync rather than overwrite changes
-      }
+      // Auto-sync DISABLED. It was overwriting manual category corrections.
+      // Use the "Sync from bank" button to manually sync.
     }
     init();
 

@@ -19,7 +19,7 @@ export default function ContactPage() {
     // Open email client with pre-filled email — works without backend
     const body = `Name: ${name}%0D%0AEmail: ${email}%0D%0A%0D%0A${encodeURIComponent(message)}`;
     const subjectLine = encodeURIComponent(subject || "Life Admin support");
-    window.location.href = `mailto:support@lifeadminofficial.com?subject=${subjectLine}&body=${body}`;
+    window.location.href = `mailto:lifeadminofficial@gmail.com?subject=${subjectLine}&body=${body}`;
 
     setTimeout(() => {
       setSent(true);
@@ -37,23 +37,14 @@ export default function ContactPage() {
       </div>
 
       {/* Contact methods */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-center">
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
             <MessageCircle size={18} className="text-brand" />
           </div>
-          <p className="font-semibold mb-1">Support</p>
-          <a href="mailto:support@lifeadminofficial.com" className="text-xs text-brand hover:underline break-all">
-            support@lifeadminofficial.com
-          </a>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
-            <Shield size={18} className="text-brand" />
-          </div>
-          <p className="font-semibold mb-1">Privacy</p>
-          <a href="mailto:privacy@lifeadminofficial.com" className="text-xs text-brand hover:underline break-all">
-            privacy@lifeadminofficial.com
+          <p className="font-semibold mb-1">Email us</p>
+          <a href="mailto:lifeadminofficial@gmail.com" className="text-xs text-brand hover:underline break-all">
+            lifeadminofficial@gmail.com
           </a>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-center">

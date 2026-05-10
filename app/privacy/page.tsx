@@ -2,7 +2,7 @@ export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="mb-2 text-4xl font-bold">Privacy Policy</h1>
-      <p className="mb-10 text-sm text-gray-500">Last updated: April 27, 2026</p>
+      <p className="mb-10 text-sm text-gray-500">Last updated: May 9, 2026</p>
 
       <div className="space-y-8 text-gray-300 leading-relaxed">
         <section>
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
           <ul className="mt-3 list-disc space-y-2 pl-6">
             <li><strong className="text-white">Supabase</strong> — secure database and authentication</li>
             <li><strong className="text-white">Plaid</strong> — bank account connection (Pro users only)</li>
-            <li><strong className="text-white">Stripe</strong> — payment processing</li>
+            <li><strong className="text-white">Apple / RevenueCat</strong> — payment processing for iOS subscriptions</li>
           </ul>
         </section>
 
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="mb-3 text-xl font-semibold text-white">6. Data Retention</h2>
-          <p>We retain your data as long as your account is active. You may request deletion of your account and all associated data at any time by contacting us at support@lifeadminofficial.com.</p>
+          <p>We retain your data as long as your account is active. You may request deletion of your account and all associated data at any time by contacting us at lifeadminofficial@gmail.com.</p>
         </section>
 
         <section>
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="mb-3 text-xl font-semibold text-white">8. Your Rights</h2>
-          <p>You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at support@lifeadminofficial.com.</p>
+          <p>You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at lifeadminofficial@gmail.com.</p>
         </section>
 
         <section>
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="mb-3 text-xl font-semibold text-white">10. Contact Us</h2>
           <p>If you have any questions about this Privacy Policy, contact Life Admin Finance Tracker at:</p>
-          <p className="mt-2">Email: <a href="mailto:support@lifeadminofficial.com" className="text-brand hover:underline">support@lifeadminofficial.com</a></p>
+          <p className="mt-2">Email: <a href="mailto:lifeadminofficial@gmail.com" className="text-brand hover:underline">lifeadminofficial@gmail.com</a></p>
           <p>Website: <a href="https://lifeadminofficial.com" className="text-brand hover:underline">lifeadminofficial.com</a></p>
         </section>
       </div>
