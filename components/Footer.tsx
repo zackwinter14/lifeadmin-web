@@ -48,14 +48,13 @@ export default function Footer() {
             <h4 className="mb-3 text-sm font-semibold text-white">Legal</h4>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
-                <a href="https://zackwinter14.github.io/lifeadmin-privacy/privacy-policy.html">
-                  Privacy
-                </a>
+                <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
               </li>
               <li>
-                <a href="https://zackwinter14.github.io/lifeadmin-privacy/terms.html">
-                  Terms
-                </a>
+                <Link href="/terms" className="hover:text-white transition">Terms</Link>
+              </li>
+              <li>
+                <Link href="/transparency" className="hover:text-white transition">How We Make Money</Link>
               </li>
             </ul>
           </div>
