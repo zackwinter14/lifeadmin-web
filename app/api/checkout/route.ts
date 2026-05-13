@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const PRICES: Record<string, string> = {
-  monthly: "price_1TSsclFe7SBiTN7UNFY3RIEw",
-  yearly: "price_1TSsd1Fe7SBiTN7ULodteqOU",
+  monthly: "price_1TWRFHFe7SBiTN7UF1cmuZqm",
+  yearly: "price_1TSsd1Fe7SBiTN7ULodteqOU", // TODO: replace with new $49.99 yearly price ID
 };
 
 export async function POST(req: NextRequest) {
