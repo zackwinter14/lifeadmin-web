@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X } from "lucide-react";
+import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X, CreditCard } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 import UpgradeBanner from "@/components/UpgradeBanner";
 import UpcomingCharges from "@/components/UpcomingCharges";
@@ -707,7 +707,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick links */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <button
           onClick={() => router.push("/manual")}
           className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
@@ -738,6 +738,22 @@ export default function Dashboard() {
                 <p className="text-xs text-gray-500">{isPro ? "Auto-imported entries" : "Upgrade to Pro"}</p>
               </div>
               {isPro && <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-yellow-400">Pro</span>}
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
+
+        <button
+          onClick={() => router.push("/credit")}
+          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#38BDF8]/10 border border-[#38BDF8]/20">
+              <CreditCard size={16} className="text-[#38BDF8]" />
+            </div>
+            <div>
+              <p className="font-semibold">Credit Cards</p>
+              <p className="text-xs text-gray-500">Track balances & utilization</p>
             </div>
           </div>
           <ChevronRight size={16} className="text-gray-600" />
