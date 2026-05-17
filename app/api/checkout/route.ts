@@ -5,7 +5,7 @@ import Stripe from "stripe";
 
 const PRICES: Record<string, string> = {
   monthly: "price_1TWRFHFe7SBiTN7UF1cmuZqm",
-  yearly: "price_1TSsd1Fe7SBiTN7ULodteqOU", // TODO: replace with new $49.99 yearly price ID
+  yearly: "price_1TSsd1Fe7SBiTN7ULodteqOU",
 };
 
 export async function POST(req: NextRequest) {

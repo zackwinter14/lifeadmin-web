@@ -1,9 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackgroundWrapper from "@/components/BackgroundWrapper";
 import PinGate from "@/components/PinGate";
+import AdBanner from "@/components/AdBanner";
+
+const ADSENSE_PUBLISHER_ID = "ca-pub-5151835818661965";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Life Admin — Track bills. Cancel forgotten subscriptions. Save hundreds.",
@@ -34,11 +42,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`}
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="relative">
         <BackgroundWrapper />
         <PinGate>
           <Navbar />
+          <AdBanner position="mid" />
           <main className="min-h-screen">{children}</main>
+          <AdBanner position="bottom" />
           <Footer />
         </PinGate>
       </body>

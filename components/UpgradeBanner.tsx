@@ -75,7 +75,7 @@ export default function UpgradeBanner() {
               Pro users don't see this
             </h3>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Cancel ads and unlock every feature — unlimited bills, receipt scanning, bank connections, and more.
+              Unlock every feature — unlimited bills, receipt scanning, bank connections, and more.
             </p>
           </div>
         </div>

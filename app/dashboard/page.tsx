@@ -523,11 +523,15 @@ export default function Dashboard() {
       {/* DEBUG BANNER */}
       {debugInfo && (
         <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <p className="text-sm font-bold text-red-400">Move debug — screenshot this and send to Zack</p>
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <p className="text-sm font-bold text-red-400">Couldn't save that change</p>
             <button onClick={() => setDebugInfo(null)} className="text-xs text-gray-500 hover:text-white">close</button>
           </div>
-          <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono overflow-auto max-h-96">{debugInfo}</pre>
+          <p className="text-xs text-gray-400 mb-3">This item couldn't be moved. Your changes have been undone. If this keeps happening, contact support.</p>
+          <details className="group">
+            <summary className="text-xs text-gray-600 cursor-pointer hover:text-gray-400 select-none">Show details</summary>
+            <pre className="mt-2 text-xs text-gray-500 whitespace-pre-wrap font-mono overflow-auto max-h-48">{debugInfo}</pre>
+          </details>
         </div>
       )}
 

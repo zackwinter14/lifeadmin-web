@@ -52,7 +52,7 @@ export default function Pricing() {
         <div className="mb-8 flex w-full items-center justify-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-6 py-3 text-sm">
             <span className="gradient-text font-bold">Launch Special:</span>
-            <span>Save 40% on yearly — $49.99 instead of paying monthly</span>
+            <span>Save 40% — pay $49.99/yr instead of $83.88</span>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ export default function Pricing() {
             <ul className="mt-6 space-y-3">
               {[
                 "Everything in Monthly",
-                "Save $33.89 vs paying monthly",
+                "Lock in your rate — no price increases",
                 "60-day money-back guarantee",
                 "Priority support",
               ].map((f) => (

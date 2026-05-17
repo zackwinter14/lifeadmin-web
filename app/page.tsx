@@ -349,10 +349,10 @@ function Feature({ icon, title, body }: { icon: React.ReactNode; title: string; 
 function Row({ label, us, them1, them2 }: { label: string; us: string; them1: string; them2: string }) {
   return (
     <tr className="border-t border-white/5">
-      <td className="p-4 font-medium">{label}</td>
-      <td className="p-4 font-semibold text-brand">{us}</td>
-      <td className="p-4 text-gray-500">{them1}</td>
-      <td className="p-4 text-gray-500">{them2}</td>
+      <td className="p-3 text-sm font-medium sm:p-4">{label}</td>
+      <td className="p-3 text-sm font-semibold text-brand sm:p-4">{us}</td>
+      <td className="p-3 text-sm text-gray-500 sm:p-4">{them1}</td>
+      <td className="p-3 text-sm text-gray-500 sm:p-4">{them2}</td>
     </tr>
   );
 }
@@ -396,7 +396,7 @@ export default function Home() {
   return (
     <div className="relative">
       {/* Hero */}
-      <section className="relative overflow-hidden px-6 pb-24 pt-20 md:pt-32">
+      <section className="relative overflow-hidden px-6 pb-16 pt-16 md:pb-24 md:pt-32">
         <div className="mx-auto max-w-5xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -412,7 +412,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl font-bold leading-tight tracking-tight md:text-7xl"
+            className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-7xl"
           >
             Know exactly where <br />
             every dollar <span className="gradient-text">goes</span>.
@@ -433,19 +433,25 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-10 flex flex-col items-center justify-center gap-4 md:flex-row"
+            className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <Link
               href="/signup"
-              className="rounded-xl bg-brand-gradient px-8 py-4 font-semibold text-black transition hover:opacity-90"
+              className="w-full rounded-xl bg-brand-gradient px-8 py-4 text-center font-semibold text-black transition hover:opacity-90 sm:w-auto"
             >
               Start saving free
             </Link>
             <a
               href="https://apps.apple.com/app/id6762589970"
-              className="rounded-xl border border-white/10 bg-white/5 px-8 py-4 font-semibold transition hover:bg-white/10"
+              className="inline-flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white/5 px-7 py-3.5 transition hover:bg-white/10 sm:w-auto"
             >
-              Download iOS App
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+              </svg>
+              <div className="text-left leading-none">
+                <div className="text-[9px] text-gray-400">Download on the</div>
+                <div className="text-sm font-semibold text-white">App Store</div>
+              </div>
             </a>
           </motion.div>
 
@@ -453,7 +459,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-16 flex flex-wrap justify-center gap-x-12 gap-y-8 text-center"
+            className="mt-16 grid grid-cols-2 gap-8 text-center sm:grid-cols-4"
           >
             {[
               { value: <>$<CountUp end={240} />+</>, label: "average monthly savings" },
@@ -471,7 +477,7 @@ export default function Home() {
       </section>
 
       {/* Mockup trio */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -491,7 +497,7 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-5xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -523,7 +529,7 @@ export default function Home() {
       </section>
 
       {/* Spotlight 1 — Auto detect */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn>
@@ -556,7 +562,7 @@ export default function Home() {
       </section>
 
       {/* Spotlight 2 — Calendar */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn delay={0.2} className="order-2 md:order-1"><CalendarMockup /></FadeIn>
@@ -589,7 +595,7 @@ export default function Home() {
       </section>
 
       {/* Spotlight 3 — Net worth */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn>
@@ -622,7 +628,7 @@ export default function Home() {
       </section>
 
       {/* Spotlight 4 — Receipt scanning */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn delay={0.2} className="order-2 md:order-1"><ReceiptMockup /></FadeIn>
@@ -655,7 +661,7 @@ export default function Home() {
       </section>
 
       {/* Features grid */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -665,7 +671,7 @@ export default function Home() {
               Built for people tired of $9.99 charges from apps they don&apos;t remember.
             </p>
           </FadeIn>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             {features.map((f, i) => (
               <FadeIn key={f.title} delay={(i % 3) * 0.08}>
                 <Feature {...f} />
@@ -676,7 +682,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-5xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -706,7 +712,7 @@ export default function Home() {
       </section>
 
       {/* Comparison */}
-      <section className="border-t border-white/5 bg-gradient-to-b from-transparent to-brand/5 px-6 py-24">
+      <section className="border-t border-white/5 bg-gradient-to-b from-transparent to-brand/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <FadeIn>
             <h2 className="text-4xl font-bold md:text-5xl">
@@ -716,14 +722,14 @@ export default function Home() {
             <p className="mt-4 text-gray-400">Compare us to the others.</p>
           </FadeIn>
 
-          <FadeIn delay={0.1} className="mt-12 overflow-hidden rounded-2xl border border-white/10">
-            <table className="w-full text-left">
+          <FadeIn delay={0.1} className="mt-12 overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full min-w-[480px] text-left">
               <thead className="bg-white/5 text-sm">
                 <tr>
-                  <th className="p-4"></th>
-                  <th className="p-4"><span className="gradient-text font-bold">Life Admin</span></th>
-                  <th className="p-4 text-gray-400">Rocket Money</th>
-                  <th className="p-4 text-gray-400">Bobby</th>
+                  <th className="p-3 sm:p-4"></th>
+                  <th className="p-3 sm:p-4"><span className="gradient-text font-bold">Life Admin</span></th>
+                  <th className="p-3 sm:p-4 text-gray-400">Rocket Money</th>
+                  <th className="p-3 sm:p-4 text-gray-400">Bobby</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -748,7 +754,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-white/5 px-6 py-24">
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <FadeIn>
             <h2 className="text-4xl font-bold md:text-5xl">

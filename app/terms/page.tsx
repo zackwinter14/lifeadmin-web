@@ -2,7 +2,7 @@ export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="mb-2 text-4xl font-bold">Terms of Service</h1>
-      <p className="mb-10 text-sm text-gray-500">Last updated: May 9, 2026</p>
+      <p className="mb-10 text-sm text-gray-500">Last updated: May 13, 2026</p>
 
       <div className="space-y-8 text-gray-300 leading-relaxed">
         <section>
@@ -87,29 +87,40 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-white">9. Intellectual Property</h2>
-          <p className="text-sm">All content, branding, and technology within Life Admin is owned by ZZW LLC. You may not copy, reproduce, or distribute any part of the service without written permission.</p>
+          <h2 className="mb-3 text-xl font-semibold text-white">9. Third-Party Platform Integrations</h2>
+          <p className="text-sm mb-2"><strong className="text-white">Life Admin Finance Tracker</strong> connects to the following third-party platforms to deliver educational financial content to our users:</p>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm">
+            <li><strong className="text-white">TikTok:</strong> Life Admin Finance Tracker uses the TikTok Content Posting API to publish financial education content, money-saving tips, budgeting advice, and subscription-tracking guidance to TikTok on behalf of the Life Admin Finance Tracker account. All content posted via this integration is created by Life Admin Finance Tracker to educate the public about personal finance.</li>
+            <li><strong className="text-white">YouTube:</strong> Life Admin Finance Tracker uses the YouTube Data API and YouTube Analytics API to publish educational finance videos and analyze video performance metrics.</li>
+            <li><strong className="text-white">Meta (Facebook / Instagram):</strong> Life Admin Finance Tracker uses Meta's Graph API to post educational financial content to its public pages.</li>
+          </ul>
+          <p className="text-sm mt-3">When you interact with content posted by Life Admin Finance Tracker on these platforms, your interaction is governed by each platform's respective terms and privacy policy in addition to these Terms.</p>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-white">10. Termination</h2>
-          <p className="text-sm">We reserve the right to suspend or terminate your account if you violate these Terms of Service. You may delete your account at any time by contacting support@lifeadminofficial.com.</p>
+          <h2 className="mb-3 text-xl font-semibold text-white">10. Intellectual Property</h2>
+          <p className="text-sm">All content, branding, and technology within Life Admin Finance Tracker is owned by ZZW LLC. You may not copy, reproduce, or distribute any part of the service without written permission.</p>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-white">11. Limitation of Liability</h2>
-          <p className="text-sm">Life Admin is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of the service, including loss of data or financial loss.</p>
+          <h2 className="mb-3 text-xl font-semibold text-white">11. Termination</h2>
+          <p className="text-sm">We reserve the right to suspend or terminate your account if you violate these Terms of Service. You may delete your account at any time by contacting lifeadminofficial@gmail.com.</p>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-white">12. Changes to Terms</h2>
-          <p className="text-sm">We may update these Terms of Service at any time. Continued use of Life Admin after changes constitutes acceptance of the new terms.</p>
+          <h2 className="mb-3 text-xl font-semibold text-white">12. Limitation of Liability</h2>
+          <p className="text-sm">Life Admin Finance Tracker is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of the service, including loss of data or financial loss.</p>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-white">13. Contact</h2>
+          <h2 className="mb-3 text-xl font-semibold text-white">13. Changes to Terms</h2>
+          <p className="text-sm">We may update these Terms of Service at any time. Continued use of Life Admin Finance Tracker after changes constitutes acceptance of the new terms.</p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-white">14. Contact</h2>
           <p className="text-sm">For questions about these Terms of Service, contact us at:</p>
-          <p className="mt-2 text-sm">Email: <a href="mailto:support@lifeadminofficial.com" className="text-brand hover:underline">support@lifeadminofficial.com</a></p>
+          <p className="mt-2 text-sm">Email: <a href="mailto:lifeadminofficial@gmail.com" className="text-brand hover:underline">lifeadminofficial@gmail.com</a></p>
           <p className="text-sm">Website: <a href="https://lifeadminofficial.com" className="text-brand hover:underline">lifeadminofficial.com</a></p>
         </section>
       </div>
