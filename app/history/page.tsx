@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { History, RefreshCw, Search, Filter, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { History, RefreshCw, Search, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import MerchantLogo from "@/components/MerchantLogo";
+import { simplifyName } from "@/lib/merchantUtils";
 
 interface Transaction {
   id: string;
@@ -52,6 +54,7 @@ export default function HistoryPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [days, setDays] = useState(30);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   async function load(d: number = days) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -181,15 +184,22 @@ export default function HistoryPage() {
           {filtered.map(t => {
             const isIncome = t.amount > 0;
             const color = CATEGORY_COLORS[t.category] || "#888";
-            const name = t.clean_merchant_name || t.merchant_name || t.description || "Unknown";
+            const rawName = t.clean_merchant_name || t.merchant_name || t.description || "Unknown";
+            const displayName = simplifyName(rawName);
+            const isExpanded = expandedId === t.id;
             return (
-              <div key={t.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div
+                key={t.id}
+                className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition"
+                onClick={() => setExpandedId(isExpanded ? null : t.id)}
+              >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: color + "20" }}>
-                    <span className="text-xs font-bold" style={{ color }}>{name.slice(0, 2).toUpperCase()}</span>
-                  </div>
+                  <MerchantLogo name={rawName} color={color} size={36} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{name}</p>
+                    <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                    {isExpanded && rawName !== displayName && (
+                      <p className="text-xs text-gray-400 truncate">{rawName}</p>
+                    )}
                     <p className="text-xs text-gray-500">
                       {formatDate(t.date)} · {CATEGORY_LABELS[t.category] || t.category}
                       {t.pending && <span className="ml-1 text-yellow-500">· pending</span>}

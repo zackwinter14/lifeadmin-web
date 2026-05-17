@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { Repeat, Calendar, AlertCircle, RefreshCw, Plus } from "lucide-react";
+import { Repeat, RefreshCw, Plus } from "lucide-react";
 import AddItemModal from "@/components/AddItemModal";
+import MerchantLogo from "@/components/MerchantLogo";
+import { simplifyName } from "@/lib/merchantUtils";
 
 interface RecurringItem {
   id: string;
@@ -192,14 +194,10 @@ export default function UpcomingCharges() {
               return (
                 <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.015] px-3 py-2.5">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: color + "20" }}>
-                      <span className="text-xs font-bold" style={{ color }}>
-                        {(item.clean_merchant_name || item.merchant_name).slice(0, 2).toUpperCase()}
-                      </span>
-                    </div>
+                    <MerchantLogo name={item.clean_merchant_name || item.merchant_name} color={color} size={32} />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-white truncate">
-                        {item.clean_merchant_name || item.merchant_name}
+                        {simplifyName(item.clean_merchant_name || item.merchant_name)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {CATEGORY_LABELS[item.category] || item.category} · {dayLabel}
@@ -229,8 +227,8 @@ export default function UpcomingCharges() {
               return (
                 <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.015] px-3 py-2">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                    <p className="text-sm text-white truncate">{item.clean_merchant_name || item.merchant_name}</p>
+                    <MerchantLogo name={item.clean_merchant_name || item.merchant_name} color={color} size={28} />
+                    <p className="text-sm text-white truncate">{simplifyName(item.clean_merchant_name || item.merchant_name)}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-mono text-gray-300">{fmt(amount)}</p>

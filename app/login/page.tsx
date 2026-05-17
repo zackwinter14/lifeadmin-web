@@ -11,6 +11,7 @@ export default function Login() {
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,6 +21,11 @@ export default function Login() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaVerifying, setMfaVerifying] = useState(false);
   const mfaInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("remembered_email");
+    if (saved) { setEmail(saved); setRememberMe(true); }
+  }, []);
 
   useEffect(() => {
     if (mfaStep && mfaInputRef.current) mfaInputRef.current.focus();
@@ -34,6 +40,12 @@ export default function Login() {
       setLoading(false);
       setError(signInError.message);
       return;
+    }
+
+    if (rememberMe) {
+      localStorage.setItem("remembered_email", email);
+    } else {
+      localStorage.removeItem("remembered_email");
     }
 
     // Check if user has MFA enabled
@@ -169,6 +181,16 @@ export default function Login() {
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-brand"
               />
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border border-white/20 bg-black/30 accent-brand cursor-pointer"
+              />
+              <span className="text-sm text-gray-400">Remember me</span>
+            </label>
 
             {error && (
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
