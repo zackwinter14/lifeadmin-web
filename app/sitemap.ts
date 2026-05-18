@@ -1,28 +1,21 @@
 import { MetadataRoute } from "next";
 
-const BASE_URL = "https://lifeadminofficial.com";
+const BASE = "https://lifeadminofficial.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const publicPages = [
-    { url: "/", priority: 1.0, changeFrequency: "weekly" },
-    { url: "/features", priority: 0.9, changeFrequency: "monthly" },
-    { url: "/pricing", priority: 0.9, changeFrequency: "monthly" },
-    { url: "/tools", priority: 0.8, changeFrequency: "monthly" },
-    { url: "/transparency", priority: 0.7, changeFrequency: "monthly" },
-    { url: "/school", priority: 0.7, changeFrequency: "monthly" },
-    { url: "/negotiation", priority: 0.7, changeFrequency: "monthly" },
-    { url: "/about", priority: 0.6, changeFrequency: "monthly" },
-    { url: "/contact", priority: 0.5, changeFrequency: "yearly" },
-    { url: "/privacy", priority: 0.4, changeFrequency: "yearly" },
-    { url: "/terms", priority: 0.4, changeFrequency: "yearly" },
-    { url: "/login", priority: 0.5, changeFrequency: "yearly" },
-    { url: "/signup", priority: 0.8, changeFrequency: "yearly" },
-  ] as const;
-
-  return publicPages.map(page => ({
-    url: `${BASE_URL}${page.url}`,
-    lastModified: new Date(),
-    changeFrequency: page.changeFrequency,
-    priority: page.priority,
-  }));
+  return [
+    { url: `${BASE}/`,             lastModified: new Date(), changeFrequency: "weekly",  priority: 1.0 },
+    { url: `${BASE}/features`,     lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/pricing`,      lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/tools`,        lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/negotiation`,  lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/school`,       lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/transparency`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/about`,        lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE}/contact`,      lastModified: new Date(), changeFrequency: "yearly",  priority: 0.5 },
+    { url: `${BASE}/signup`,       lastModified: new Date(), changeFrequency: "yearly",  priority: 0.8 },
+    { url: `${BASE}/login`,        lastModified: new Date(), changeFrequency: "yearly",  priority: 0.5 },
+    { url: `${BASE}/privacy`,      lastModified: new Date(), changeFrequency: "yearly",  priority: 0.4 },
+    { url: `${BASE}/terms`,        lastModified: new Date(), changeFrequency: "yearly",  priority: 0.4 },
+  ];
 }
