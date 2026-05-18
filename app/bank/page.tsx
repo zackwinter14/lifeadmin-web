@@ -70,57 +70,66 @@ export default function BankPage() {
   async function createLinkToken() {
     if (!user) return;
     setIsReconnect(false);
-    const res = await fetch("/api/plaid/create-link-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
-    const data = await res.json();
-    if (data.link_token) setLinkToken(data.link_token);
+    try {
+      const res = await fetch("/api/plaid/create-link-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      const data = await res.json();
+      if (data.link_token) setLinkToken(data.link_token);
+    } catch {}
   }
 
   async function startReconnect() {
     if (!user) return;
     setIsReconnect(true);
-    const res = await fetch("/api/plaid/update-link-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
-    const data = await res.json();
-    if (data.link_token) setLinkToken(data.link_token);
+    try {
+      const res = await fetch("/api/plaid/update-link-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      const data = await res.json();
+      if (data.link_token) setLinkToken(data.link_token);
+    } catch { setIsReconnect(false); }
   }
 
   async function refreshBank() {
     if (!user) return;
     setSyncing(true);
     setSyncMessage(null);
-    const res = await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
-    const data = await res.json();
-    if (data.error_code === "ITEM_LOGIN_REQUIRED") {
-      setNeedsReconnect(true);
-      setSyncMessage("Bank connection expired. Please reconnect.");
-    } else if (data.error_code === "PRODUCT_NOT_READY") {
-      setSyncMessage("Bank data is still loading. Try again in a moment.");
-    } else if (data.synced !== undefined) {
-      const now = new Date().toISOString();
-      localStorage.setItem(`plaid_last_synced_${user.id}`, now);
-      setLastSynced(now);
-      setNeedsReconnect(false);
-      setSyncMessage(`Synced ${data.synced} transactions.`);
-      const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
-      if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
-    } else {
-      // Show the actual error from Plaid so we know what's going wrong
-      setSyncMessage(data.error || "Sync failed. Try again.");
+    try {
+      const res = await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      const data = await res.json();
+      if (data.error_code === "ITEM_LOGIN_REQUIRED") {
+        setNeedsReconnect(true);
+        setSyncMessage("Bank connection expired. Please reconnect.");
+      } else if (data.error_code === "PRODUCT_NOT_READY") {
+        setSyncMessage("Bank data is still loading. Try again in a moment.");
+      } else if (data.synced !== undefined) {
+        const now = new Date().toISOString();
+        localStorage.setItem(`plaid_last_synced_${user.id}`, now);
+        setLastSynced(now);
+        setNeedsReconnect(false);
+        setSyncMessage(`Synced ${data.synced} transactions.`);
+        const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
+        if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+      } else {
+        setSyncMessage(data.error || "Sync failed. Try again.");
+      }
+    } catch (e: any) {
+      setSyncMessage("Connection error. Check your network and try again.");
+    } finally {
+      setSyncing(false);
     }
-    setSyncing(false);
   }
 
   async function onPlaidSuccess(publicToken: string) {
     setDetecting(true);
-    await fetch("/api/plaid/exchange-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicToken, userId: user.id }) });
-    // sync populates transactions + recurring_transactions + income — do this instead of income-only
-    await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+    try {
+      await fetch("/api/plaid/exchange-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicToken, userId: user.id }) });
+      await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      const now = new Date().toISOString();
+      localStorage.setItem(`plaid_last_synced_${user.id}`, now);
+      setLastSynced(now);
+    } catch {}
     setPlaidConnected(true);
-    setDetecting(false);
     setLinkToken(null);
     setIsReconnect(false);
-    const now = new Date().toISOString();
-    localStorage.setItem(`plaid_last_synced_${user.id}`, now);
-    setLastSynced(now);
+    setDetecting(false);
   }
 
   async function onReconnectSuccess() {
