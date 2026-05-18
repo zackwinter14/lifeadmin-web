@@ -13,6 +13,7 @@ interface Item {
   type: "subscription" | "bill" | "trial";
   category: string;
   color: string;
+  value_rating: number | null;
 }
 
 function fmt(n: number) {
@@ -25,6 +26,45 @@ const TYPE_COLORS = {
   trial: "#38BDF8",
 };
 
+const RATING_LABELS: Record<number, string> = {
+  1: "Not using it",
+  2: "Rarely use",
+  3: "Sometimes",
+  4: "Use it often",
+  5: "Love it",
+};
+
+function StarRating({
+  value,
+  onChange,
+}: {
+  value: number | null;
+  onChange: (v: number) => void;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
+  const active = hover ?? value;
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          onClick={e => { e.stopPropagation(); onChange(n); }}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(null)}
+          className="text-base leading-none transition"
+          style={{ color: active && n <= active ? "#FFB300" : "rgba(255,255,255,0.15)" }}
+          title={RATING_LABELS[n]}
+        >
+          &#9733;
+        </button>
+      ))}
+      {active && (
+        <span className="ml-1 text-[10px] text-gray-500">{RATING_LABELS[active]}</span>
+      )}
+    </div>
+  );
+}
+
 export default function SavePage() {
   const router = useRouter();
   const supabase = createClient();
@@ -32,6 +72,7 @@ export default function SavePage() {
   const [items, setItems] = useState<Item[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [savingRating, setSavingRating] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -40,7 +81,7 @@ export default function SavePage() {
 
       const { data } = await supabase
         .from("items")
-        .select("id, name, amount, type, category, color")
+        .select("id, name, amount, type, category, color, value_rating")
         .eq("user_id", user.id)
         .in("type", ["subscription", "bill", "trial"])
         .order("amount", { ascending: false });
@@ -59,7 +100,18 @@ export default function SavePage() {
     });
   }
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
+  async function setRating(itemId: string, rating: number) {
+    setSavingRating(itemId);
+    await supabase.from("items").update({ value_rating: rating }).eq("id", itemId);
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, value_rating: rating } : i));
+    setSavingRating(null);
+  }
+
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-gray-500">Loading...</div>
+    </div>
+  );
 
   const total = items.reduce((a, b) => a + b.amount, 0);
   const saved = items.filter(i => selected.has(i.id)).reduce((a, b) => a + b.amount, 0);
@@ -75,6 +127,9 @@ export default function SavePage() {
   const billsTotal = bills.reduce((a, b) => a + b.amount, 0);
   const trialsTotal = trials.reduce((a, b) => a + b.amount, 0);
 
+  // Low-value items: rated 1 or 2 and not already selected
+  const lowValue = items.filter(i => i.value_rating && i.value_rating <= 2 && !selected.has(i.id));
+
   const groups = [
     { label: "Subscriptions", items: subs, color: "#00C853", total: subsTotal },
     { label: "Bills", items: bills, color: "#FFB300", total: billsTotal },
@@ -87,18 +142,41 @@ export default function SavePage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Savings Calculator</h1>
-        <p className="mt-1 text-sm text-gray-400">Check off items you&apos;re thinking about cancelling to see how much you&apos;d save.</p>
+        <p className="mt-1 text-sm text-gray-400">Rate how much you use each item, then check off the ones to cancel.</p>
       </div>
 
       {/* Instruction banner */}
       <div className="mb-5 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm leading-relaxed text-gray-300">
-        <strong className="text-white">How to use this:</strong> Check off subscriptions or bills you&apos;re thinking about cancelling. The calculator shows exactly how much you&apos;d free up per month and per year.
+        <strong className="text-white">How to use this:</strong> Rate each subscription 1-5 stars to see which ones aren&apos;t worth the money, then check them off to calculate your savings.
       </div>
+
+      {/* Low value suggestion */}
+      {lowValue.length > 0 && (
+        <div className="mb-5 rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
+          <p className="text-sm font-semibold text-orange-400 mb-1">
+            {lowValue.length} low-value {lowValue.length === 1 ? "item" : "items"} you rarely use
+          </p>
+          <p className="text-xs text-gray-500 mb-2">
+            {lowValue.map(i => i.name).join(", ")} &mdash; {fmt(lowValue.reduce((a, b) => a + b.amount, 0))}/mo
+          </p>
+          <button
+            onClick={() => {
+              setSelected(prev => {
+                const next = new Set(prev);
+                lowValue.forEach(i => next.add(i.id));
+                return next;
+              });
+            }}
+            className="text-xs font-semibold text-orange-400 hover:text-orange-300 transition"
+          >
+            Select all low-value items
+          </button>
+        </div>
+      )}
 
       {/* Summary card */}
       <div className={`mb-6 rounded-2xl border p-5 transition-all ${saved > 0 ? "border-brand/40 bg-brand/5" : "border-white/10 bg-white/[0.02]"}`}>
         <div className="mb-4 flex items-center gap-5">
-
           {/* Mini donut */}
           <div className="relative shrink-0">
             <svg width="80" height="80" viewBox="0 0 80 80">
@@ -171,11 +249,11 @@ export default function SavePage() {
               </div>
               <div className="flex justify-between text-xs text-gray-500">
                 <span>After: {fmt(newTotal)}/mo</span>
-                <span className="text-green-400 font-semibold">↓ {pct}%</span>
+                <span className="text-green-400 font-semibold">down {pct}%</span>
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-500">Select items below to see your savings.</p>
+            <p className="text-sm text-gray-500">Check items below to calculate your savings.</p>
           )}
         </div>
       </div>
@@ -199,42 +277,66 @@ export default function SavePage() {
               <div className="space-y-2">
                 {g.items.map(item => {
                   const isSelected = selected.has(item.id);
+                  const isLow = item.value_rating && item.value_rating <= 2;
                   return (
-                    <button
+                    <div
                       key={item.id}
-                      onClick={() => toggle(item.id)}
-                      className="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition"
+                      className="rounded-xl border transition overflow-hidden"
                       style={{
                         background: isSelected ? "#34C75910" : "rgba(255,255,255,0.02)",
-                        borderColor: isSelected ? "#34C75938" : "rgba(255,255,255,0.08)",
+                        borderColor: isLow && !isSelected
+                          ? "rgba(251,146,60,0.25)"
+                          : isSelected ? "#34C75938" : "rgba(255,255,255,0.08)",
                       }}
                     >
-                      {/* Checkbox */}
+                      {/* Main row — click to toggle */}
                       <div
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition"
-                        style={{
-                          background: isSelected ? "#34C759" : "transparent",
-                          borderColor: isSelected ? "#34C759" : "rgba(255,255,255,0.2)",
-                        }}
+                        className="flex items-center gap-3 px-4 py-3 cursor-pointer"
+                        onClick={() => toggle(item.id)}
                       >
-                        {isSelected && <Check size={11} color="#fff" strokeWidth={3} />}
+                        {/* Checkbox */}
+                        <div
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition"
+                          style={{
+                            background: isSelected ? "#34C759" : "transparent",
+                            borderColor: isSelected ? "#34C759" : "rgba(255,255,255,0.2)",
+                          }}
+                        >
+                          {isSelected && <Check size={11} color="#fff" strokeWidth={3} />}
+                        </div>
+
+                        <MerchantLogo name={item.name} color={item.color || g.color} size={36} />
+
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold ${isSelected ? "line-through text-gray-500" : ""}`}>
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-gray-500">{item.category}</p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <p className={`font-mono text-sm font-bold ${isSelected ? "text-green-400" : ""}`}>
+                            {isSelected ? "-" : ""}{fmt(item.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500">/mo</p>
+                        </div>
                       </div>
 
-                      {/* Icon */}
-                      <MerchantLogo name={item.name} color={item.color || g.color} size={36} />
-
-                      <div className="flex-1">
-                        <p className={`text-sm font-semibold ${isSelected ? "line-through text-gray-500" : ""}`}>{item.name}</p>
-                        <p className="text-xs text-gray-500">{item.category}</p>
+                      {/* Star rating row */}
+                      <div
+                        className="flex items-center gap-2 px-4 pb-2.5 pt-0"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <span className="text-[10px] text-gray-600 shrink-0">Worth it?</span>
+                        <StarRating
+                          value={item.value_rating}
+                          onChange={rating => setRating(item.id, rating)}
+                        />
+                        {savingRating === item.id && (
+                          <span className="text-[10px] text-gray-600 ml-1">saving...</span>
+                        )}
                       </div>
-
-                      <div className="text-right">
-                        <p className={`font-mono text-sm font-bold ${isSelected ? "text-green-400" : ""}`}>
-                          {isSelected ? "-" : ""}{fmt(item.amount)}
-                        </p>
-                        <p className="text-xs text-gray-500">/mo</p>
-                      </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -245,7 +347,7 @@ export default function SavePage() {
           {selected.size > 0 && (
             <div className="rounded-2xl border border-green-500/25 bg-green-500/10 p-5 text-center">
               <p className="mb-3 text-sm font-semibold text-green-400">
-                Cancel {selected.size} item{selected.size > 1 ? "s" : ""} · save {fmt(saved)}/mo · {fmt(annual)}/yr
+                Cancel {selected.size} item{selected.size > 1 ? "s" : ""} &middot; save {fmt(saved)}/mo &middot; {fmt(annual)}/yr
               </p>
               <button
                 onClick={() => router.push("/dashboard")}

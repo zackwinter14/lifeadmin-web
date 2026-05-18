@@ -10,6 +10,7 @@ import { usePlaidLink } from "react-plaid-link";
 import UpgradeBanner from "@/components/UpgradeBanner";
 import UpcomingCharges from "@/components/UpcomingCharges";
 import HelpTip from "@/components/HelpTip";
+import MerchantLogo from "@/components/MerchantLogo";
 
 type ItemType = "subscription" | "bill" | "trial";
 
@@ -205,10 +206,7 @@ function ItemsModal({ label, color, items, onClose, onTypeChange }: {
             <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
               {items.map(item => (
                 <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black"
-                    style={{ background: item.color || TYPE_COLORS[item.type] }}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </div>
+                  <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type]} size={36} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{item.name}</p>
                     <p className="text-xs text-gray-500">
@@ -751,9 +749,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               {upcoming.map(item => (
                 <div key={item.id} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-black" style={{ background: item.color || TYPE_COLORS[item.type] }}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </div>
+                  <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type]} size={32} />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-semibold">{item.name}</p>
                     <p className="text-xs text-gray-500">{item.due_date}</p>

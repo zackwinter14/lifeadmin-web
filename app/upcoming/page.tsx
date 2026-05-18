@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { AlertTriangle, Bell, Copy, Check, Calendar, ChevronRight } from "lucide-react";
+import MerchantLogo from "@/components/MerchantLogo";
 
 interface Item {
   id: string;
@@ -66,12 +67,7 @@ function ItemRow({ item }: { item: Item & { daysUntil: number | null } }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 px-5 py-4 last:border-0 hover:bg-white/[0.02]">
       <div className="flex items-center gap-3">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black"
-          style={{ background: color }}
-        >
-          {item.name.charAt(0).toUpperCase()}
-        </div>
+        <MerchantLogo name={item.name} color={color} size={40} />
         <div>
           <p className="font-semibold text-sm">{item.name}</p>
           <p className="text-xs text-gray-500">
