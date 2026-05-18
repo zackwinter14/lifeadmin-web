@@ -64,12 +64,14 @@ Do NOT use generic advice. Reference their actual numbers. Do NOT use emojis.`,
     const message = response.content[0].type === "text" ? response.content[0].text : "";
 
     // Persist notification to Supabase so the bell badge works across sessions
-    await supabase.from("ai_notifications").upsert({
-      user_id: userId,
-      message,
-      created_at: new Date().toISOString(),
-      read: false,
-    }, { onConflict: "user_id" }).catch(() => {}); // table may not exist yet
+    try {
+      await supabase.from("ai_notifications").upsert({
+        user_id: userId,
+        message,
+        created_at: new Date().toISOString(),
+        read: false,
+      }, { onConflict: "user_id" });
+    } catch {} // table may not exist yet
 
     return NextResponse.json({ message });
   } catch (e) {
