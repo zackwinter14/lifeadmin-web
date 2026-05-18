@@ -6,6 +6,7 @@ import BackgroundWrapper from "@/components/BackgroundWrapper";
 import PinGate from "@/components/PinGate";
 import AdBanner from "@/components/AdBanner";
 import BankAutoSync from "@/components/BankAutoSync";
+import AutoAINotification from "@/components/AutoAINotification";
 
 const ADSENSE_PUBLISHER_ID = "ca-pub-5151835818661965";
 
@@ -61,6 +62,7 @@ export default function RootLayout({
         <BackgroundWrapper />
         <PinGate>
           <BankAutoSync />
+          <AutoAINotification />
           <Navbar />
           <AdBanner position="mid" />
           <main className="min-h-screen">{children}</main>

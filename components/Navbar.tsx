@@ -51,6 +51,7 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
+  const [autoaiUnread, setAutoaiUnread] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -63,6 +64,9 @@ export default function Navbar() {
         const { data } = await supabase.from("profiles").select("full_name, is_pro").eq("id", user.id).single();
         if (data?.full_name) setProfileName(data.full_name);
         if (data?.is_pro) setIsPro(true);
+        try {
+          setAutoaiUnread(localStorage.getItem(`autoai_unread_${user.id}`) === "true");
+        } catch {}
       }
     }
     loadUser();
@@ -182,15 +186,19 @@ export default function Navbar() {
                           <div className="grid grid-cols-2 gap-1">
                             {section.items.map(item => {
                               const Icon = item.icon;
+                              const isAutoAI = item.href === "/autoai";
                               return (
                                 <Link
                                   key={item.href}
                                   href={item.href}
-                                  onClick={() => setMenuOpen(false)}
+                                  onClick={() => { setMenuOpen(false); if (isAutoAI) setAutoaiUnread(false); }}
                                   className="flex items-center gap-2 rounded-xl px-2.5 py-2 transition hover:bg-white/5"
                                 >
-                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
+                                  <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
                                     <Icon size={13} style={{ color: item.color }} />
+                                    {isAutoAI && autoaiUnread && (
+                                      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-purple-500 ring-1 ring-black" />
+                                    )}
                                   </div>
                                   <span className="text-xs font-medium text-gray-200">{item.label}</span>
                                 </Link>
@@ -278,10 +286,14 @@ export default function Navbar() {
                     <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">{section.label}</p>
                     {section.items.map(item => {
                       const Icon = item.icon;
+                      const isAutoAI = item.href === "/autoai";
                       return (
-                        <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
+                        <Link key={item.href} href={item.href} onClick={() => { setMobileOpen(false); if (isAutoAI) setAutoaiUnread(false); }} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
+                          <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
                             <Icon size={13} style={{ color: item.color }} />
+                            {isAutoAI && autoaiUnread && (
+                              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-purple-500 ring-1 ring-black" />
+                            )}
                           </div>
                           <span className="text-sm text-gray-300">{item.label}</span>
                         </Link>
