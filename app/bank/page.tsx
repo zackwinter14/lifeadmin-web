@@ -56,13 +56,43 @@ export default function BankPage() {
 
       const { data: profile } = await supabase.from("profiles").select("is_pro, plaid_access_token").eq("id", user.id).single();
       if (profile?.is_pro) setIsPro(true);
-      if (profile?.plaid_access_token) setPlaidConnected(true);
+
+      const hasToken = !!profile?.plaid_access_token;
+      if (hasToken) setPlaidConnected(true);
+
       const stored = localStorage.getItem(`plaid_last_synced_${user.id}`);
       if (stored) setLastSynced(stored);
 
       const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
       if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
       setLoading(false);
+
+      // Auto-sync on every page visit when bank is connected so data stays fresh
+      if (hasToken) {
+        setSyncing(true);
+        try {
+          // Use the same Edge Functions the dashboard uses — they're the proven sync path
+          await Promise.allSettled([
+            fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-transactions-sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: user.id }),
+            }),
+            fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: user.id }),
+            }),
+          ]);
+          const now = new Date().toISOString();
+          localStorage.setItem(`plaid_last_synced_${user.id}`, now);
+          setLastSynced(now);
+          // Reload items after sync
+          const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
+          if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+        } catch {}
+        setSyncing(false);
+      }
     }
     init();
   }, []);
@@ -92,25 +122,42 @@ export default function BankPage() {
     setSyncing(true);
     setSyncMessage(null);
     try {
-      const res = await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
-      const data = await res.json();
-      if (data.error_code === "ITEM_LOGIN_REQUIRED") {
-        setNeedsReconnect(true);
-        setSyncMessage("Bank connection expired. Please reconnect.");
-      } else if (data.error_code === "PRODUCT_NOT_READY") {
-        setSyncMessage("Bank data is still loading. Try again in a moment.");
-      } else if (data.synced !== undefined) {
-        const now = new Date().toISOString();
-        localStorage.setItem(`plaid_last_synced_${user.id}`, now);
-        setLastSynced(now);
-        setNeedsReconnect(false);
-        setSyncMessage(`Synced ${data.synced} transactions.`);
-        const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
-        if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
-      } else {
-        setSyncMessage(data.error || "Sync failed. Try again.");
+      // Call the same Edge Functions the dashboard sync uses
+      const results = await Promise.allSettled([
+        fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-transactions-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        }),
+        fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        }),
+      ]);
+
+      // Check if either returned ITEM_LOGIN_REQUIRED
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          try {
+            const body = await r.value.clone().json();
+            if (body?.error_code === "ITEM_LOGIN_REQUIRED") {
+              setNeedsReconnect(true);
+              setSyncMessage("Bank connection expired. Please reconnect.");
+              return;
+            }
+          } catch {}
+        }
       }
-    } catch (e: any) {
+
+      const now = new Date().toISOString();
+      localStorage.setItem(`plaid_last_synced_${user.id}`, now);
+      setLastSynced(now);
+      setNeedsReconnect(false);
+      setSyncMessage("Bank synced.");
+      const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
+      if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+    } catch {
       setSyncMessage("Connection error. Check your network and try again.");
     } finally {
       setSyncing(false);

@@ -441,9 +441,16 @@ export default function Dashboard() {
 
   async function saveIncome(val: string) {
     const v = parseFloat(val) || 0;
+    const prev = income;
     setIncome(v);
     setEditingIncome(false);
-    await supabase.from("profiles").upsert({ id: user.id, monthly_income: v });
+    const { error } = await supabase.from("profiles").upsert({ id: user.id, monthly_income: v });
+    if (error) {
+      // Revert if save failed
+      setIncome(prev);
+      setIncomeInput(String(prev));
+      console.error("saveIncome failed:", error.message);
+    }
   }
 
   async function createLinkToken() {
@@ -460,18 +467,21 @@ export default function Dashboard() {
   async function onPlaidSuccess(publicToken: string) {
     if (!user) return;
     setDetectingIncome(true);
-    await fetch("/api/plaid/exchange-token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ publicToken, userId: user.id }),
-    });
-    const res = await fetch("/api/plaid/income", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
-    });
-    const data = await res.json();
-    if (data.income > 0) { setIncome(data.income); setIncomeInput(String(data.income)); }
+    try {
+      await fetch("/api/plaid/exchange-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicToken, userId: user.id }),
+      });
+      // sync populates transactions + recurring + income in one pass
+      const res = await fetch("/api/plaid/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (data.income > 0) { setIncome(data.income); setIncomeInput(String(data.income)); }
+    } catch {}
     setPlaidConnected(true);
     setDetectingIncome(false);
     setLinkToken(null);

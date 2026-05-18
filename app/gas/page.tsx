@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Plus, X, Pencil, Trash2, Check, Fuel } from "lucide-react";
+import { Plus, X, Trash2, Fuel } from "lucide-react";
 
 interface Fillup {
   id: string;
@@ -37,34 +37,18 @@ function EditRow({ tx, onSave, onDelete, onCancel }: { tx: Fillup; onSave: (u: P
   return (
     <div className="mb-2 overflow-hidden rounded-xl border border-yellow-500/30 bg-white/[0.02]">
       <div className="flex flex-col gap-2 p-4">
-        <input
-          value={merchant}
-          onChange={e => setMerchant(e.target.value)}
-          placeholder="Station / merchant"
-          className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-yellow-400"
-        />
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <p className="mb-1 text-xs text-gray-500">Amount $</p>
-            <input
-              type="number"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm outline-none focus:border-yellow-400"
-            />
-          </div>
+        <input value={merchant} onChange={e => setMerchant(e.target.value)} placeholder="Station / merchant"
+          className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-yellow-400" />
+        <div>
+          <p className="mb-1 text-xs text-gray-500">Amount $</p>
+          <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm outline-none focus:border-yellow-400" />
         </div>
-        <input
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          placeholder="Note (optional)"
-          className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-yellow-400"
-        />
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Note (optional)"
+          className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-yellow-400" />
         <div className="flex gap-2">
-          <button
-            onClick={() => onSave({ merchant, amount: parseFloat(amount) || tx.amount, note })}
-            className="flex-1 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-600 py-2 text-sm font-bold text-black hover:opacity-90"
-          >
+          <button onClick={() => onSave({ merchant, amount: parseFloat(amount) || tx.amount, note })}
+            className="flex-1 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-600 py-2 text-sm font-bold text-black hover:opacity-90">
             Save
           </button>
           <button onClick={onCancel} className="flex-1 rounded-lg border border-white/10 py-2 text-sm text-gray-400 hover:bg-white/5">
@@ -82,62 +66,135 @@ function EditRow({ tx, onSave, onDelete, onCancel }: { tx: Fillup; onSave: (u: P
 export default function GasPage() {
   const router = useRouter();
   const supabase = createClient();
+  const [user, setUser] = useState<any>(null);
   const [authed, setAuthed] = useState(false);
   const [income, setIncome] = useState(0);
-
   const [txns, setTxns] = useState<Fillup[]>([]);
   const [filter, setFilter] = useState<"all" | "thisMonth" | "lastMonth">("all");
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ merchant: "", amount: "", gallons: "", pricePer: "", date: "", note: "" });
 
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
+      setUser(user);
+
       const { data: profile } = await supabase.from("profiles").select("monthly_income").eq("id", user.id).single();
       if (profile?.monthly_income) setIncome(profile.monthly_income);
-      try {
-        const stored = localStorage.getItem("gas_txns");
-        if (stored) setTxns(JSON.parse(stored));
-      } catch {}
+
+      // Load from Supabase first, fall back to localStorage cache
+      const { data: rows, error } = await supabase
+        .from("gas_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (!error && rows) {
+        const fillups: Fillup[] = rows.map((r: any) => ({
+          id: r.id,
+          merchant: r.merchant,
+          amount: r.amount,
+          gallons: r.gallons ?? 0,
+          pricePer: r.price_per ?? 0,
+          date: r.date,
+          note: r.note ?? undefined,
+        }));
+        setTxns(fillups);
+        try { localStorage.setItem(`gas_txns_${user.id}`, JSON.stringify(fillups)); } catch {}
+      } else {
+        // Table may not exist yet — fall back to localStorage
+        try {
+          const stored = localStorage.getItem(`gas_txns_${user.id}`) || localStorage.getItem("gas_txns");
+          if (stored) setTxns(JSON.parse(stored));
+        } catch {}
+      }
+
       setAuthed(true);
     }
     init();
   }, []);
 
-  function saveTxns(updated: Fillup[]) {
-    setTxns(updated);
-    try { localStorage.setItem("gas_txns", JSON.stringify(updated)); } catch {}
+  function localCache(updated: Fillup[]) {
+    if (user) {
+      try { localStorage.setItem(`gas_txns_${user.id}`, JSON.stringify(updated)); } catch {}
+    }
   }
 
-  function addFillup() {
-    if (!form.merchant || !form.amount) return;
+  async function addFillup() {
+    if (!form.merchant || !form.amount || saving) return;
+    setSaving(true);
     const amt = parseFloat(form.amount) || 0;
     const gal = parseFloat(form.gallons) || 0;
     const ppg = gal > 0 ? amt / gal : parseFloat(form.pricePer) || 0;
-    const tx: Fillup = {
-      id: `g${Date.now()}`,
+    const dateStr = form.date || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+    // Try to save to Supabase
+    const { data: inserted, error } = await supabase.from("gas_logs").insert({
+      user_id: user.id,
       merchant: form.merchant,
       amount: amt,
-      date: form.date || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       gallons: gal || parseFloat((amt / (ppg || 4.20)).toFixed(1)),
-      pricePer: parseFloat(ppg.toFixed(2)),
-      note: form.note || undefined,
-    };
-    saveTxns([tx, ...txns]);
+      price_per: parseFloat(ppg.toFixed(2)),
+      date: dateStr,
+      note: form.note || null,
+    }).select().single();
+
+    let newTx: Fillup;
+    if (!error && inserted) {
+      newTx = {
+        id: inserted.id,
+        merchant: inserted.merchant,
+        amount: inserted.amount,
+        gallons: inserted.gallons ?? 0,
+        pricePer: inserted.price_per ?? 0,
+        date: inserted.date,
+        note: inserted.note ?? undefined,
+      };
+    } else {
+      // Supabase failed (table may not exist) — use local ID
+      newTx = {
+        id: `g${Date.now()}`,
+        merchant: form.merchant,
+        amount: amt,
+        gallons: gal || parseFloat((amt / (ppg || 4.20)).toFixed(1)),
+        pricePer: parseFloat(ppg.toFixed(2)),
+        date: dateStr,
+        note: form.note || undefined,
+      };
+    }
+
+    const updated = [newTx, ...txns];
+    setTxns(updated);
+    localCache(updated);
     setForm({ merchant: "", amount: "", gallons: "", pricePer: "", date: "", note: "" });
     setShowAdd(false);
+    setSaving(false);
   }
 
-  function updateTx(id: string, updates: Partial<Fillup>) {
-    saveTxns(txns.map(x => x.id === id ? { ...x, ...updates } : x));
+  async function updateTx(id: string, updates: Partial<Fillup>) {
+    // Optimistic update
+    const updated = txns.map(x => x.id === id ? { ...x, ...updates } : x);
+    setTxns(updated);
+    localCache(updated);
     setEditingId(null);
+
+    // Persist to Supabase
+    await supabase.from("gas_logs").update({
+      merchant: updates.merchant,
+      amount: updates.amount,
+      note: updates.note ?? null,
+    }).eq("id", id).eq("user_id", user.id);
   }
 
-  function deleteTx(id: string) {
-    saveTxns(txns.filter(x => x.id !== id));
+  async function deleteTx(id: string) {
+    const updated = txns.filter(x => x.id !== id);
+    setTxns(updated);
+    localCache(updated);
     setEditingId(null);
+    await supabase.from("gas_logs").delete().eq("id", id).eq("user_id", user.id);
   }
 
   if (!authed) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
@@ -151,13 +208,11 @@ export default function GasPage() {
   const thisTotal = thisTxns.reduce((a, b) => a + b.amount, 0);
   const lastTotal = lastTxns.reduce((a, b) => a + b.amount, 0);
   const diff = thisTotal - lastTotal;
-
   const totalSpent = display.reduce((a, b) => a + b.amount, 0);
   const totalGal = display.reduce((a, b) => a + b.gallons, 0);
   const avgPpg = totalGal > 0 ? totalSpent / totalGal : 0;
   const gasPct = income > 0 ? (thisTotal / income) * 100 : 0;
 
-  // Station breakdown
   const stationTotals: Record<string, number> = {};
   display.forEach(tx => { stationTotals[tx.merchant] = (stationTotals[tx.merchant] || 0) + tx.amount; });
   const stations = Object.entries(stationTotals).sort((a, b) => b[1] - a[1]);
@@ -168,21 +223,17 @@ export default function GasPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
 
-      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gas Tracker</h1>
           <p className="mt-1 text-sm text-gray-400">Manually logged fill-ups.</p>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 px-4 py-2.5 text-sm font-bold text-black hover:opacity-90"
-        >
+        <button onClick={() => setShowAdd(true)}
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 px-4 py-2.5 text-sm font-bold text-black hover:opacity-90">
           <Plus size={15} /> Add Fill-up
         </button>
       </div>
 
-      {/* Stats row */}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="col-span-2 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 md:col-span-1">
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">This Month</p>
@@ -205,18 +256,10 @@ export default function GasPage() {
         ))}
       </div>
 
-      {/* Filter tabs */}
       <div className="mb-5 flex gap-2">
         {([["all", "All time"], ["thisMonth", thisM], ["lastMonth", lastM]] as const).map(([v, l]) => (
-          <button
-            key={v}
-            onClick={() => setFilter(v)}
-            className="rounded-full px-4 py-1.5 text-sm font-semibold transition"
-            style={{
-              background: filter === v ? "#F5C518" : "rgba(255,255,255,0.05)",
-              color: filter === v ? "#0a0a0f" : "#8E8E93",
-            }}
-          >
+          <button key={v} onClick={() => setFilter(v)} className="rounded-full px-4 py-1.5 text-sm font-semibold transition"
+            style={{ background: filter === v ? "#F5C518" : "rgba(255,255,255,0.05)", color: filter === v ? "#0a0a0f" : "#8E8E93" }}>
             {l}
           </button>
         ))}
@@ -232,7 +275,6 @@ export default function GasPage() {
         </div>
       ) : (
         <>
-          {/* Stations breakdown */}
           {stations.length > 0 && (
             <div className="mb-6">
               <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">Stations</p>
@@ -255,7 +297,6 @@ export default function GasPage() {
             </div>
           )}
 
-          {/* Fill-ups list */}
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Fill-ups</p>
             <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 rounded-lg bg-yellow-500/10 px-3 py-1.5 text-xs font-bold text-yellow-400 hover:bg-yellow-500/20">
@@ -265,19 +306,10 @@ export default function GasPage() {
           <div>
             {display.map(tx =>
               editingId === tx.id ? (
-                <EditRow
-                  key={tx.id}
-                  tx={tx}
-                  onSave={u => updateTx(tx.id, u)}
-                  onDelete={() => deleteTx(tx.id)}
-                  onCancel={() => setEditingId(null)}
-                />
+                <EditRow key={tx.id} tx={tx} onSave={u => updateTx(tx.id, u)} onDelete={() => deleteTx(tx.id)} onCancel={() => setEditingId(null)} />
               ) : (
-                <div
-                  key={tx.id}
-                  className="mb-2 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 hover:bg-white/5"
-                  onClick={() => setEditingId(tx.id)}
-                >
+                <div key={tx.id} className="mb-2 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 hover:bg-white/5"
+                  onClick={() => setEditingId(tx.id)}>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-yellow-500/20 bg-yellow-500/10">
                     <Fuel size={18} className="text-yellow-400" />
                   </div>
@@ -286,9 +318,7 @@ export default function GasPage() {
                       {tx.merchant}
                       {tx.note && <span className="ml-1 text-xs font-normal text-gray-500">· {tx.note}</span>}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {tx.date} · {tx.gallons} gal · ${tx.pricePer}/gal
-                    </p>
+                    <p className="text-xs text-gray-500">{tx.date} · {tx.gallons} gal · ${tx.pricePer}/gal</p>
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-sm font-bold text-yellow-400">{fmt(tx.amount)}</p>
@@ -299,9 +329,7 @@ export default function GasPage() {
             )}
           </div>
 
-          {display.length === 0 && (
-            <p className="py-8 text-center text-sm text-gray-500">No fill-ups for this period.</p>
-          )}
+          {display.length === 0 && <p className="py-8 text-center text-sm text-gray-500">No fill-ups for this period.</p>}
 
           {totalSpent > 0 && (
             <div className="mt-4 flex items-center gap-2 rounded-xl border border-yellow-500/15 bg-yellow-500/5 px-4 py-3">
@@ -315,9 +343,9 @@ export default function GasPage() {
         </>
       )}
 
-      {/* Add modal */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={e => { if (e.target === e.currentTarget) setShowAdd(false); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowAdd(false); }}>
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
@@ -348,7 +376,7 @@ export default function GasPage() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Date</label>
-                  <input value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} placeholder="Apr 17" className={inputCls} />
+                  <input value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} placeholder="May 18" className={inputCls} />
                 </div>
               </div>
               <div>
@@ -358,12 +386,9 @@ export default function GasPage() {
             </div>
             <div className="mt-5 flex gap-3">
               <button onClick={() => setShowAdd(false)} className="flex-1 rounded-xl border border-white/10 py-3 text-sm hover:bg-white/5">Cancel</button>
-              <button
-                onClick={addFillup}
-                disabled={!form.merchant || !form.amount}
-                className="flex-1 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40"
-              >
-                Add Fill-up
+              <button onClick={addFillup} disabled={!form.merchant || !form.amount || saving}
+                className="flex-1 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40">
+                {saving ? "Saving..." : "Add Fill-up"}
               </button>
             </div>
           </div>
