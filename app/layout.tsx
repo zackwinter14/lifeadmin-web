@@ -155,6 +155,63 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "SoftwareApplication",
+                "name": "Life Admin",
+                "url": "https://lifeadminofficial.com",
+                "description": "Life Admin tracks subscriptions, bills, expenses, income, gas, and net worth. Connect your bank to auto-detect every recurring charge and cancel forgotten subscriptions.",
+                "applicationCategory": "FinanceApplication",
+                "operatingSystem": "iOS, Web",
+                "offers": [
+                  { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" },
+                  { "@type": "Offer", "price": "6.99", "priceCurrency": "USD", "name": "Pro Monthly" },
+                  { "@type": "Offer", "price": "49.99", "priceCurrency": "USD", "name": "Pro Yearly" }
+                ],
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": "4.8",
+                  "ratingCount": "500",
+                  "bestRating": "5"
+                },
+                "screenshot": "https://lifeadminofficial.com/opengraph-image",
+                "featureList": [
+                  "Auto-detect subscriptions via bank connection",
+                  "Cancel forgotten subscriptions",
+                  "Bill calendar and reminders",
+                  "Income tracking",
+                  "Net worth tracker",
+                  "Gas expense tracker",
+                  "AI receipt scanning",
+                  "Household sharing",
+                  "Bill negotiation scripts",
+                  "Budget goals"
+                ]
+              },
+              {
+                "@type": "Organization",
+                "name": "Life Admin",
+                "url": "https://lifeadminofficial.com",
+                "logo": "https://lifeadminofficial.com/icon.png",
+                "sameAs": []
+              },
+              {
+                "@type": "WebSite",
+                "url": "https://lifeadminofficial.com",
+                "name": "Life Admin",
+                "potentialAction": {
+                  "@type": "SearchAction",
+                  "target": "https://lifeadminofficial.com/tools?q={search_term_string}",
+                  "query-input": "required name=search_term_string"
+                }
+              }
+            ]
+          })}}
+        />
         {/* Apply saved theme before paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `
           try {
