@@ -6,22 +6,41 @@ import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Ha
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-const MENU_ITEMS = [
-  { href: "/expenses",      label: "Add Expense",      icon: DollarSign,    color: "#007AFF" },
-  { href: "/income",        label: "Income",           icon: Wallet,        color: "#34C759" },
-  { href: "/history",       label: "History",          icon: History,       color: "#38BDF8" },
-  { href: "/household",     label: "Household",        icon: Users,         color: "#30D158" },
-  { href: "/networth",      label: "Net Worth",        icon: TrendingUp,    color: "#64D2FF" },
-  { href: "/calendar",      label: "Calendar",         icon: Calendar,      color: "#FF9500" },
-  { href: "/autoai",        label: "AutoAI",           icon: Bot,           color: "#AF52DE" },
-  { href: "/school",        label: "School",           icon: GraduationCap, color: "#38BDF8" },
-  { href: "/negotiation",   label: "Negotiation",      icon: Handshake,     color: "#FF6B35" },
-  { href: "/rewards",       label: "Rewards",          icon: Trophy,        color: "#F5C518" },
-  { href: "/insights",      label: "Insights",         icon: BarChart2,     color: "#AF52DE" },
-  { href: "/tools",         label: "Free Tools",       icon: Calculator,    color: "#3EA758" },
-  { href: "/cancel",        label: "Cancel Manager",   icon: CircleX,       color: "#FF3B30" },
-  { href: "/report",        label: "Monthly Report",   icon: FileText,      color: "#38BDF8" },
-  { href: "/wrapped",       label: "Year in Review",   icon: Sparkles,      color: "#F5C518" },
+const MENU_SECTIONS = [
+  {
+    label: "Track",
+    items: [
+      { href: "/expenses",  label: "Add Expense", icon: DollarSign,    color: "#007AFF" },
+      { href: "/history",   label: "History",     icon: History,       color: "#38BDF8" },
+      { href: "/networth",  label: "Net Worth",   icon: TrendingUp,    color: "#64D2FF" },
+      { href: "/household", label: "Household",   icon: Users,         color: "#30D158" },
+    ],
+  },
+  {
+    label: "Plan",
+    items: [
+      { href: "/calendar",     label: "Calendar",    icon: Calendar,      color: "#FF9500" },
+      { href: "/cancel",       label: "Cancel Mgr",  icon: CircleX,       color: "#FF3B30" },
+      { href: "/report",       label: "Monthly",     icon: FileText,      color: "#38BDF8" },
+      { href: "/wrapped",      label: "Year Review", icon: Sparkles,      color: "#F5C518" },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { href: "/autoai",      label: "AutoAI",      icon: Bot,           color: "#AF52DE" },
+      { href: "/negotiation", label: "Negotiation", icon: Handshake,     color: "#FF6B35" },
+      { href: "/tools",       label: "Free Tools",  icon: Calculator,    color: "#3EA758" },
+      { href: "/school",      label: "School",      icon: GraduationCap, color: "#38BDF8" },
+    ],
+  },
+  {
+    label: "Insights",
+    items: [
+      { href: "/insights", label: "Insights", icon: BarChart2, color: "#AF52DE" },
+      { href: "/rewards",  label: "Rewards",  icon: Trophy,    color: "#F5C518" },
+    ],
+  },
 ];
 
 export default function Navbar() {
@@ -84,7 +103,7 @@ export default function Navbar() {
     { href: "/upcoming", label: "Upcoming" },
     { href: "/budget",   label: "Budget"   },
     { href: "/save",     label: "Save"     },
-    { href: "/insights", label: "Insights" },
+    { href: "/income",   label: "Income"   },
     { href: "/gas",      label: "Gas"      },
   ];
 
@@ -155,24 +174,31 @@ export default function Navbar() {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 top-10 z-50 w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
-                    <div className="p-2">
-                      {MENU_ITEMS.map(item => {
-                        const Icon = item.icon;
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5"
-                          >
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
-                              <Icon size={15} style={{ color: item.color }} />
-                            </div>
-                            <span className="text-sm font-medium text-gray-200">{item.label}</span>
-                          </Link>
-                        );
-                      })}
+                  <div className="absolute right-0 top-10 z-50 w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
+                    <div className="p-3 space-y-3">
+                      {MENU_SECTIONS.map(section => (
+                        <div key={section.label}>
+                          <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-widest text-gray-600">{section.label}</p>
+                          <div className="grid grid-cols-2 gap-1">
+                            {section.items.map(item => {
+                              const Icon = item.icon;
+                              return (
+                                <Link
+                                  key={item.href}
+                                  href={item.href}
+                                  onClick={() => setMenuOpen(false)}
+                                  className="flex items-center gap-2 rounded-xl px-2.5 py-2 transition hover:bg-white/5"
+                                >
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
+                                    <Icon size={13} style={{ color: item.color }} />
+                                  </div>
+                                  <span className="text-xs font-medium text-gray-200">{item.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -247,18 +273,22 @@ export default function Navbar() {
                     {l.label}
                   </Link>
                 ))}
-                <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Menu</p>
-                {MENU_ITEMS.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
-                        <Icon size={13} style={{ color: item.color }} />
-                      </div>
-                      <span className="text-sm text-gray-300">{item.label}</span>
-                    </Link>
-                  );
-                })}
+                {MENU_SECTIONS.map(section => (
+                  <div key={section.label}>
+                    <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">{section.label}</p>
+                    {section.items.map(item => {
+                      const Icon = item.icon;
+                      return (
+                        <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
+                            <Icon size={13} style={{ color: item.color }} />
+                          </div>
+                          <span className="text-sm text-gray-300">{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
                 <div className="my-2 border-t border-white/5" />
                 <Link href="/profile" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5">
                   Profile ({displayName})
