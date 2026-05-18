@@ -43,6 +43,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Apply saved theme before paint to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var t = localStorage.getItem('app_theme') || 'forest';
+            document.documentElement.setAttribute('data-theme', t);
+          } catch(e) {}
+        ` }} />
         <script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`}

@@ -36,12 +36,31 @@ export default function AnimatedBackground() {
     }));
 
     let animId: number;
+    const getParticleColor = () =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--brand-hex")
+        .trim() || "#3EA758";
+
+    let particleColor = getParticleColor();
+
+    const observer = new MutationObserver(() => {
+      particleColor = getParticleColor();
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    const hexToRgba = (hex: string, alpha: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    };
+
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach((p) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(62,167,88,${p.opacity})`;
+        ctx.fillStyle = hexToRgba(particleColor, p.opacity);
         ctx.fill();
         p.y -= p.speed;
         p.x += p.drift;
@@ -60,6 +79,7 @@ export default function AnimatedBackground() {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
+      observer.disconnect();
     };
   }, []);
 
@@ -77,11 +97,11 @@ export default function AnimatedBackground() {
         className="fixed inset-0 overflow-hidden pointer-events-none"
         style={{ zIndex: -5 }}
       >
-        <div className="orb-1 absolute -top-60 -left-60 h-[800px] w-[800px] rounded-full bg-brand/20 blur-[100px]" />
-        <div className="orb-2 absolute top-1/3 -right-80 h-[700px] w-[700px] rounded-full bg-brand/15 blur-[90px]" />
-        <div className="orb-3 absolute top-2/3 left-1/4 h-[600px] w-[600px] rounded-full bg-brand-light/10 blur-[80px]" />
-        <div className="orb-4 absolute -bottom-60 right-1/4 h-[600px] w-[600px] rounded-full bg-brand/15 blur-[100px]" />
-        <div className="aurora absolute -top-20 left-1/2 -translate-x-1/2 h-[350px] w-[1000px] rounded-full bg-brand/20 blur-[60px]" />
+        <div className="orb-1 absolute -top-60 -left-60 h-[800px] w-[800px] rounded-full blur-[100px]" style={{ background: "var(--orb-color)" }} />
+        <div className="orb-2 absolute top-1/3 -right-80 h-[700px] w-[700px] rounded-full blur-[90px]" style={{ background: "var(--orb-color)" }} />
+        <div className="orb-3 absolute top-2/3 left-1/4 h-[600px] w-[600px] rounded-full blur-[80px]" style={{ background: "var(--orb-color-light)" }} />
+        <div className="orb-4 absolute -bottom-60 right-1/4 h-[600px] w-[600px] rounded-full blur-[100px]" style={{ background: "var(--orb-color)" }} />
+        <div className="aurora absolute -top-20 left-1/2 -translate-x-1/2 h-[350px] w-[1000px] rounded-full blur-[60px]" style={{ background: "var(--orb-color)" }} />
       </div>
 
       {/* Grid overlay */}

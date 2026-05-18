@@ -9,9 +9,9 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#3EA758",
-          light: "#5dd377",
-          dark: "#2e7d40",
+          DEFAULT: "rgb(var(--brand-rgb) / <alpha-value>)",
+          light:   "rgb(var(--brand-light-rgb) / <alpha-value>)",
+          dark:    "rgb(var(--brand-dark-rgb) / <alpha-value>)",
         },
         bg: {
           DEFAULT: "#0a0a0a",
@@ -23,7 +23,7 @@ const config: Config = {
         sans: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "Inter", "sans-serif"],
       },
       backgroundImage: {
-        "brand-gradient": "linear-gradient(135deg, #3EA758, #5dd377)",
+        "brand-gradient": "var(--brand-gradient)",
       },
     },
   },

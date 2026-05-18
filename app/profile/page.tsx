@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash, Sparkles, Shield, Delete } from "lucide-react";
 import AlertPreferences from "@/components/AlertPreferences";
+import ThemeSelector from "@/components/ThemeSelector";
 import { getPinHash, savePin, clearPin, markSessionVerified } from "@/components/PinGate";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -1010,6 +1011,11 @@ export default function ProfilePage() {
       />
 
       <div className="my-4" />
+
+      <div className="mb-4">
+        <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-brand">Appearance</p>
+        <ThemeSelector />
+      </div>
 
       <div className="mb-2">
         <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-brand">Notifications</p>

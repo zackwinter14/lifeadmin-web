@@ -2,6 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme tokens ─────────────────────────────────────── */
+:root,
+[data-theme="forest"] {
+  --brand-rgb:       62 167 88;
+  --brand-light-rgb: 93 211 119;
+  --brand-dark-rgb:  46 125 64;
+  --brand-hex:       #3EA758;
+  --brand-light-hex: #5dd377;
+  --brand-gradient:  linear-gradient(135deg, #3EA758, #5dd377);
+  --page-bg:         #0a0a0a;
+  --particle-color:  rgba(62,167,88,var(--particle-alpha, 0.5));
+  --orb-color:       rgba(62,167,88,0.18);
+  --orb-color-light: rgba(93,211,119,0.10);
+  --grid-color:      rgba(62,167,88,0.08);
+}
+
+[data-theme="midnight"] {
+  --brand-rgb:       99 102 241;
+  --brand-light-rgb: 129 140 248;
+  --brand-dark-rgb:  67 56 202;
+  --brand-hex:       #6366F1;
+  --brand-light-hex: #818CF8;
+  --brand-gradient:  linear-gradient(135deg, #6366F1, #818CF8);
+  --page-bg:         #080a14;
+  --particle-color:  rgba(99,102,241,var(--particle-alpha, 0.5));
+  --orb-color:       rgba(99,102,241,0.18);
+  --orb-color-light: rgba(129,140,248,0.10);
+  --grid-color:      rgba(99,102,241,0.08);
+}
+
+[data-theme="ember"] {
+  --brand-rgb:       249 115 22;
+  --brand-light-rgb: 251 146 60;
+  --brand-dark-rgb:  194 65 12;
+  --brand-hex:       #F97316;
+  --brand-light-hex: #FB923C;
+  --brand-gradient:  linear-gradient(135deg, #F97316, #FB923C);
+  --page-bg:         #0f0a08;
+  --particle-color:  rgba(249,115,22,var(--particle-alpha, 0.5));
+  --orb-color:       rgba(249,115,22,0.18);
+  --orb-color-light: rgba(251,146,60,0.10);
+  --grid-color:      rgba(249,115,22,0.08);
+}
+
+[data-theme="ocean"] {
+  --brand-rgb:       56 189 248;
+  --brand-light-rgb: 125 211 252;
+  --brand-dark-rgb:  2 132 199;
+  --brand-hex:       #38BDF8;
+  --brand-light-hex: #7DD3FC;
+  --brand-gradient:  linear-gradient(135deg, #38BDF8, #7DD3FC);
+  --page-bg:         #050d18;
+  --particle-color:  rgba(56,189,248,var(--particle-alpha, 0.5));
+  --orb-color:       rgba(56,189,248,0.18);
+  --orb-color-light: rgba(125,211,252,0.10);
+  --grid-color:      rgba(56,189,248,0.08);
+}
+
+[data-theme="amethyst"] {
+  --brand-rgb:       168 85 247;
+  --brand-light-rgb: 192 132 252;
+  --brand-dark-rgb:  126 34 206;
+  --brand-hex:       #A855F7;
+  --brand-light-hex: #C084FC;
+  --brand-gradient:  linear-gradient(135deg, #A855F7, #C084FC);
+  --page-bg:         #0d0a14;
+  --particle-color:  rgba(168,85,247,var(--particle-alpha, 0.5));
+  --orb-color:       rgba(168,85,247,0.18);
+  --orb-color-light: rgba(192,132,252,0.10);
+  --grid-color:      rgba(168,85,247,0.08);
+}
+
+[data-theme="gold"] {
+  --brand-rgb:       245 197 24;
+  --brand-light-rgb: 252 211 77;
+  --brand-dark-rgb:  180 138 0;
+  --brand-hex:       #F5C518;
+  --brand-light-hex: #FCD34D;
+  --brand-gradient:  linear-gradient(135deg, #F5C518, #FCD34D);
+  --page-bg:         #0c0a05;
+  --particle-color:  rgba(245,197,24,var(--particle-alpha, 0.5));
+  --orb-color:       rgba(245,197,24,0.18);
+  --orb-color-light: rgba(252,211,77,0.10);
+  --grid-color:      rgba(245,197,24,0.08);
+}
+
+/* ── Base ─────────────────────────────────────────────── */
 html,
 body {
   background: transparent;
@@ -9,22 +96,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Base background sits below all fixed effects */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -100;
-  background: #0a0a0a;
+  background: var(--page-bg, #0a0a0a);
+  transition: background 0.4s ease;
 }
 
 ::selection {
-  background: #3EA758;
+  background: var(--brand-hex, #3EA758);
   color: #000;
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #3EA758, #5dd377);
+  background: var(--brand-gradient, linear-gradient(135deg, #3EA758, #5dd377));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -82,7 +169,7 @@ body::before {
 
 .bg-grid {
   background-image:
-    linear-gradient(rgba(62,167,88,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(62,167,88,0.08) 1px, transparent 1px);
+    linear-gradient(var(--grid-color, rgba(62,167,88,0.08)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color, rgba(62,167,88,0.08)) 1px, transparent 1px);
   background-size: 72px 72px;
 }
