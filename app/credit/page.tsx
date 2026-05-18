@@ -139,6 +139,139 @@ function CardTile({ card, onUpdateBalance, onDelete }: {
   );
 }
 
+function calcPayoff(
+  cards: Card[],
+  extraPerMonth: number,
+  method: "snowball" | "avalanche"
+): { months: number; totalInterest: number } | null {
+  const work = cards
+    .filter(c => c.current_balance > 0)
+    .map(c => ({
+      balance: c.current_balance,
+      apr: c.apr || 18,
+      minPay: c.min_payment || Math.max(25, c.current_balance * 0.02),
+    }));
+  if (!work.length) return null;
+  if (method === "snowball") work.sort((a, b) => a.balance - b.balance);
+  else work.sort((a, b) => b.apr - a.apr);
+
+  let months = 0;
+  let totalInterest = 0;
+  while (work.some(w => w.balance > 0.01) && months < 600) {
+    months++;
+    let extra = extraPerMonth;
+    // Apply interest + pay minimums
+    for (const w of work) {
+      if (w.balance <= 0) continue;
+      const interest = w.balance * (w.apr / 100 / 12);
+      w.balance += interest;
+      totalInterest += interest;
+      const pay = Math.min(w.minPay, w.balance);
+      w.balance = Math.max(0, w.balance - pay);
+    }
+    // Snowball: add freed minimum payment to extra
+    for (const w of work) {
+      if (w.balance <= 0.01 && w.balance > 0) { extra += w.minPay; w.balance = 0; }
+    }
+    // Apply extra to first card with balance
+    for (const w of work) {
+      if (w.balance <= 0) continue;
+      const pay = Math.min(extra, w.balance);
+      w.balance = Math.max(0, w.balance - pay);
+      break;
+    }
+  }
+  if (months >= 600) return null;
+  return { months, totalInterest };
+}
+
+function DebtPayoffPlanner({ cards }: { cards: Card[] }) {
+  const [extra, setExtra] = useState("0");
+  const [method, setMethod] = useState<"snowball" | "avalanche">("avalanche");
+
+  const totalBalance = cards.reduce((a, c) => a + c.current_balance, 0);
+  const extraNum = parseFloat(extra) || 0;
+  const result = calcPayoff(cards, extraNum, method);
+  const baseline = calcPayoff(cards, 0, method);
+
+  function monthsToDate(months: number) {
+    const d = new Date();
+    d.setMonth(d.getMonth() + months);
+    return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }
+
+  const savedMonths = baseline && result ? baseline.months - result.months : 0;
+  const savedInterest = baseline && result ? baseline.totalInterest - result.totalInterest : 0;
+
+  return (
+    <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Debt Payoff Planner</p>
+
+      {/* Method */}
+      <div className="flex gap-2 mb-4">
+        {(["avalanche", "snowball"] as const).map(m => (
+          <button
+            key={m}
+            onClick={() => setMethod(m)}
+            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold capitalize transition ${method === m ? "bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/30" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+          >
+            {m}
+            <span className="block text-[10px] font-normal mt-0.5 opacity-60">
+              {m === "avalanche" ? "Highest APR first — saves most interest" : "Lowest balance first — fastest wins"}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Extra payment input */}
+      <div className="mb-5">
+        <label className="text-xs text-gray-400 mb-1.5 block">Extra monthly payment beyond minimums</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+          <input
+            type="number"
+            min="0"
+            value={extra}
+            onChange={e => setExtra(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-black/30 pl-7 pr-3 py-2.5 text-sm text-white outline-none focus:border-[#38BDF8]/50"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      {/* Results */}
+      {result ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-[#38BDF8]/5 border border-[#38BDF8]/15 p-3">
+              <p className="text-xs text-gray-500 mb-1">Debt-free date</p>
+              <p className="text-sm font-bold text-white">{monthsToDate(result.months)}</p>
+              <p className="text-xs text-[#38BDF8]">{result.months} months</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.02] border border-white/10 p-3">
+              <p className="text-xs text-gray-500 mb-1">Total interest paid</p>
+              <p className="text-sm font-bold text-white">${result.totalInterest.toFixed(0)}</p>
+              <p className="text-xs text-gray-500">on ${totalBalance.toFixed(0)} balance</p>
+            </div>
+          </div>
+
+          {savedMonths > 0 && (
+            <div className="rounded-xl bg-green-500/5 border border-green-500/15 p-3">
+              <p className="text-xs font-semibold text-green-400">
+                Your extra ${extraNum}/mo saves {savedMonths} month{savedMonths !== 1 ? "s" : ""} and ${savedInterest.toFixed(0)} in interest
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500 text-center py-4">
+          Add APR and minimum payment to each card to see your payoff plan.
+        </p>
+      )}
+    </div>
+  );
+}
+
 const EMPTY_FORM = {
   name: "", last_four: "", credit_limit: "", current_balance: "",
   due_date: "", min_payment: "", apr: "", color: CARD_COLORS[0],
@@ -283,6 +416,11 @@ export default function CreditPage() {
             <CardTile key={card.id} card={card} onUpdateBalance={updateBalance} onDelete={deleteCard} />
           ))}
         </div>
+      )}
+
+      {/* ── Debt Payoff Planner ─────────────────────────────────────────────── */}
+      {cards.some(c => c.current_balance > 0) && (
+        <DebtPayoffPlanner cards={cards} />
       )}
 
       {showAdd && (

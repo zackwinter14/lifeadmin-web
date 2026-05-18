@@ -11,6 +11,7 @@ import UpgradeBanner from "@/components/UpgradeBanner";
 import UpcomingCharges from "@/components/UpcomingCharges";
 import HelpTip from "@/components/HelpTip";
 import MerchantLogo from "@/components/MerchantLogo";
+import PriceChangeAlert from "@/components/PriceChangeAlert";
 
 type ItemType = "subscription" | "bill" | "trial";
 
@@ -577,6 +578,8 @@ export default function Dashboard() {
         </h1>
         <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
       </div>
+
+      {user && <PriceChangeAlert userId={user.id} />}
 
       <HelpTip
         storageKey="dashboard_welcome"

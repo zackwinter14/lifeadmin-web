@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { User, Gift, Lock, AlertTriangle, MessageCircle, ChevronRight, ChevronDown, Copy, Check, Send, Hash, Sparkles, Shield, Delete } from "lucide-react";
+import AlertPreferences from "@/components/AlertPreferences";
 import { getPinHash, savePin, clearPin, markSessionVerified } from "@/components/PinGate";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -1007,6 +1008,13 @@ export default function ProfilePage() {
         onPinSetup={() => setSubPage("pin")}
         onMfaSetup={() => setSubPage("mfa")}
       />
+
+      <div className="my-4" />
+
+      <div className="mb-2">
+        <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-brand">Notifications</p>
+        <AlertPreferences userId={user.id} userEmail={user.email || ""} />
+      </div>
 
       <div className="my-4" />
 

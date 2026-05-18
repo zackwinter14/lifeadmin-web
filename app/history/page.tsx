@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { History, RefreshCw, Search, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { History, RefreshCw, Search, ArrowUpRight, ArrowDownRight, Download } from "lucide-react";
 import MerchantLogo from "@/components/MerchantLogo";
 import { simplifyName } from "@/lib/merchantUtils";
 import HelpTip from "@/components/HelpTip";
@@ -56,6 +56,27 @@ export default function HistoryPage() {
   const [filter, setFilter] = useState<string>("all");
   const [days, setDays] = useState(30);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  function exportCSV() {
+    const rows = [
+      ["Date", "Merchant", "Category", "Amount", "Pending"],
+      ...items.map(t => [
+        t.date,
+        simplifyName(t.clean_merchant_name || t.merchant_name || t.description || ""),
+        t.category,
+        t.amount.toFixed(2),
+        t.pending ? "yes" : "no",
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function load(d: number = days) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -131,6 +152,14 @@ export default function HistoryPage() {
             aria-label="Refresh"
           >
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+          </button>
+          <button
+            onClick={exportCSV}
+            disabled={items.length === 0}
+            title="Export CSV"
+            className="text-gray-500 hover:text-[#3EA758] transition disabled:opacity-30"
+          >
+            <Download size={16} />
           </button>
         </div>
         <div className="flex gap-1">
