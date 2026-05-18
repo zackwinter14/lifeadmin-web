@@ -16,24 +16,44 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Life Admin — Track bills. Cancel forgotten subscriptions. Save hundreds.",
+  title: {
+    default: "Life Admin — Track Bills, Cancel Subscriptions, Save Money",
+    template: "%s | Life Admin",
+  },
   description:
-    "Life Admin connects to your bank, finds every subscription you forgot you had, and helps you cancel them in one tap. Save $240+/month on average.",
+    "Life Admin connects to your bank, finds every subscription you forgot you had, and helps you cancel them in one tap. Track bills, income, gas, and net worth. Save $240+/month on average.",
   keywords: [
     "subscription tracker",
     "bill manager",
     "cancel subscriptions",
-    "personal finance",
-    "save money",
+    "personal finance app",
+    "save money app",
+    "budget tracker",
+    "expense tracker",
+    "net worth tracker",
     "Life Admin",
+    "Rocket Money alternative",
   ],
+  metadataBase: new URL("https://lifeadminofficial.com"),
+  alternates: {
+    canonical: "https://lifeadminofficial.com",
+  },
   openGraph: {
-    title: "Life Admin — Stop bleeding money on forgotten subscriptions",
+    title: "Life Admin — Stop Bleeding Money on Forgotten Subscriptions",
     description:
-      "Find every recurring charge in your bank account. Cancel what you don't use. Save hundreds.",
+      "Find every recurring charge in your bank account. Cancel what you don't use. Track bills, income, gas, and net worth. Save $240+/month on average.",
     url: "https://lifeadminofficial.com",
     siteName: "Life Admin",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Life Admin — Track Bills, Cancel Subscriptions, Save Money",
+    description: "Find every recurring charge in your bank. Cancel what you don't use. Save $240+/month.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

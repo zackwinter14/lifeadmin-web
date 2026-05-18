@@ -1,3 +1,20 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Features — Life Admin | Everything Your Money Needs in One App",
+  description: "Auto-detect every subscription, track income, scan receipts with AI, monitor net worth, and never get surprised by a charge again. See every Life Admin feature.",
+  keywords: ["subscription tracker features", "bill management app", "AI receipt scanner", "net worth tracker", "income tracking app", "cancel subscriptions app"],
+  openGraph: {
+    title: "Life Admin Features — Track Every Dollar Automatically",
+    description: "Auto-detect subscriptions, scan receipts with AI, track net worth, manage bills, and cancel forgotten subs. Everything in one app.",
+    url: "https://lifeadminofficial.com/features",
+    siteName: "Life Admin",
+  },
+  alternates: {
+    canonical: "https://lifeadminofficial.com/features",
+  },
+};
+
 import {
   Zap,
   ShieldCheck,
