@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Check } from "lucide-react";
+import MerchantLogo from "@/components/MerchantLogo";
 
 interface Item {
   id: string;
@@ -220,12 +221,7 @@ export default function SavePage() {
                       </div>
 
                       {/* Icon */}
-                      <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black"
-                        style={{ background: item.color || g.color }}
-                      >
-                        {item.name.charAt(0).toUpperCase()}
-                      </div>
+                      <MerchantLogo name={item.name} color={item.color || g.color} size={36} />
 
                       <div className="flex-1">
                         <p className={`text-sm font-semibold ${isSelected ? "line-through text-gray-500" : ""}`}>{item.name}</p>
