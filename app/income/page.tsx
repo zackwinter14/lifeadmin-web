@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Plus, X, Trash2, Wallet, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Plus, X, Trash2, Wallet, TrendingUp, ArrowUpRight, BarChart3 } from "lucide-react";
 import BankIncome from "@/components/BankIncome";
 
 interface IncomeEntry {
@@ -13,6 +13,14 @@ interface IncomeEntry {
   frequency: "monthly" | "biweekly" | "weekly" | "one-time";
   date: string;
   note?: string;
+  category?: "primary" | "side";
+}
+
+interface SideLog {
+  id: string;
+  month: string; // "YYYY-MM"
+  amount: number;
+  note: string;
 }
 
 const FREQ_LABELS: Record<string, string> = {
@@ -42,8 +50,11 @@ export default function IncomePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "recurring" | "one-time">("all");
   const [form, setForm] = useState({
-    source: "", amount: "", frequency: "monthly" as IncomeEntry["frequency"], date: "", note: "",
+    source: "", amount: "", frequency: "monthly" as IncomeEntry["frequency"], date: "", note: "", category: "primary" as "primary" | "side",
   });
+  const [sideLog, setSideLog] = useState<SideLog[]>([]);
+  const [showSideAdd, setShowSideAdd] = useState(false);
+  const [sideForm, setSideForm] = useState({ month: new Date().toISOString().slice(0, 7), amount: "", note: "" });
 
   useEffect(() => {
     async function init() {
@@ -52,6 +63,8 @@ export default function IncomePage() {
       try {
         const stored = localStorage.getItem("income_entries");
         if (stored) setEntries(JSON.parse(stored));
+        const sl = localStorage.getItem("side_income_log_v1");
+        if (sl) setSideLog(JSON.parse(sl));
       } catch {}
       setAuthed(true);
     }
@@ -63,6 +76,11 @@ export default function IncomePage() {
     try { localStorage.setItem("income_entries", JSON.stringify(updated)); } catch {}
   }
 
+  function saveSideLog(updated: SideLog[]) {
+    setSideLog(updated);
+    try { localStorage.setItem("side_income_log_v1", JSON.stringify(updated)); } catch {}
+  }
+
   function addEntry() {
     if (!form.source || !form.amount) return;
     const entry: IncomeEntry = {
@@ -72,10 +90,19 @@ export default function IncomePage() {
       frequency: form.frequency,
       date: form.date || new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       note: form.note || undefined,
+      category: form.category,
     };
     save([entry, ...entries]);
-    setForm({ source: "", amount: "", frequency: "monthly", date: "", note: "" });
+    setForm({ source: "", amount: "", frequency: "monthly", date: "", note: "", category: "primary" });
     setShowAdd(false);
+  }
+
+  function addSideLog() {
+    if (!sideForm.amount) return;
+    const entry: SideLog = { id: `sl${Date.now()}`, month: sideForm.month, amount: parseFloat(sideForm.amount) || 0, note: sideForm.note };
+    saveSideLog([entry, ...sideLog]);
+    setSideForm({ month: new Date().toISOString().slice(0, 7), amount: "", note: "" });
+    setShowSideAdd(false);
   }
 
   function deleteEntry(id: string) {
@@ -171,6 +198,120 @@ export default function IncomePage() {
           </div>
         </div>
       )}
+
+      {/* Side income monthly log */}
+      <div className="mb-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={14} className="text-brand" />
+            <p className="text-sm font-bold">Side Income Log</p>
+          </div>
+          <button
+            onClick={() => setShowSideAdd(v => !v)}
+            className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand/20 transition"
+          >
+            + Log month
+          </button>
+        </div>
+
+        {showSideAdd && (
+          <div className="mb-3 rounded-2xl border border-brand/30 bg-brand/[0.04] p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Month</p>
+                <input
+                  type="month"
+                  value={sideForm.month}
+                  onChange={e => setSideForm(f => ({ ...f, month: e.target.value }))}
+                  className={inputCls}
+                  style={{ colorScheme: "dark" }}
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Amount earned</p>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={sideForm.amount}
+                    onChange={e => setSideForm(f => ({ ...f, amount: e.target.value }))}
+                    placeholder="0"
+                    className={`${inputCls} pl-7 font-mono`}
+                  />
+                </div>
+              </div>
+            </div>
+            <input
+              value={sideForm.note}
+              onChange={e => setSideForm(f => ({ ...f, note: e.target.value }))}
+              placeholder="Note (e.g. freelance design, Uber, rental)"
+              className={inputCls}
+            />
+            <div className="flex gap-2">
+              <button onClick={() => setShowSideAdd(false)} className="flex-1 rounded-xl border border-white/10 py-2 text-sm hover:bg-white/5">Cancel</button>
+              <button
+                onClick={addSideLog}
+                disabled={!sideForm.amount}
+                className="flex-1 rounded-xl bg-brand-gradient py-2 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+
+        {sideLog.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/10 py-8 text-center">
+            <p className="text-sm text-gray-500">No side income logged yet.</p>
+            <p className="text-xs text-gray-600 mt-1">Track freelance, gig, rental, or any extra earnings month by month.</p>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+            {/* Mini chart */}
+            {sideLog.length >= 2 && (() => {
+              const sorted = [...sideLog].sort((a, b) => a.month.localeCompare(b.month)).slice(-6);
+              const max = Math.max(...sorted.map(s => s.amount));
+              return (
+                <div className="flex items-end gap-1.5 px-4 pt-4 pb-2 h-20">
+                  {sorted.map(s => (
+                    <div key={s.id} className="flex flex-1 flex-col items-center gap-1">
+                      <div
+                        className="w-full rounded-t-md bg-brand-gradient transition-all duration-700"
+                        style={{ height: `${Math.max((s.amount / max) * 52, 4)}px` }}
+                      />
+                      <p className="text-[9px] text-gray-600">{s.month.slice(5)}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {[...sideLog].sort((a, b) => b.month.localeCompare(a.month)).map((entry, i, arr) => {
+              const d = new Date(entry.month + "-01");
+              const label = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+              return (
+                <div key={entry.id} className={`flex items-center justify-between px-4 py-3 ${i < arr.length - 1 ? "border-b border-white/5" : ""}`}>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{label}</p>
+                    {entry.note && <p className="text-xs text-gray-500">{entry.note}</p>}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="font-mono text-sm font-bold text-brand">${entry.amount.toLocaleString()}</p>
+                    <button onClick={() => saveSideLog(sideLog.filter(s => s.id !== entry.id))} className="text-gray-600 hover:text-red-400 transition">
+                      <X size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {sideLog.length >= 2 && (
+              <div className="px-4 py-2.5 border-t border-white/5 flex justify-between text-xs text-gray-500">
+                <span>Total logged</span>
+                <span className="font-mono font-bold text-brand">${sideLog.reduce((a, s) => a + s.amount, 0).toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Filter tabs */}
       <div className="mb-5 flex gap-2">

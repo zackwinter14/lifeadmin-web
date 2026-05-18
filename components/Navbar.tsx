@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank, CreditCard, BarChart2, CircleX } from "lucide-react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank, CreditCard, BarChart2, CircleX, FileText, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +20,8 @@ const MENU_ITEMS = [
   { href: "/insights",      label: "Insights",         icon: BarChart2,     color: "#AF52DE" },
   { href: "/tools",         label: "Free Tools",       icon: Calculator,    color: "#3EA758" },
   { href: "/cancel",        label: "Cancel Manager",   icon: CircleX,       color: "#FF3B30" },
+  { href: "/report",        label: "Monthly Report",   icon: FileText,      color: "#38BDF8" },
+  { href: "/wrapped",       label: "Year in Review",   icon: Sparkles,      color: "#F5C518" },
 ];
 
 export default function Navbar() {
