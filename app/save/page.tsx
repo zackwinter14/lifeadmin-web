@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Check } from "lucide-react";
+import { Check, Plus, X, RefreshCw } from "lucide-react";
 import MerchantLogo from "@/components/MerchantLogo";
 
 interface Item {
@@ -73,6 +73,10 @@ export default function SavePage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [savingRating, setSavingRating] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", amount: "", type: "subscription" as "subscription" | "bill" | "trial" });
+  const [quickSaving, setQuickSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -87,6 +91,7 @@ export default function SavePage() {
         .order("amount", { ascending: false });
 
       if (data) setItems(data as Item[]);
+      setUserId(user.id);
       setLoading(false);
     }
     load();
@@ -98,6 +103,26 @@ export default function SavePage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  }
+
+  async function quickAdd() {
+    if (!userId || !quickForm.name || !quickForm.amount) return;
+    setQuickSaving(true);
+    const color = TYPE_COLORS[quickForm.type];
+    const { data } = await supabase.from("items").insert({
+      user_id: userId,
+      name: quickForm.name.trim(),
+      amount: parseFloat(quickForm.amount) || 0,
+      type: quickForm.type,
+      category: quickForm.type === "subscription" ? "Entertainment" : quickForm.type === "bill" ? "Utilities" : "Other",
+      color,
+      status: "active",
+      autopay: false,
+    }).select("id, name, amount, type, category, color, value_rating").single();
+    if (data) setItems(prev => [...prev, data as Item].sort((a, b) => b.amount - a.amount));
+    setQuickForm({ name: "", amount: "", type: "subscription" });
+    setShowQuickAdd(false);
+    setQuickSaving(false);
   }
 
   async function setRating(itemId: string, rating: number) {
@@ -342,6 +367,67 @@ export default function SavePage() {
               </div>
             </div>
           ))}
+
+          {/* Quick-add missing item */}
+          {showQuickAdd ? (
+            <div className="mb-4 rounded-2xl border border-brand/30 bg-brand/[0.04] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-white">Add a missing item</p>
+                <button onClick={() => setShowQuickAdd(false)} className="text-gray-500 hover:text-white">
+                  <X size={15} />
+                </button>
+              </div>
+              <div className="space-y-2.5">
+                <input
+                  autoFocus
+                  value={quickForm.name}
+                  onChange={e => setQuickForm(f => ({ ...f, name: e.target.value }))}
+                  onKeyDown={e => { if (e.key === "Enter" && quickForm.name && quickForm.amount) quickAdd(); }}
+                  placeholder="e.g. HBO Max, Rent, Gym…"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-brand/50"
+                />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={quickForm.amount}
+                      onChange={e => setQuickForm(f => ({ ...f, amount: e.target.value }))}
+                      onKeyDown={e => { if (e.key === "Enter" && quickForm.name && quickForm.amount) quickAdd(); }}
+                      placeholder="0.00 /mo"
+                      className="w-full rounded-xl border border-white/10 bg-black/30 pl-7 pr-3 py-2.5 text-sm text-white outline-none focus:border-brand/50"
+                    />
+                  </div>
+                  <select
+                    value={quickForm.type}
+                    onChange={e => setQuickForm(f => ({ ...f, type: e.target.value as typeof f.type }))}
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none"
+                  >
+                    <option value="subscription">Subscription</option>
+                    <option value="bill">Bill</option>
+                    <option value="trial">Trial</option>
+                  </select>
+                </div>
+                <button
+                  onClick={quickAdd}
+                  disabled={!quickForm.name || !quickForm.amount || quickSaving}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gradient py-2.5 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40"
+                >
+                  {quickSaving ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />}
+                  Add to list
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowQuickAdd(true)}
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 py-3 text-sm text-gray-500 hover:border-brand/30 hover:text-brand transition"
+            >
+              <Plus size={14} /> Add a missing item
+            </button>
+          )}
 
           {/* Confirm banner */}
           {selected.size > 0 && (
