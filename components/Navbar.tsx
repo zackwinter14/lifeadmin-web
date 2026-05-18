@@ -104,10 +104,10 @@ export default function Navbar() {
   ];
 
   const appLinks = [
+    { href: "/income",   label: "Income"   },
     { href: "/upcoming", label: "Upcoming" },
     { href: "/budget",   label: "Budget"   },
     { href: "/save",     label: "Save"     },
-    { href: "/income",   label: "Income"   },
     { href: "/gas",      label: "Gas"      },
   ];
 
