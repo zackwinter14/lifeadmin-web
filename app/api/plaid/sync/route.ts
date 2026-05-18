@@ -50,7 +50,6 @@ function isLikelyPayroll(txn: any): boolean {
 }
 
 function detectIncome(transactions: any[]): number {
-  // Plaid: amount < 0 = credit (money in)
   const credits = transactions.filter(t => t.amount < 0 && Math.abs(t.amount) > 200);
   const payrollTxns = credits.filter(isLikelyPayroll);
   const pool = payrollTxns.length > 0 ? payrollTxns : credits;
@@ -92,106 +91,122 @@ function detectIncome(transactions: any[]): number {
   return Math.round(Math.abs(sorted[0].amount));
 }
 
+function plaidErrorCode(e: any): string | null {
+  return e?.response?.data?.error_code ?? null;
+}
+
+function plaidErrorMessage(e: any): string {
+  return e?.response?.data?.error_message ?? e?.message ?? "Unknown error";
+}
+
 export async function POST(req: NextRequest) {
+  const { userId } = await req.json();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plaid_access_token")
+    .eq("id", userId)
+    .single();
+
+  if (!profile?.plaid_access_token) {
+    return NextResponse.json({ error: "No bank connected" }, { status: 400 });
+  }
+
+  const endDate = new Date().toISOString().split("T")[0];
+  const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  // Step 1: fetch transactions — each error code gets a specific response
+  let transactions: any[] = [];
   try {
-    const { userId } = await req.json();
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("plaid_access_token")
-      .eq("id", userId)
-      .single();
-
-    if (!profile?.plaid_access_token) {
-      return NextResponse.json({ error: "No bank connected" }, { status: 400 });
-    }
-
-    const endDate = new Date().toISOString().split("T")[0];
-    const startDate = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-
     const txRes = await plaid.transactionsGet({
       access_token: profile.plaid_access_token,
       start_date: startDate,
       end_date: endDate,
       options: { count: 500 },
     });
-
-    const transactions = txRes.data.transactions;
-
-    // Store transactions with flipped sign: Plaid positive = debit (money out),
-    // we store as negative so SubScanner's `amount < 0` query finds expenses correctly.
-    try {
-      const rows = transactions.map(t => ({
-        user_id: userId,
-        plaid_transaction_id: t.transaction_id,
-        merchant_name: t.merchant_name || t.name,
-        clean_merchant_name: t.merchant_name || t.name,
-        amount: -t.amount,
-        date: t.date,
-        category: t.personal_finance_category?.primary || (t.category?.[0] ?? null),
-      }));
-      if (rows.length > 0) {
-        await supabase.from("transactions").upsert(rows, { onConflict: "plaid_transaction_id" });
-      }
-    } catch (e) {
-      console.error("transactions upsert error:", e);
-    }
-
-    // Populate recurring_transactions using Plaid's recurring stream detector.
-    // SubScanner reads this table as its highest-confidence source.
-    let recurringCount = 0;
-    try {
-      const recurringRes = await plaid.transactionsRecurringGet({
-        access_token: profile.plaid_access_token,
-        options: {},
-      });
-
-      const outflowStreams = recurringRes.data.outflow_streams || [];
-
-      await supabase.from("recurring_transactions").delete().eq("user_id", userId);
-
-      const recurringRows = outflowStreams
-        .filter((s: any) => s.is_active && s.status !== "TOMBSTONED")
-        .map((s: any) => ({
-          user_id: userId,
-          merchant_name: s.merchant_name || s.description,
-          clean_merchant_name: s.merchant_name || s.description,
-          average_amount: Math.abs(s.average_amount?.amount ?? 0),
-          last_amount: Math.abs(s.last_amount?.amount ?? 0),
-          frequency: s.frequency,
-          category: s.category?.[0] ?? null,
-          is_active: true,
-        }));
-
-      if (recurringRows.length > 0) {
-        await supabase.from("recurring_transactions").insert(recurringRows);
-        recurringCount = recurringRows.length;
-      }
-    } catch (e) {
-      // Not all accounts/environments support recurring detection — continue gracefully
-    }
-
-    // Re-run income detection on raw Plaid amounts (before sign flip)
-    const income = detectIncome(transactions);
-    if (income > 0) {
-      await supabase.from("profiles").upsert({ id: userId, monthly_income: income });
-    }
-
-    return NextResponse.json({
-      synced: transactions.length,
-      recurring: recurringCount,
-      income,
-      synced_at: new Date().toISOString(),
-    });
+    transactions = txRes.data.transactions;
   } catch (e: any) {
-    const plaidError = e?.response?.data;
-    const errorCode = plaidError?.error_code;
-    console.error("Plaid sync error:", plaidError || e);
+    const code = plaidErrorCode(e);
+    const msg = plaidErrorMessage(e);
+    console.error("Plaid transactionsGet error:", code, msg);
 
-    if (errorCode === "ITEM_LOGIN_REQUIRED") {
-      return NextResponse.json({ error: "reconnect_required", error_code: errorCode }, { status: 400 });
+    if (code === "ITEM_LOGIN_REQUIRED") {
+      return NextResponse.json({ error: "reconnect_required", error_code: code }, { status: 400 });
     }
-
-    return NextResponse.json({ error: "Failed to sync" }, { status: 500 });
+    if (code === "PRODUCT_NOT_READY") {
+      return NextResponse.json({
+        error: "Bank data is still loading. Wait a moment then try again.",
+        error_code: code,
+      }, { status: 202 });
+    }
+    // Return the actual Plaid error so we can see what's happening
+    return NextResponse.json({ error: msg, error_code: code ?? "PLAID_ERROR" }, { status: 500 });
   }
+
+  // Step 2: upsert transactions (sign-flipped: expenses stored as negative)
+  let stored = 0;
+  try {
+    const rows = transactions.map(t => ({
+      user_id: userId,
+      plaid_transaction_id: t.transaction_id,
+      merchant_name: t.merchant_name || t.name,
+      clean_merchant_name: t.merchant_name || t.name,
+      amount: -t.amount,
+      date: t.date,
+      category: t.personal_finance_category?.primary || t.category?.[0] || null,
+    }));
+    if (rows.length > 0) {
+      const { error } = await supabase
+        .from("transactions")
+        .upsert(rows, { onConflict: "plaid_transaction_id" });
+      if (error) console.error("transactions upsert error:", error.message);
+      else stored = rows.length;
+    }
+  } catch (e: any) {
+    console.error("transactions upsert exception:", e?.message);
+  }
+
+  // Step 3: populate recurring_transactions from Plaid's stream detector
+  let recurringCount = 0;
+  try {
+    const recurringRes = await plaid.transactionsRecurringGet({
+      access_token: profile.plaid_access_token,
+      options: {},
+    });
+    const outflowStreams = recurringRes.data.outflow_streams || [];
+    await supabase.from("recurring_transactions").delete().eq("user_id", userId);
+    const recurringRows = outflowStreams
+      .filter((s: any) => s.is_active && s.status !== "TOMBSTONED")
+      .map((s: any) => ({
+        user_id: userId,
+        merchant_name: s.merchant_name || s.description,
+        clean_merchant_name: s.merchant_name || s.description,
+        average_amount: Math.abs(s.average_amount?.amount ?? 0),
+        last_amount: Math.abs(s.last_amount?.amount ?? 0),
+        frequency: s.frequency,
+        category: s.category?.[0] ?? null,
+        is_active: true,
+      }));
+    if (recurringRows.length > 0) {
+      await supabase.from("recurring_transactions").insert(recurringRows);
+      recurringCount = recurringRows.length;
+    }
+  } catch (e: any) {
+    // Not fatal — recurring detection may not be available for all accounts/environments
+    console.error("transactionsRecurringGet skipped:", plaidErrorCode(e) ?? e?.message);
+  }
+
+  // Step 4: income detection (runs on raw Plaid amounts before sign flip)
+  const income = detectIncome(transactions);
+  if (income > 0) {
+    await supabase.from("profiles").upsert({ id: userId, monthly_income: income });
+  }
+
+  return NextResponse.json({
+    synced: transactions.length,
+    stored,
+    recurring: recurringCount,
+    income,
+    synced_at: new Date().toISOString(),
+  });
 }

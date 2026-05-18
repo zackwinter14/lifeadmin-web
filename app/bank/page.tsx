@@ -92,17 +92,19 @@ export default function BankPage() {
     if (data.error_code === "ITEM_LOGIN_REQUIRED") {
       setNeedsReconnect(true);
       setSyncMessage("Bank connection expired. Please reconnect.");
+    } else if (data.error_code === "PRODUCT_NOT_READY") {
+      setSyncMessage("Bank data is still loading. Try again in a moment.");
     } else if (data.synced !== undefined) {
       const now = new Date().toISOString();
       localStorage.setItem(`plaid_last_synced_${user.id}`, now);
       setLastSynced(now);
       setNeedsReconnect(false);
       setSyncMessage(`Synced ${data.synced} transactions.`);
-      // Reload items
       const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
       if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
     } else {
-      setSyncMessage("Sync failed. Try again.");
+      // Show the actual error from Plaid so we know what's going wrong
+      setSyncMessage(data.error || "Sync failed. Try again.");
     }
     setSyncing(false);
   }
