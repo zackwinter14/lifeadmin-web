@@ -82,7 +82,6 @@ export default function Navbar() {
     { href: "/upcoming", label: "Upcoming" },
     { href: "/budget",   label: "Budget"   },
     { href: "/save",     label: "Save"     },
-    { href: "/cancel",   label: "Cancel"   },
     { href: "/insights", label: "Insights" },
     { href: "/gas",      label: "Gas"      },
   ];
