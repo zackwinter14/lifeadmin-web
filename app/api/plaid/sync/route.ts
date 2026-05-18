@@ -50,6 +50,7 @@ function isLikelyPayroll(txn: any): boolean {
 }
 
 function detectIncome(transactions: any[]): number {
+  // Plaid: amount < 0 = credit (money in)
   const credits = transactions.filter(t => t.amount < 0 && Math.abs(t.amount) > 200);
   const payrollTxns = credits.filter(isLikelyPayroll);
   const pool = payrollTxns.length > 0 ? payrollTxns : credits;
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
 
     const endDate = new Date().toISOString().split("T")[0];
-    const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const startDate = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
     const txRes = await plaid.transactionsGet({
       access_token: profile.plaid_access_token,
@@ -117,23 +118,60 @@ export async function POST(req: NextRequest) {
 
     const transactions = txRes.data.transactions;
 
-    // Upsert transactions — ignore failures if schema differs
+    // Store transactions with flipped sign: Plaid positive = debit (money out),
+    // we store as negative so SubScanner's `amount < 0` query finds expenses correctly.
     try {
       const rows = transactions.map(t => ({
         user_id: userId,
         plaid_transaction_id: t.transaction_id,
         merchant_name: t.merchant_name || t.name,
         clean_merchant_name: t.merchant_name || t.name,
-        amount: t.amount,
+        amount: -t.amount,
         date: t.date,
-        category: t.personal_finance_category?.primary || t.category?.[0] || null,
+        category: t.personal_finance_category?.primary || (t.category?.[0] ?? null),
       }));
       if (rows.length > 0) {
         await supabase.from("transactions").upsert(rows, { onConflict: "plaid_transaction_id" });
       }
-    } catch {}
+    } catch (e) {
+      console.error("transactions upsert error:", e);
+    }
 
-    // Re-run income detection
+    // Populate recurring_transactions using Plaid's recurring stream detector.
+    // SubScanner reads this table as its highest-confidence source.
+    let recurringCount = 0;
+    try {
+      const recurringRes = await plaid.transactionsRecurringGet({
+        access_token: profile.plaid_access_token,
+        options: {},
+      });
+
+      const outflowStreams = recurringRes.data.outflow_streams || [];
+
+      await supabase.from("recurring_transactions").delete().eq("user_id", userId);
+
+      const recurringRows = outflowStreams
+        .filter((s: any) => s.is_active && s.status !== "TOMBSTONED")
+        .map((s: any) => ({
+          user_id: userId,
+          merchant_name: s.merchant_name || s.description,
+          clean_merchant_name: s.merchant_name || s.description,
+          average_amount: Math.abs(s.average_amount?.amount ?? 0),
+          last_amount: Math.abs(s.last_amount?.amount ?? 0),
+          frequency: s.frequency,
+          category: s.category?.[0] ?? null,
+          is_active: true,
+        }));
+
+      if (recurringRows.length > 0) {
+        await supabase.from("recurring_transactions").insert(recurringRows);
+        recurringCount = recurringRows.length;
+      }
+    } catch (e) {
+      // Not all accounts/environments support recurring detection — continue gracefully
+    }
+
+    // Re-run income detection on raw Plaid amounts (before sign flip)
     const income = detectIncome(transactions);
     if (income > 0) {
       await supabase.from("profiles").upsert({ id: userId, monthly_income: income });
@@ -141,6 +179,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       synced: transactions.length,
+      recurring: recurringCount,
       income,
       synced_at: new Date().toISOString(),
     });
@@ -149,7 +188,6 @@ export async function POST(req: NextRequest) {
     const errorCode = plaidError?.error_code;
     console.error("Plaid sync error:", plaidError || e);
 
-    // Surface ITEM_LOGIN_REQUIRED so the client can prompt reconnect
     if (errorCode === "ITEM_LOGIN_REQUIRED") {
       return NextResponse.json({ error: "reconnect_required", error_code: errorCode }, { status: 400 });
     }

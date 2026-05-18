@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Landmark, Lock, Check, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import MerchantLogo from "@/components/MerchantLogo";
+import SubScanner from "@/components/SubScanner";
 import { usePlaidLink } from "react-plaid-link";
 
 interface Item {
@@ -109,7 +110,8 @@ export default function BankPage() {
   async function onPlaidSuccess(publicToken: string) {
     setDetecting(true);
     await fetch("/api/plaid/exchange-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicToken, userId: user.id }) });
-    await fetch("/api/plaid/income", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+    // sync populates transactions + recurring_transactions + income — do this instead of income-only
+    await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
     setPlaidConnected(true);
     setDetecting(false);
     setLinkToken(null);
@@ -228,7 +230,23 @@ export default function BankPage() {
             )}
           </div>
 
-          {items.length === 0 ? (
+          {items.length === 0 && plaidConnected ? (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+              <div className="py-12 text-center">
+                <Landmark size={28} className="mx-auto mb-3 text-gray-600" />
+                <p className="font-semibold text-gray-300">Scanning your transactions</p>
+                <p className="mt-1 text-sm text-gray-500">Confirm detected subscriptions below to add them to your list.</p>
+              </div>
+              <SubScanner
+                userId={user.id}
+                trackedNames={items.map(i => i.name)}
+                onAdded={async () => {
+                  const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
+                  if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
+                }}
+              />
+            </div>
+          ) : items.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-16 text-center">
               <Landmark size={28} className="mx-auto mb-3 text-gray-600" />
               <p className="font-semibold text-gray-300">No bank entries yet</p>
@@ -255,6 +273,14 @@ export default function BankPage() {
                     </div>
                   ))}
                 </div>
+                <SubScanner
+                  userId={user.id}
+                  trackedNames={items.map(i => i.name)}
+                  onAdded={async () => {
+                    const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
+                    if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
+                  }}
+                />
               </div>
             </>
           )}
