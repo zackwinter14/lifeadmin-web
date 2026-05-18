@@ -9,6 +9,7 @@ import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X
 import { usePlaidLink } from "react-plaid-link";
 import UpgradeBanner from "@/components/UpgradeBanner";
 import UpcomingCharges from "@/components/UpcomingCharges";
+import HelpTip from "@/components/HelpTip";
 
 type ItemType = "subscription" | "bill" | "trial";
 
@@ -252,6 +253,7 @@ export default function Dashboard() {
   const [syncing, setSyncing] = useState(false);
   const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [creditCards, setCreditCards] = useState<{ id: string; name: string; last_four: string | null; credit_limit: number; current_balance: number; min_payment: number | null; due_date: string | null }[]>([]);
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
@@ -343,6 +345,12 @@ export default function Dashboard() {
       .order("created_at", { ascending: true });
 
     if (itemsData) setItems(itemsData as Item[]);
+
+    const { data: ccData } = await supabase
+      .from("credit_cards")
+      .select("id, name, last_four, credit_limit, current_balance, min_payment, due_date")
+      .eq("user_id", userId);
+    if (ccData) setCreditCards(ccData);
   }, [supabase]);
 
   useEffect(() => {
@@ -482,7 +490,9 @@ export default function Dashboard() {
   const subsTotal   = subs.reduce((a, b) => a + b.amount, 0);
   const billsTotal  = bills.reduce((a, b) => a + b.amount, 0);
   const trialsTotal = trials.reduce((a, b) => a + b.amount, 0);
-  const totalSpend  = subsTotal + billsTotal + trialsTotal;
+  const creditMinTotal = creditCards.reduce((s, c) => s + (c.min_payment || 0), 0);
+  const creditBalanceTotal = creditCards.reduce((s, c) => s + (c.current_balance || 0), 0);
+  const totalSpend  = subsTotal + billsTotal + trialsTotal + creditMinTotal;
   const remaining   = income - totalSpend;
   const spendPct    = income > 0 ? Math.min(Math.round((totalSpend / income) * 100), 100) : 0;
 
@@ -490,10 +500,35 @@ export default function Dashboard() {
     { name: "Subscriptions", value: subsTotal, color: TYPE_COLORS.subscription },
     { name: "Bills", value: billsTotal, color: TYPE_COLORS.bill },
     { name: "Trials", value: trialsTotal, color: TYPE_COLORS.trial },
+    { name: "Credit Payments", value: creditMinTotal, color: "#38BDF8" },
   ].filter(d => d.value > 0);
 
   // Upcoming due in next 7 days
   const today = new Date();
+
+  // Credit card upcoming payments
+  const creditUpcoming = creditCards
+    .filter(c => c.due_date)
+    .map(c => {
+      const day = parseInt(c.due_date!);
+      if (isNaN(day)) return null;
+      let target = new Date(today.getFullYear(), today.getMonth(), day);
+      if (target <= today) target.setMonth(target.getMonth() + 1);
+      const daysUntil = Math.ceil((target.getTime() - today.getTime()) / 86400000);
+      if (daysUntil < 0 || daysUntil > 7) return null;
+      return {
+        id: "cc_" + c.id,
+        name: c.name + (c.last_four ? ` ···· ${c.last_four}` : ""),
+        amount: c.min_payment || c.current_balance || 0,
+        color: "#38BDF8",
+        type: "bill" as ItemType,
+        due_date: c.due_date,
+        autopay: false,
+        daysUntil,
+      };
+    })
+    .filter(Boolean) as { id: string; name: string; amount: number; color: string; type: ItemType; due_date: string | null; autopay: boolean; daysUntil: number }[];
+
   const upcoming = items
     .filter(i => i.due_date)
     .map(i => {
@@ -515,7 +550,9 @@ export default function Dashboard() {
     })
     .filter(i => i.daysUntil >= 0 && i.daysUntil <= 7)
     .sort((a, b) => a.daysUntil - b.daysUntil)
-    .slice(0, 4);
+    .concat(creditUpcoming as any[])
+    .sort((a, b) => a.daysUntil - b.daysUntil)
+    .slice(0, 5);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -542,6 +579,17 @@ export default function Dashboard() {
         </h1>
         <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
       </div>
+
+      <HelpTip
+        storageKey="dashboard_welcome"
+        title="Start here — set your monthly income"
+        body={
+          <>
+            <p>This is your financial command center. Tap <span className="text-white font-medium">Set income</span> above to enter your monthly take-home pay — that&apos;s your paycheck after taxes, not your salary.</p>
+            <p className="mt-1">Once you set it, the progress bar shows exactly how much of your income goes to bills, subscriptions, and credit card minimums — and what&apos;s left over to save or spend freely. The bar turns yellow at 70% and red at 90%.</p>
+          </>
+        }
+      />
 
       {/* Income hero */}
       <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -627,8 +675,25 @@ export default function Dashboard() {
         <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })} />
         <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })} />
         <StatCard label="Trials" value={fmt(trialsTotal)} sub={`${trials.length} running`} color={TYPE_COLORS.trial} onClick={() => setActiveCard({ label: "Trials", color: TYPE_COLORS.trial, filterType: "trial" })} />
-        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
+        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items + credit`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
       </div>
+
+      {/* Credit card summary strip */}
+      {creditCards.length > 0 && (
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-[#38BDF8]/20 bg-[#38BDF8]/5 px-5 py-4 cursor-pointer hover:bg-[#38BDF8]/10 transition" onClick={() => router.push("/credit")}>
+          <div className="flex items-center gap-3">
+            <CreditCard size={18} className="text-[#38BDF8]" />
+            <div>
+              <p className="text-sm font-bold text-white">Credit Card Debt</p>
+              <p className="text-xs text-gray-400">{creditCards.length} card{creditCards.length !== 1 ? "s" : ""} · {creditMinTotal > 0 ? `${fmt(creditMinTotal)}/mo min payments` : "no min payments set"}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-black text-white">{fmt(creditBalanceTotal)}</p>
+            <p className="text-xs text-[#38BDF8]">View cards</p>
+          </div>
+        </div>
+      )}
 
       {activeCard && (
         <ItemsModal

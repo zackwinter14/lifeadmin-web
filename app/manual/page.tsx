@@ -7,8 +7,10 @@ import { createClient } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp,
-  Repeat, Receipt, Zap, DollarSign, Clock, ArrowRightLeft,
+  Repeat, Receipt, Zap, DollarSign, Clock, ArrowRightLeft, CreditCard,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import HelpTip from "@/components/HelpTip";
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
 
@@ -300,6 +302,7 @@ export default function ManualPage() {
 
   const [user, setUser] = useState<any>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [creditCards, setCreditCards] = useState<{ id: string; name: string; last_four: string | null; credit_limit: number; current_balance: number; min_payment: number | null; due_date: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [income, setIncome] = useState(0);
   const [incomeInput, setIncomeInput] = useState("");
@@ -332,6 +335,12 @@ export default function ManualPage() {
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (data) setItems((data as Item[]).filter(i => !i.source || i.source === "manual"));
+
+    const { data: ccData } = await supabase
+      .from("credit_cards")
+      .select("id, name, last_four, credit_limit, current_balance, min_payment, due_date")
+      .eq("user_id", userId);
+    if (ccData) setCreditCards(ccData);
   }, [supabase]);
 
   async function moveItemType(id: string, newType: ItemType) {
@@ -472,7 +481,9 @@ export default function ManualPage() {
   const billsTotal    = bills.reduce((a, b) => a + b.amount, 0);
   const trialsTotal   = trials.reduce((a, b) => a + b.amount, 0);
   const expensesTotal = expenses.reduce((a, b) => a + b.amount, 0);
-  const totalSpend    = subsTotal + billsTotal + trialsTotal + expensesTotal;
+  const creditMinTotal = creditCards.reduce((s, c) => s + (c.min_payment || 0), 0);
+  const creditBalanceTotal = creditCards.reduce((s, c) => s + (c.current_balance || 0), 0);
+  const totalSpend    = subsTotal + billsTotal + trialsTotal + expensesTotal + creditMinTotal;
   const remaining     = income - totalSpend;
   const spendPct      = income > 0 ? Math.min(Math.round((totalSpend / income) * 100), 100) : 0;
 
@@ -481,10 +492,31 @@ export default function ManualPage() {
     { name: "Bills", value: billsTotal, color: TYPE_COLORS.bill },
     { name: "Trials", value: trialsTotal, color: TYPE_COLORS.trial },
     { name: "Expenses", value: expensesTotal, color: TYPE_COLORS.expense },
+    { name: "Credit Payments", value: creditMinTotal, color: "#38BDF8" },
   ].filter(d => d.value > 0);
 
   // Upcoming in next 7 days
   const today = new Date();
+  const creditDueThisWeek = creditCards
+    .filter(c => c.due_date)
+    .map(c => {
+      const day = parseInt(c.due_date!);
+      if (isNaN(day)) return null;
+      let target = new Date(today.getFullYear(), today.getMonth(), day);
+      if (target <= today) target.setMonth(target.getMonth() + 1);
+      const daysUntil = Math.ceil((target.getTime() - today.getTime()) / 86400000);
+      if (daysUntil < 0 || daysUntil > 7) return null;
+      return {
+        id: "cc_" + c.id,
+        name: c.name + (c.last_four ? ` ···· ${c.last_four}` : ""),
+        amount: c.min_payment || c.current_balance || 0,
+        color: "#38BDF8",
+        type: "bill" as ItemType,
+        autopay: false,
+        daysUntil,
+      };
+    })
+    .filter(Boolean) as { id: string; name: string; amount: number; color: string; type: ItemType; autopay: boolean; daysUntil: number }[];
   const MONTH_MAP: Record<string, number> = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
   const upcoming = items
     .filter(i => i.due_date && i.type !== "expense")
@@ -505,6 +537,7 @@ export default function ManualPage() {
       return { ...i, daysUntil };
     })
     .filter(i => i.daysUntil >= 0 && i.daysUntil <= 7)
+    .concat(creditDueThisWeek as any[])
     .sort((a, b) => a.daysUntil - b.daysUntil);
 
   const sections: { type: ItemType; label: string; icon: React.ReactNode; items: Item[]; total: number }[] = [
@@ -524,6 +557,21 @@ export default function ManualPage() {
           Track everything manually — subscriptions, bills, expenses, and income.
         </p>
       </div>
+
+      <HelpTip
+        storageKey="manual_categories"
+        title="What goes in each category?"
+        color="#FFB300"
+        body={
+          <>
+            <p><span className="text-[#3EA758] font-semibold">Subscriptions</span> — services billed on a repeating schedule: Netflix, Spotify, gym memberships, software. Add these first since they&apos;re the easiest to forget about.</p>
+            <p className="mt-1"><span className="text-[#FFB300] font-semibold">Bills</span> — utilities, rent, phone, insurance. These are fixed monthly obligations even if the amount changes slightly.</p>
+            <p className="mt-1"><span className="text-[#38BDF8] font-semibold">Trials</span> — free trials that could charge you soon. Add them so you don&apos;t get surprised when the trial ends.</p>
+            <p className="mt-1"><span className="text-[#FF6B35] font-semibold">Expenses</span> — one-time or irregular purchases. Groceries, gas, dining out. Tracking these helps you understand where your &ldquo;extra&rdquo; money goes.</p>
+            <p className="mt-1">If something lands in the wrong section, tap the colored pill on any item to move it.</p>
+          </>
+        }
+      />
 
       {/* Income hero */}
       <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -583,12 +631,29 @@ export default function ManualPage() {
         )}
       </div>
 
+      {/* Credit card summary strip */}
+      {creditCards.length > 0 && (
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-[#38BDF8]/20 bg-[#38BDF8]/5 px-5 py-4 cursor-pointer hover:bg-[#38BDF8]/10 transition" onClick={() => router.push("/credit")}>
+          <div className="flex items-center gap-3">
+            <CreditCard size={18} className="text-[#38BDF8]" />
+            <div>
+              <p className="text-sm font-bold text-white">Credit Card Debt</p>
+              <p className="text-xs text-gray-400">{creditCards.length} card{creditCards.length !== 1 ? "s" : ""} · {creditMinTotal > 0 ? `${fmt(creditMinTotal)}/mo min payments` : "no min payments set"}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-black text-white">{fmt(creditBalanceTotal)}</p>
+            <p className="text-xs text-[#38BDF8]">View cards</p>
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })} />
         <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })} />
         <StatCard label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} this month`} color={TYPE_COLORS.expense} onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, filterType: "expense" })} />
-        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
+        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items + credit`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
       </div>
 
       {activeCard && (

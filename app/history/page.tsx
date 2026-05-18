@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { History, RefreshCw, Search, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import MerchantLogo from "@/components/MerchantLogo";
 import { simplifyName } from "@/lib/merchantUtils";
+import HelpTip from "@/components/HelpTip";
 
 interface Transaction {
   id: string;
@@ -105,6 +106,19 @@ export default function HistoryPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+
+      <HelpTip
+        storageKey="history_explainer"
+        title="Reading your transaction history"
+        color="#38BDF8"
+        body={
+          <>
+            <p>This shows every transaction pulled from your connected bank account. Merchant names are cleaned up — &ldquo;NFLX*8005714700&rdquo; becomes &ldquo;Netflix&rdquo; — so they&apos;re easier to read at a glance.</p>
+            <p className="mt-1">Tap any row to reveal the original bank description, in case you don&apos;t recognize a simplified name.</p>
+            <p className="mt-1">Use the <span className="text-white font-medium">7d / 30d / 90d</span> buttons to zoom out and see patterns over time. The income and expense totals at the top update as you filter.</p>
+          </>
+        }
+      />
 
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">

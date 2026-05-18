@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { CreditCard, Plus, Trash2, X, Check, AlertTriangle } from "lucide-react";
+import HelpTip from "@/components/HelpTip";
 
 interface Card {
   id: string;
@@ -209,6 +210,20 @@ export default function CreditPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+
+      <HelpTip
+        storageKey="credit_utilization"
+        title="Credit utilization — the number that matters most"
+        color="#38BDF8"
+        body={
+          <>
+            <p>Utilization is how much of your credit limit you&apos;re using. It makes up about 30% of your credit score — second only to payment history.</p>
+            <p className="mt-1"><span className="text-[#3EA758] font-semibold">Under 10%</span> is excellent. <span className="text-[#FFB300] font-semibold">10–30%</span> is good. Above 30% starts dragging your score down — even if you pay on time every month.</p>
+            <p className="mt-1">To improve: pay down your highest-utilization card first, or ask your card issuer for a credit limit increase (which lowers your percentage without paying anything).</p>
+            <p className="mt-1">Tap any card&apos;s balance to update it after you make a payment.</p>
+          </>
+        }
+      />
 
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">

@@ -6,6 +6,7 @@ import { Repeat, RefreshCw, Plus } from "lucide-react";
 import AddItemModal from "@/components/AddItemModal";
 import MerchantLogo from "@/components/MerchantLogo";
 import { simplifyName } from "@/lib/merchantUtils";
+import HelpTip from "@/components/HelpTip";
 
 interface RecurringItem {
   id: string;
@@ -24,6 +25,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   bill: "#FFB300",
   loan: "#FF6B35",
   income: "#38BDF8",
+  credit: "#38BDF8",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -31,6 +33,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   bill: "Bill",
   loan: "Loan",
   income: "Income",
+  credit: "Credit Card",
 };
 
 function fmt(n: number) {
@@ -100,6 +103,36 @@ export default function UpcomingCharges() {
         .gte("due_date", today)
         .or("status.eq.active,status.is.null");
 
+      // Pull credit card payment due dates
+      const { data: creditData } = await supabase
+        .from("credit_cards")
+        .select("id, name, last_four, min_payment, current_balance, due_date")
+        .eq("user_id", user.id)
+        .not("due_date", "is", null);
+
+      const creditItems = (creditData || [])
+        .map((c: any) => {
+          const day = parseInt(c.due_date);
+          if (isNaN(day)) return null;
+          const now = new Date();
+          let target = new Date(now.getFullYear(), now.getMonth(), day);
+          if (target <= now) target.setMonth(target.getMonth() + 1);
+          const nextDate = target.toISOString().slice(0, 10);
+          const amount = c.min_payment || c.current_balance || 0;
+          return {
+            id: "cc_" + c.id,
+            clean_merchant_name: c.name + (c.last_four ? ` ···· ${c.last_four}` : ""),
+            merchant_name: c.name,
+            category: "credit",
+            frequency: "MONTHLY",
+            last_amount: amount,
+            average_amount: amount,
+            next_predicted_date: nextDate,
+            is_active: true,
+          };
+        })
+        .filter(Boolean) as RecurringItem[];
+
       const plaid = (plaidData || []).map((p: any) => ({
         id: "p_" + p.id,
         clean_merchant_name: p.clean_merchant_name,
@@ -127,7 +160,7 @@ export default function UpcomingCharges() {
           is_active: true,
         }));
 
-      const all = [...plaid, ...manual].sort((a, b) =>
+      const all = [...plaid, ...manual, ...creditItems].sort((a, b) =>
         a.next_predicted_date.localeCompare(b.next_predicted_date)
       );
 
@@ -171,6 +204,13 @@ export default function UpcomingCharges() {
       </div>
 
       <AddItemModal open={showAdd} onClose={() => setShowAdd(false)} onAdded={() => window.location.reload()} />
+
+      <HelpTip
+        storageKey="upcoming_charges"
+        title="How upcoming charges are found"
+        color="#3EA758"
+        body="We scan your bank history for recurring patterns — same merchant, similar amount, regular schedule — and predict your next charge date. Credit card payment due dates also appear here. Use + Add to manually track anything we miss."
+      />
 
       {items.length === 0 ? (
         <div className="py-6 text-center">

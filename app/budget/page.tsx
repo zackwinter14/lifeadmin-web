@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Plus, X, Target } from "lucide-react";
+import { Plus, X, Target, CreditCard } from "lucide-react";
+import HelpTip from "@/components/HelpTip";
 
 interface Item {
   id: string;
@@ -34,6 +35,7 @@ export default function BudgetPage() {
   const supabase = createClient();
 
   const [items, setItems] = useState<Item[]>([]);
+  const [creditCards, setCreditCards] = useState<{ id: string; name: string; min_payment: number | null; current_balance: number }[]>([]);
   const [income, setIncome] = useState(0);
   const [loading, setLoading] = useState(true);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -60,6 +62,12 @@ export default function BudgetPage() {
         .eq("user_id", user.id)
         .neq("type", "expense");
       if (itemsData) setItems(itemsData as Item[]);
+
+      const { data: ccData } = await supabase
+        .from("credit_cards")
+        .select("id, name, min_payment, current_balance")
+        .eq("user_id", user.id);
+      if (ccData) setCreditCards(ccData);
 
       try {
         const stored = localStorage.getItem("budget_goals_v2");
@@ -96,7 +104,9 @@ export default function BudgetPage() {
   const subsTotal = subs.reduce((a, b) => a + b.amount, 0);
   const billsTotal = bills.reduce((a, b) => a + b.amount, 0);
   const trialsTotal = trials.reduce((a, b) => a + b.amount, 0);
-  const totalSpend = subsTotal + billsTotal + trialsTotal;
+  const creditMinTotal = creditCards.reduce((s, c) => s + (c.min_payment || 0), 0);
+  const creditBalanceTotal = creditCards.reduce((s, c) => s + (c.current_balance || 0), 0);
+  const totalSpend = subsTotal + billsTotal + trialsTotal + creditMinTotal;
   const remaining = income - totalSpend;
   const spendPct = income > 0 ? Math.min((totalSpend / income) * 100, 100) : 0;
 
@@ -118,6 +128,19 @@ export default function BudgetPage() {
         <h1 className="text-3xl font-bold">Budget</h1>
         <p className="mt-1 text-sm text-gray-400">Your income vs. what you&apos;re spending.</p>
       </div>
+
+      <HelpTip
+        storageKey="budget_explainer"
+        title="How to read your budget"
+        color="#00C853"
+        body={
+          <>
+            <p>The bar compares your total fixed spending (bills + subscriptions + credit minimums) against your monthly income. <span className="text-[#00C853] font-semibold">Green</span> means you&apos;re in good shape — under 50% spent. <span className="text-[#FFB300] font-semibold">Yellow</span> is 50–70% — watch it. <span className="text-red-400 font-semibold">Red</span> is over 70% — time to cut something.</p>
+            <p className="mt-1">The <span className="text-white font-medium">money left over</span> is what&apos;s available for food, fun, and saving. A healthy rule of thumb: try to keep at least 20% of your income unspoken for savings.</p>
+            <p className="mt-1"><span className="text-white font-medium">Savings goals</span> below show how many months it would take to reach each target using your leftover amount — so you can see exactly when you&apos;d hit your vacation fund, emergency fund, or anything else.</p>
+          </>
+        }
+      />
 
       {/* Income vs Spend */}
       <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -154,11 +177,12 @@ export default function BudgetPage() {
       </div>
 
       {/* Category cards */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Subscriptions", amount: subsTotal, color: "#00C853", count: subs.length },
           { label: "Bills",         amount: billsTotal, color: "#FFB300", count: bills.length },
           { label: "Trials",        amount: trialsTotal, color: "#38BDF8", count: trials.length },
+          { label: "Credit Pmts",   amount: creditMinTotal, color: "#38BDF8", count: creditCards.length },
         ].map(cat => (
           <div key={cat.label} className="rounded-2xl border bg-white/[0.02] p-4" style={{ borderColor: cat.color + "38" }}>
             <div className="mb-2 h-2 w-2 rounded-full" style={{ background: cat.color }} />
@@ -173,9 +197,10 @@ export default function BudgetPage() {
       <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
         <p className="mb-4 font-bold">Spending Breakdown</p>
         {[
-          { label: "Subscriptions", amount: subsTotal, color: "#00C853" },
-          { label: "Bills",         amount: billsTotal, color: "#FFB300" },
-          { label: "Trials",        amount: trialsTotal, color: "#38BDF8" },
+          { label: "Subscriptions",   amount: subsTotal,      color: "#00C853" },
+          { label: "Bills",           amount: billsTotal,     color: "#FFB300" },
+          { label: "Trials",          amount: trialsTotal,    color: "#38BDF8" },
+          { label: "Credit Payments", amount: creditMinTotal, color: "#38BDF8" },
         ].map(row => (
           <div key={row.label} className="mb-4 last:mb-0">
             <div className="mb-1.5 flex justify-between text-sm">
@@ -194,6 +219,34 @@ export default function BudgetPage() {
           </div>
         ))}
       </div>
+
+      {/* Credit card debt snapshot */}
+      {creditCards.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-[#38BDF8]/20 bg-[#38BDF8]/5 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <CreditCard size={16} className="text-[#38BDF8]" />
+              <p className="font-bold text-white">Credit Card Debt</p>
+            </div>
+            <p className="text-lg font-black text-white">{fmt(creditBalanceTotal)}</p>
+          </div>
+          <div className="space-y-2">
+            {creditCards.map(c => {
+              const pct = c.current_balance && creditBalanceTotal > 0
+                ? Math.round((c.current_balance / creditBalanceTotal) * 100) : 0;
+              return (
+                <div key={c.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-300">{c.name}</span>
+                  <div className="text-right">
+                    <span className="font-semibold text-white">{fmt(c.current_balance || 0)}</span>
+                    {c.min_payment ? <span className="text-xs text-gray-500 ml-2">min {fmt(c.min_payment)}/mo</span> : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Savings Goals */}
       <div className="mb-4 flex items-center justify-between">
