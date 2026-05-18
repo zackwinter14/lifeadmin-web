@@ -17,6 +17,8 @@ export default function AlertPreferences({ userId, userEmail }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [largeTxEnabled, setLargeTxEnabled] = useState(false);
+  const [largeTxAmount, setLargeTxAmount] = useState("100");
 
   useEffect(() => {
     async function load() {
@@ -31,6 +33,14 @@ export default function AlertPreferences({ userId, userEmail }: Props) {
         setAlertEmail(data.alert_email || userEmail);
       }
       setLoaded(true);
+      try {
+        const ltx = localStorage.getItem(`alert_large_tx_${userId}`);
+        if (ltx) {
+          const parsed = JSON.parse(ltx);
+          setLargeTxEnabled(parsed.enabled ?? false);
+          setLargeTxAmount(String(parsed.amount ?? 100));
+        }
+      } catch {}
     }
     load();
   }, [userId]);
@@ -42,6 +52,12 @@ export default function AlertPreferences({ userId, userEmail }: Props) {
       alert_days_before: daysBefore,
       alert_email: alertEmail,
     }).eq("id", userId);
+    try {
+      localStorage.setItem(`alert_large_tx_${userId}`, JSON.stringify({
+        enabled: largeTxEnabled,
+        amount: parseFloat(largeTxAmount) || 100,
+      }));
+    } catch {}
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -97,6 +113,37 @@ export default function AlertPreferences({ userId, userEmail }: Props) {
             </div>
           </>
         )}
+
+        {/* Large transaction alerts */}
+        <div className="border-t border-white/5 pt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">Large transaction alerts</p>
+              <p className="text-xs text-gray-500">Get notified when a transaction exceeds your threshold</p>
+            </div>
+            <button
+              onClick={() => setLargeTxEnabled(v => !v)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${largeTxEnabled ? "bg-brand" : "bg-white/10"}`}
+            >
+              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${largeTxEnabled ? "left-6" : "left-1"}`} />
+            </button>
+          </div>
+          {largeTxEnabled && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-400 mb-1.5">Alert me when a transaction is over</p>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  type="number"
+                  value={largeTxAmount}
+                  onChange={e => setLargeTxAmount(e.target.value)}
+                  placeholder="100"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 pl-7 pr-3 py-2.5 text-sm text-white outline-none focus:border-brand/50 font-mono"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         <button
           onClick={save}

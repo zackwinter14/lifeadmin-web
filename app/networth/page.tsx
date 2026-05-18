@@ -12,8 +12,54 @@ interface NWItem {
   value: number;
 }
 
+interface Snapshot {
+  date: string;
+  networth: number;
+}
+
 const ASSET_CATS = ["Real Estate", "Vehicle", "Investment", "Cash / Bank", "Retirement", "Crypto", "Other"];
 const LIAB_CATS  = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Other"];
+
+function NWChart({ history }: { history: Snapshot[] }) {
+  if (history.length < 2) return null;
+  const W = 600, H = 120, PAD = 16;
+  const vals = history.map(s => s.networth);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 1;
+  const xStep = (W - PAD * 2) / (history.length - 1);
+  const toY = (v: number) => PAD + ((max - v) / range) * (H - PAD * 2);
+  const points = history.map((s, i) => `${PAD + i * xStep},${toY(s.networth)}`).join(" ");
+  const last = history[history.length - 1];
+  const first = history[0];
+  const up = last.networth >= first.networth;
+  const color = up ? "#00C853" : "#FF3B30";
+  const fillPoints = `${PAD},${H} ${points} ${PAD + (history.length - 1) * xStep},${H}`;
+
+  return (
+    <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Net Worth Over Time</p>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 100 }}>
+        <defs>
+          <linearGradient id="nwgrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon points={fillPoints} fill="url(#nwgrad)" />
+        <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {history.map((s, i) => (
+          <circle key={i} cx={PAD + i * xStep} cy={toY(s.networth)} r="3" fill={color} />
+        ))}
+      </svg>
+      <div className="flex justify-between mt-2">
+        {history.map((s, i) => (
+          <p key={i} className="text-[9px] text-gray-600">{s.date}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function fmt(n: number) {
   return "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -28,6 +74,7 @@ export default function NetWorthPage() {
 
   const [assets, setAssets] = useState<NWItem[]>([]);
   const [liabs, setLiabs]   = useState<NWItem[]>([]);
+  const [history, setHistory] = useState<Snapshot[]>([]);
   const [showAdd, setShowAdd] = useState<"asset" | "liability" | null>(null);
   const [newName, setNewName] = useState("");
   const [newCat,  setNewCat]  = useState(ASSET_CATS[0]);
@@ -40,16 +87,39 @@ export default function NetWorthPage() {
       try {
         const a = localStorage.getItem("nw_assets");
         const l = localStorage.getItem("nw_liabs");
+        const h = localStorage.getItem("nw_history");
         if (a) setAssets(JSON.parse(a));
         if (l) setLiabs(JSON.parse(l));
+        if (h) setHistory(JSON.parse(h));
       } catch {}
       setAuthed(true);
     }
     init();
   }, []);
 
-  function saveAssets(u: NWItem[]) { setAssets(u); try { localStorage.setItem("nw_assets", JSON.stringify(u)); } catch {} }
-  function saveLiabs(u: NWItem[])  { setLiabs(u);  try { localStorage.setItem("nw_liabs",  JSON.stringify(u)); } catch {} }
+  function takeSnapshot(newAssets: NWItem[], newLiabs: NWItem[]) {
+    try {
+      const totalA = newAssets.reduce((a, b) => a + b.value, 0);
+      const totalL = newLiabs.reduce((a, b) => a + b.value, 0);
+      const nw = totalA - totalL;
+      const now = new Date();
+      const label = now.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      const stored = localStorage.getItem("nw_history");
+      const hist: Snapshot[] = stored ? JSON.parse(stored) : [];
+      const lastEntry = hist[hist.length - 1];
+      if (lastEntry && lastEntry.date === label) {
+        hist[hist.length - 1] = { date: label, networth: nw };
+      } else {
+        hist.push({ date: label, networth: nw });
+        if (hist.length > 12) hist.splice(0, hist.length - 12);
+      }
+      localStorage.setItem("nw_history", JSON.stringify(hist));
+      setHistory([...hist]);
+    } catch {}
+  }
+
+  function saveAssets(u: NWItem[]) { setAssets(u); try { localStorage.setItem("nw_assets", JSON.stringify(u)); } catch {} takeSnapshot(u, liabs); }
+  function saveLiabs(u: NWItem[])  { setLiabs(u);  try { localStorage.setItem("nw_liabs",  JSON.stringify(u)); } catch {} takeSnapshot(assets, u); }
 
   function addItem() {
     if (!newName || !newVal) return;
@@ -117,6 +187,8 @@ export default function NetWorthPage() {
           </div>
         )}
       </div>
+
+      <NWChart history={history} />
 
       {/* Assets */}
       <div className="mb-6">

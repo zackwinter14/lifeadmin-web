@@ -191,6 +191,123 @@ const SCRIPTS: Script[] = [
   },
 ];
 
+const CUSTOM_TEMPLATE = `"Hi, I've been a loyal [COMPANY] customer for [YEARS] years and I'm currently paying $[AMOUNT]/month. I've been looking at my budget and need to reduce my expenses. I'd really love to stay with [COMPANY], but I need to get this down. Is there anything you can do for me — maybe a loyalty discount, a promotional rate, or a temporary reduction? I'd love to stay if we can make it work."`;
+
+function CustomScriptGenerator() {
+  const [company, setCompany] = useState("");
+  const [years, setYears] = useState("");
+  const [amount, setAmount] = useState("");
+  const [ask, setAsk] = useState("");
+  const [generated, setGenerated] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function generate() {
+    let script = CUSTOM_TEMPLATE
+      .replace(/\[COMPANY\]/g, company || "the company")
+      .replace(/\[YEARS\]/g, years || "X")
+      .replace(/\[AMOUNT\]/g, amount || "?");
+    if (ask) {
+      script = script.replace(
+        "Is there anything you can do for me — maybe a loyalty discount, a promotional rate, or a temporary reduction?",
+        `I'm specifically looking to ${ask}.`
+      );
+    }
+    setGenerated(script);
+  }
+
+  async function copy() {
+    await navigator.clipboard.writeText(generated);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="mb-6 rounded-2xl border border-purple-500/20 bg-purple-500/[0.04] overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 border border-purple-500/25">
+          <Handshake size={15} className="text-purple-400" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-white">Custom Script Generator</p>
+          <p className="text-xs text-gray-500">Build a personalized negotiation script for any company</p>
+        </div>
+      </div>
+      <div className="p-5 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Company name</p>
+            <input
+              value={company}
+              onChange={e => setCompany(e.target.value)}
+              placeholder="e.g. Comcast"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500/50"
+            />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Years as customer</p>
+            <input
+              type="number"
+              value={years}
+              onChange={e => setYears(e.target.value)}
+              placeholder="e.g. 3"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500/50"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Current monthly amount</p>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+              <input
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="0"
+                className="w-full rounded-xl border border-white/10 bg-black/30 pl-7 pr-3 py-2.5 text-sm text-white outline-none focus:border-purple-500/50 font-mono"
+              />
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">What you&apos;re asking for (optional)</p>
+            <input
+              value={ask}
+              onChange={e => setAsk(e.target.value)}
+              placeholder="e.g. lower my bill by $20"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500/50"
+            />
+          </div>
+        </div>
+        <button
+          onClick={generate}
+          disabled={!company}
+          className="w-full rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-40 hover:opacity-90"
+          style={{ background: "linear-gradient(135deg,#AF52DE,#7B3FE4)" }}
+        >
+          Generate Script
+        </button>
+        {generated && (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Your script</p>
+              <button
+                onClick={copy}
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1 text-xs font-semibold transition hover:bg-white/5"
+                style={{ color: copied ? "#AF52DE" : "#9ca3af" }}
+              >
+                {copied ? <><Check size={11} /> Copied!</> : <><Copy size={11} /> Copy</>}
+              </button>
+            </div>
+            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 text-sm text-gray-200 italic leading-relaxed">
+              {generated}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function NegotiationPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -233,6 +350,8 @@ export default function NegotiationPage() {
         <p className="font-semibold text-orange-300">Most people never ask. Those who do save an average of $500/year.</p>
         <p className="mt-0.5 text-sm text-gray-500">Use the scripts below — they work for any bill, any company.</p>
       </div>
+
+      <CustomScriptGenerator />
 
       {/* Category filter */}
       <div className="mb-6 flex flex-wrap gap-2">

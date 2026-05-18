@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Plus, X, Target, CreditCard } from "lucide-react";
+import { Plus, X, Target, CreditCard, Shield, Pencil, Check } from "lucide-react";
 import HelpTip from "@/components/HelpTip";
 
 interface Item {
@@ -18,6 +18,8 @@ interface Goal {
   label: string;
   target: number;
   priority: "high" | "medium" | "low";
+  deadline?: string;
+  current_saved?: number;
 }
 
 const PRIORITY = {
@@ -43,18 +45,27 @@ export default function BudgetPage() {
   const [goalLabel, setGoalLabel] = useState("");
   const [goalAmount, setGoalAmount] = useState("");
   const [goalPriority, setGoalPriority] = useState<"high" | "medium" | "low">("medium");
+  const [goalDeadline, setGoalDeadline] = useState("");
+  const [goalCurrentSaved, setGoalCurrentSaved] = useState("");
+  const [emergencySavings, setEmergencySavings] = useState(0);
+  const [editingEF, setEditingEF] = useState(false);
+  const [efInput, setEfInput] = useState("");
+  const [efSaving, setEfSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
+      setUserId(user.id);
       const { data: profile } = await supabase
         .from("profiles")
-        .select("monthly_income")
+        .select("monthly_income, emergency_savings")
         .eq("id", user.id)
         .single();
       if (profile?.monthly_income) setIncome(profile.monthly_income);
+      if (profile?.emergency_savings) setEmergencySavings(profile.emergency_savings);
 
       const { data: itemsData } = await supabase
         .from("items")
@@ -86,9 +97,27 @@ export default function BudgetPage() {
 
   function addGoal() {
     if (!goalLabel || !goalAmount) return;
-    const g: Goal = { id: Date.now(), label: goalLabel, target: parseFloat(goalAmount), priority: goalPriority };
+    const g: Goal = {
+      id: Date.now(),
+      label: goalLabel,
+      target: parseFloat(goalAmount),
+      priority: goalPriority,
+      deadline: goalDeadline || undefined,
+      current_saved: goalCurrentSaved ? parseFloat(goalCurrentSaved) : undefined,
+    };
     saveGoals([...goals, g]);
-    setGoalLabel(""); setGoalAmount(""); setGoalPriority("medium"); setModalOpen(false);
+    setGoalLabel(""); setGoalAmount(""); setGoalPriority("medium");
+    setGoalDeadline(""); setGoalCurrentSaved(""); setModalOpen(false);
+  }
+
+  async function saveEmergencyFund() {
+    if (!userId) return;
+    const val = parseFloat(efInput) || 0;
+    setEfSaving(true);
+    await supabase.from("profiles").update({ emergency_savings: val }).eq("id", userId);
+    setEmergencySavings(val);
+    setEditingEF(false);
+    setEfSaving(false);
   }
 
   function removeGoal(id: number) {
@@ -118,7 +147,22 @@ export default function BudgetPage() {
     return order[a.priority] - order[b.priority];
   });
 
-  const monthsToGoal = (target: number) => remaining > 0 ? Math.ceil(target / remaining) : null;
+  const monthsToGoal = (target: number, currentSaved = 0) => {
+    const needed = Math.max(target - currentSaved, 0);
+    return remaining > 0 ? Math.ceil(needed / remaining) : null;
+  };
+
+  function completionDate(months: number | null) {
+    if (months === null) return null;
+    const d = new Date();
+    d.setMonth(d.getMonth() + months);
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  }
+
+  const monthlyExpenses = subsTotal + billsTotal + trialsTotal + creditMinTotal;
+  const efMonths = monthlyExpenses > 0 ? emergencySavings / monthlyExpenses : 0;
+  const efColor = efMonths >= 6 ? "#00C853" : efMonths >= 3 ? "#FFB300" : "#FF3B30";
+  const efLabel = efMonths >= 6 ? "Solid — 6+ months covered" : efMonths >= 3 ? "Getting there — aim for 6 months" : emergencySavings > 0 ? "Low — build toward 3 months" : "Not started";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -248,6 +292,77 @@ export default function BudgetPage() {
         </div>
       )}
 
+      {/* Emergency Fund Tracker */}
+      <div className="mb-6 rounded-2xl border overflow-hidden" style={{ borderColor: efColor + "30", background: efColor + "06" }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <Shield size={15} style={{ color: efColor }} />
+            <p className="font-bold text-white">Emergency Fund</p>
+          </div>
+          <button
+            onClick={() => { setEfInput(String(emergencySavings || "")); setEditingEF(v => !v); }}
+            className="rounded-lg p-1.5 text-gray-500 hover:text-white"
+          >
+            <Pencil size={14} />
+          </button>
+        </div>
+        <div className="p-5">
+          {editingEF ? (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  autoFocus
+                  type="number"
+                  value={efInput}
+                  onChange={e => setEfInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") saveEmergencyFund(); }}
+                  placeholder="0"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 pl-7 pr-3 py-2.5 text-sm outline-none focus:border-brand/50 font-mono font-bold"
+                />
+              </div>
+              <button
+                onClick={saveEmergencyFund}
+                disabled={efSaving}
+                className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+                style={{ background: efColor + "20", color: efColor }}
+              >
+                <Check size={13} /> Save
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-end gap-4 mb-3">
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Saved</p>
+                  <p className="font-mono text-2xl font-black" style={{ color: efColor }}>{fmt(emergencySavings)}</p>
+                </div>
+                <div className="pb-1">
+                  <p className="text-xs text-gray-500 mb-0.5">Covers</p>
+                  <p className="font-mono text-lg font-bold text-white">{efMonths.toFixed(1)} mo</p>
+                </div>
+              </div>
+              <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-white/5">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min((efMonths / 6) * 100, 100)}%`, background: efColor }}
+                />
+              </div>
+              <p className="text-xs" style={{ color: efColor }}>{efLabel}</p>
+              {emergencySavings === 0 && (
+                <button
+                  onClick={() => { setEfInput(""); setEditingEF(true); }}
+                  className="mt-3 text-xs font-semibold underline underline-offset-2"
+                  style={{ color: efColor }}
+                >
+                  Add your emergency savings amount
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Savings Goals */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold">Savings Goals</h2>
@@ -271,24 +386,32 @@ export default function BudgetPage() {
         <div className="space-y-3">
           {sortedGoals.map(g => {
             const p = PRIORITY[g.priority || "medium"];
-            const months = monthsToGoal(g.target);
+            const saved = g.current_saved || 0;
+            const months = monthsToGoal(g.target, saved);
+            const pctSaved = Math.min((saved / g.target) * 100, 100);
+            const cd = completionDate(months);
             return (
               <div key={g.id} className="rounded-2xl border bg-white/[0.02] p-5" style={{ borderColor: p.color + "35" }}>
                 <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold">{g.label}</p>
                       <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: p.bg, color: p.color }}>
-                        {p.label} Priority
+                        {p.label}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-sm text-gray-400">Target: {fmt(g.target)}</p>
+                    <p className="mt-0.5 text-sm text-gray-400">
+                      {saved > 0 ? <>{fmt(saved)} <span className="text-gray-600">of</span> {fmt(g.target)}</> : <>Target: {fmt(g.target)}</>}
+                    </p>
+                    {g.deadline && <p className="text-xs text-gray-600 mt-0.5">Deadline: {new Date(g.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-brand">{months !== null ? `${months} mo` : "∞"}</p>
-                      <p className="text-xs text-gray-500">to reach</p>
-                    </div>
+                    {cd && (
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-brand">{cd}</p>
+                        <p className="text-xs text-gray-500">est. done</p>
+                      </div>
+                    )}
                     <button onClick={() => removeGoal(g.id)} className="rounded-lg p-1.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400">
                       <X size={14} />
                     </button>
@@ -297,11 +420,11 @@ export default function BudgetPage() {
                 <div className="mb-1.5 h-2 w-full overflow-hidden rounded-full bg-white/5">
                   <div
                     className="h-full rounded-full transition-all duration-700"
-                    style={{ width: remaining > 0 ? `${Math.min((remaining / g.target) * 100 * 2, 100)}%` : "0%", background: p.color }}
+                    style={{ width: `${pctSaved}%`, background: p.color }}
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  {fmt(Math.max(remaining, 0))}/mo available · reach goal in {months !== null ? `${months} months` : "—"}
+                  {Math.round(pctSaved)}% saved · {months !== null ? `${months} months to go at ${fmt(Math.max(remaining, 0))}/mo` : "Set income to project timeline"}
                 </p>
               </div>
             );
@@ -335,6 +458,23 @@ export default function BudgetPage() {
                 placeholder="Target amount (e.g. 2000)"
                 className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-brand"
               />
+              <input
+                type="number"
+                value={goalCurrentSaved}
+                onChange={e => setGoalCurrentSaved(e.target.value)}
+                placeholder="Already saved (optional, e.g. 500)"
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-brand"
+              />
+              <div>
+                <p className="mb-1 text-xs font-semibold text-gray-500 uppercase tracking-widest">Target deadline (optional)</p>
+                <input
+                  type="date"
+                  value={goalDeadline}
+                  onChange={e => setGoalDeadline(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-brand text-white"
+                  style={{ colorScheme: "dark" }}
+                />
+              </div>
               <div>
                 <p className="mb-2 text-sm font-bold">Priority Level</p>
                 <div className="grid grid-cols-3 gap-2">

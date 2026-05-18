@@ -12,6 +12,7 @@ import UpcomingCharges from "@/components/UpcomingCharges";
 import HelpTip from "@/components/HelpTip";
 import MerchantLogo from "@/components/MerchantLogo";
 import PriceChangeAlert from "@/components/PriceChangeAlert";
+import HealthScore from "@/components/HealthScore";
 
 type ItemType = "subscription" | "bill" | "trial";
 
@@ -579,6 +580,7 @@ export default function Dashboard() {
         <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
       </div>
 
+      {user && <HealthScore userId={user.id} />}
       {user && <PriceChangeAlert userId={user.id} />}
 
       <HelpTip
