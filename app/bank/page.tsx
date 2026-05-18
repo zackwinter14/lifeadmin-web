@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Landmark, Lock, Check, Loader2 } from "lucide-react";
+import MerchantLogo from "@/components/MerchantLogo";
 import { usePlaidLink } from "react-plaid-link";
 
 interface Item {
@@ -51,7 +52,7 @@ export default function BankPage() {
       if (profile?.is_pro) setIsPro(true);
       if (profile?.plaid_access_token) setPlaidConnected(true);
 
-      const { data } = await supabase.from("items").select("*").eq("user_id", user.id).neq("type", "expense");
+      const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
       if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
       setLoading(false);
     }
@@ -138,9 +139,7 @@ export default function BankPage() {
                 <div className="divide-y divide-white/5">
                   {items.map(item => (
                     <div key={item.id} className="flex items-center gap-3 px-5 py-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-black" style={{ background: item.color || TYPE_COLORS[item.type] || "#3EA758" }}>
-                        {item.name.charAt(0).toUpperCase()}
-                      </div>
+                      <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type] || "#3EA758"} size={40} />
                       <div className="flex-1">
                         <p className="font-semibold">{item.name}</p>
                         <p className="text-xs text-gray-500">
