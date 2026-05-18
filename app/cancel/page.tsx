@@ -62,7 +62,7 @@ export default function CancelPage() {
     setCancelled(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      try { localStorage.setItem("cancelled_items_v1", JSON.stringify([...next])); } catch {}
+      try { localStorage.setItem("cancelled_items_v1", JSON.stringify(Array.from(next))); } catch {}
       return next;
     });
   }
