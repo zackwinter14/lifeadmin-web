@@ -74,6 +74,20 @@
   --grid-color:      rgba(168,85,247,0.08);
 }
 
+[data-theme="pearl"] {
+  --brand-rgb:       229 229 229;
+  --brand-light-rgb: 255 255 255;
+  --brand-dark-rgb:  163 163 163;
+  --brand-hex:       #E5E5E5;
+  --brand-light-hex: #ffffff;
+  --brand-gradient:  linear-gradient(135deg, #ffffff, #d4d4d4);
+  --page-bg:         #0a0a0a;
+  --particle-color:  rgba(229,229,229,var(--particle-alpha, 0.4));
+  --orb-color:       rgba(229,229,229,0.08);
+  --orb-color-light: rgba(255,255,255,0.05);
+  --grid-color:      rgba(229,229,229,0.06);
+}
+
 [data-theme="gold"] {
   --brand-rgb:       245 197 24;
   --brand-light-rgb: 252 211 77;

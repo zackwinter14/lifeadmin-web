@@ -45,6 +45,14 @@ const THEMES = [
     gradient: "linear-gradient(135deg, #A855F7, #C084FC)",
   },
   {
+    id: "pearl",
+    label: "Pearl",
+    description: "White & silver",
+    bg: "#0a0a0a",
+    accent: "#E5E5E5",
+    gradient: "linear-gradient(135deg, #ffffff, #d4d4d4)",
+  },
+  {
     id: "gold",
     label: "Gold",
     description: "Warm amber",
