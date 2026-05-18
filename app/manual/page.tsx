@@ -10,6 +10,7 @@ import {
   Repeat, Receipt, Zap, DollarSign, Clock, ArrowRightLeft, CreditCard,
 } from "lucide-react";
 import HelpTip from "@/components/HelpTip";
+import SubScanner from "@/components/SubScanner";
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
 
@@ -759,6 +760,15 @@ export default function ManualPage() {
 
             {openSections[section.type] && (
               <>
+                {/* Subscription scanner — only in the subscriptions section */}
+                {section.type === "subscription" && user && (
+                  <SubScanner
+                    userId={user.id}
+                    trackedNames={items.map(i => i.name)}
+                    onAdded={() => loadData(user.id)}
+                  />
+                )}
+
                 {section.items.length === 0 ? (
                   <div className="border-t border-white/5 px-5 py-8 text-center">
                     <p className="text-sm text-gray-500 mb-3">No {section.label.toLowerCase()} added yet.</p>
