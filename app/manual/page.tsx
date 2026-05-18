@@ -9,7 +9,6 @@ import {
   Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp,
   Repeat, Receipt, Zap, DollarSign, Clock, ArrowRightLeft, CreditCard,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import HelpTip from "@/components/HelpTip";
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
