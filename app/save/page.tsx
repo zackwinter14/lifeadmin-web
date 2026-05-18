@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Check, Plus, X, RefreshCw } from "lucide-react";
 import MerchantLogo from "@/components/MerchantLogo";
+import { getCancelLink } from "@/lib/cancelLinks";
 
 interface Item {
   id: string;
@@ -25,71 +26,6 @@ const TYPE_COLORS = {
   bill: "#FFB300",
   trial: "#38BDF8",
 };
-
-const CANCEL_LINKS: Record<string, string> = {
-  netflix: "https://www.netflix.com/cancelplan",
-  spotify: "https://www.spotify.com/account/subscription/cancel",
-  hulu: "https://secure.hulu.com/account/cancel",
-  "disney+": "https://www.disneyplus.com/account/subscription",
-  "disney plus": "https://www.disneyplus.com/account/subscription",
-  "apple tv": "https://support.apple.com/billing",
-  "apple music": "https://support.apple.com/billing",
-  "apple one": "https://support.apple.com/billing",
-  "youtube premium": "https://www.youtube.com/paid_memberships",
-  youtube: "https://www.youtube.com/paid_memberships",
-  "amazon prime": "https://www.amazon.com/mc/manage",
-  amazon: "https://www.amazon.com/mc/manage",
-  hbo: "https://www.max.com/settings/subscription",
-  max: "https://www.max.com/settings/subscription",
-  "paramount+": "https://www.paramountplus.com/account/",
-  paramount: "https://www.paramountplus.com/account/",
-  peacock: "https://www.peacocktv.com/account",
-  crunchyroll: "https://www.crunchyroll.com/account/membership",
-  "adobe creative cloud": "https://account.adobe.com/plans",
-  adobe: "https://account.adobe.com/plans",
-  dropbox: "https://www.dropbox.com/account/plan",
-  notion: "https://www.notion.so/my-account",
-  slack: "https://app.slack.com/account/settings",
-  "microsoft 365": "https://account.microsoft.com/services",
-  office: "https://account.microsoft.com/services",
-  "google one": "https://one.google.com/settings",
-  icloud: "https://support.apple.com/billing",
-  duolingo: "https://www.duolingo.com/settings/subscription",
-  nytimes: "https://www.nytimes.com/subscription/manage",
-  "new york times": "https://www.nytimes.com/subscription/manage",
-  audible: "https://www.audible.com/account/subscription-settings",
-  kindle: "https://www.amazon.com/mc/manage",
-  peloton: "https://www.onepeloton.com/account",
-  calm: "https://app.calm.com/manage-subscription",
-  headspace: "https://www.headspace.com/settings/subscription",
-  noom: "https://web.noom.com/account/subscription",
-  "weight watchers": "https://cmx.weightwatchers.com/account",
-  ww: "https://cmx.weightwatchers.com/account",
-  "planet fitness": "https://www.planetfitness.com/faq",
-  "anytime fitness": "https://www.anytimefitness.com",
-  experian: "https://www.experian.com/consumer/cac/ManageSubscriptions.do",
-  "identity guard": "https://www.identityguard.com/account",
-  lifelock: "https://account.lifelock.com",
-  "nord vpn": "https://my.nordaccount.com/dashboard/subscriptions/",
-  nordvpn: "https://my.nordaccount.com/dashboard/subscriptions/",
-  expressvpn: "https://www.expressvpn.com/vpn-software/cancel-subscription",
-  grammarly: "https://www.grammarly.com/settings/subscription",
-  canva: "https://www.canva.com/settings/purchase-history",
-  "1password": "https://my.1password.com/billing",
-  lastpass: "https://lastpass.com/settings.php",
-  bumble: "https://bumble.com/en-us/manage-subscription",
-  tinder: "https://account.gotinder.com/settings",
-  match: "https://accounts.match.com/subscription/my-subscription",
-  linkedin: "https://www.linkedin.com/premium/products/",
-};
-
-function getCancelLink(name: string): string | null {
-  const lower = name.toLowerCase();
-  for (const [key, url] of Object.entries(CANCEL_LINKS)) {
-    if (lower.includes(key)) return url;
-  }
-  return null;
-}
 
 const RATING_LABELS: Record<number, string> = {
   1: "Not using it",

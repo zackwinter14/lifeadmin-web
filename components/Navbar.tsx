@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank, CreditCard, BarChart2 } from "lucide-react";
+import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank, CreditCard, BarChart2, CircleX } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -19,6 +19,7 @@ const MENU_ITEMS = [
   { href: "/rewards",       label: "Rewards",          icon: Trophy,        color: "#F5C518" },
   { href: "/insights",      label: "Insights",         icon: BarChart2,     color: "#AF52DE" },
   { href: "/tools",         label: "Free Tools",       icon: Calculator,    color: "#3EA758" },
+  { href: "/cancel",        label: "Cancel Manager",   icon: CircleX,       color: "#FF3B30" },
 ];
 
 export default function Navbar() {
@@ -81,6 +82,7 @@ export default function Navbar() {
     { href: "/upcoming", label: "Upcoming" },
     { href: "/budget",   label: "Budget"   },
     { href: "/save",     label: "Save"     },
+    { href: "/cancel",   label: "Cancel"   },
     { href: "/insights", label: "Insights" },
     { href: "/gas",      label: "Gas"      },
   ];

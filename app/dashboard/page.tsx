@@ -580,9 +580,6 @@ export default function Dashboard() {
         <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
       </div>
 
-      {user && <HealthScore userId={user.id} />}
-      {user && <PriceChangeAlert userId={user.id} />}
-
       <HelpTip
         storageKey="dashboard_welcome"
         title="Start here — set your monthly income"
@@ -666,6 +663,8 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {user && <PriceChangeAlert userId={user.id} />}
 
       {/* Upcoming recurring charges from Plaid */}
       <UpcomingCharges />
@@ -825,6 +824,8 @@ export default function Dashboard() {
           <ChevronRight size={16} className="text-gray-600" />
         </button>
       </div>
+
+      {user && <HealthScore userId={user.id} />}
     </div>
   );
 }
