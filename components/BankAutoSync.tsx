@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 
-const THROTTLE_MS = 15 * 60 * 1000; // 15 minutes between syncs
+const THROTTLE_MS = 15 * 60 * 1000;
 const EDGE_BASE = "https://roamiiqvmveykqdlwsav.supabase.co/functions/v1";
 
 export default function BankAutoSync() {
@@ -11,24 +11,26 @@ export default function BankAutoSync() {
 
   useEffect(() => {
     async function maybeSync() {
-      // Only run for logged-in users with a bank connected
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("plaid_access_token")
+        .select("plaid_access_token, monthly_income")
         .eq("id", user.id)
         .single();
 
       if (!profile?.plaid_access_token) return;
 
-      // Throttle: skip if synced within the last 15 minutes
       const key = `plaid_auto_sync_last_${user.id}`;
       const last = parseInt(localStorage.getItem(key) || "0", 10);
-      if (Date.now() - last < THROTTLE_MS) return;
+      const shouldSync = Date.now() - last >= THROTTLE_MS;
 
-      // Fire both Edge Functions in parallel — don't await, don't block the page
+      // Always detect income from existing transactions on every page load
+      await detectAndSaveIncome(user.id, profile.monthly_income || 0);
+
+      if (!shouldSync) return;
+
       localStorage.setItem(key, String(Date.now()));
       Promise.allSettled([
         fetch(`${EDGE_BASE}/plaid-transactions-sync`, {
@@ -41,7 +43,40 @@ export default function BankAutoSync() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: user.id }),
         }),
-      ]).catch(() => {});
+      ]).then(async () => {
+        // Re-detect income after sync completes with fresh data
+        await detectAndSaveIncome(user.id, profile.monthly_income || 0);
+      }).catch(() => {});
+    }
+
+    async function detectAndSaveIncome(userId: string, currentIncome: number) {
+      try {
+        const thisMonthStart = new Date();
+        thisMonthStart.setDate(1);
+        thisMonthStart.setHours(0, 0, 0, 0);
+        const since = thisMonthStart.toISOString().slice(0, 10);
+
+        const { data: txns } = await supabase
+          .from("transactions")
+          .select("amount")
+          .eq("user_id", userId)
+          .gt("amount", 0)
+          .gte("date", since);
+
+        if (!txns || txns.length === 0) return;
+
+        const detected = Math.round(txns.reduce((sum, t) => sum + Number(t.amount), 0));
+        if (detected <= 0) return;
+
+        // Only update if detected income differs from current by more than $50
+        // to avoid overwriting a manually-set income with noise
+        if (Math.abs(detected - currentIncome) > 50) {
+          await supabase
+            .from("profiles")
+            .update({ monthly_income: detected })
+            .eq("id", userId);
+        }
+      } catch {}
     }
 
     maybeSync();
