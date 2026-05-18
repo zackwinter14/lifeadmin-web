@@ -56,32 +56,78 @@ export default function IncomePage() {
   const [showSideAdd, setShowSideAdd] = useState(false);
   const [sideForm, setSideForm] = useState({ month: new Date().toISOString().slice(0, 7), amount: "", note: "" });
 
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
-      try {
-        const stored = localStorage.getItem("income_entries");
-        if (stored) setEntries(JSON.parse(stored));
-        const sl = localStorage.getItem("side_income_log_v1");
-        if (sl) setSideLog(JSON.parse(sl));
-      } catch {}
+      setUser(user);
+
+      // Load from Supabase first, fallback to localStorage
+      const { data: dbEntries } = await supabase
+        .from("income_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (dbEntries && dbEntries.length > 0) {
+        setEntries(dbEntries);
+      } else {
+        try {
+          const stored = localStorage.getItem("income_entries");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setEntries(parsed);
+            // Migrate localStorage to Supabase
+            if (parsed.length > 0) {
+              await supabase.from("income_entries").upsert(
+                parsed.map((e: IncomeEntry) => ({ ...e, user_id: user.id }))
+              );
+            }
+          }
+        } catch {}
+      }
+
+      const { data: dbSide } = await supabase
+        .from("side_income_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("month", { ascending: false });
+
+      if (dbSide && dbSide.length > 0) {
+        setSideLog(dbSide);
+      } else {
+        try {
+          const sl = localStorage.getItem("side_income_log_v1");
+          if (sl) {
+            const parsed = JSON.parse(sl);
+            setSideLog(parsed);
+            if (parsed.length > 0) {
+              await supabase.from("side_income_logs").upsert(
+                parsed.map((e: SideLog) => ({ ...e, user_id: user.id }))
+              );
+            }
+          }
+        } catch {}
+      }
+
       setAuthed(true);
     }
     init();
   }, []);
 
-  function save(updated: IncomeEntry[]) {
+  async function save(updated: IncomeEntry[]) {
     setEntries(updated);
     try { localStorage.setItem("income_entries", JSON.stringify(updated)); } catch {}
   }
 
-  function saveSideLog(updated: SideLog[]) {
+  async function saveSideLog(updated: SideLog[]) {
     setSideLog(updated);
     try { localStorage.setItem("side_income_log_v1", JSON.stringify(updated)); } catch {}
   }
 
-  function addEntry() {
+  async function addEntry() {
     if (!form.source || !form.amount) return;
     const entry: IncomeEntry = {
       id: `i${Date.now()}`,
@@ -92,27 +138,43 @@ export default function IncomePage() {
       note: form.note || undefined,
       category: form.category,
     };
-    save([entry, ...entries]);
+    const updated = [entry, ...entries];
+    save(updated);
+    if (user) {
+      await supabase.from("income_entries").upsert({ ...entry, user_id: user.id });
+    }
     setForm({ source: "", amount: "", frequency: "monthly", date: "", note: "", category: "primary" });
     setShowAdd(false);
   }
 
-  function addSideLog() {
+  async function addSideLog() {
     if (!sideForm.amount) return;
     const entry: SideLog = { id: `sl${Date.now()}`, month: sideForm.month, amount: parseFloat(sideForm.amount) || 0, note: sideForm.note };
-    saveSideLog([entry, ...sideLog]);
+    const updated = [entry, ...sideLog];
+    saveSideLog(updated);
+    if (user) {
+      await supabase.from("side_income_logs").upsert({ ...entry, user_id: user.id });
+    }
     setSideForm({ month: new Date().toISOString().slice(0, 7), amount: "", note: "" });
     setShowSideAdd(false);
   }
 
-  function deleteEntry(id: string) {
-    save(entries.filter(e => e.id !== id));
+  async function deleteEntry(id: string) {
+    const updated = entries.filter(e => e.id !== id);
+    save(updated);
     setEditingId(null);
+    if (user) {
+      await supabase.from("income_entries").delete().eq("id", id).eq("user_id", user.id);
+    }
   }
 
-  function updateEntry(id: string, updates: Partial<IncomeEntry>) {
-    save(entries.map(e => e.id === id ? { ...e, ...updates } : e));
+  async function updateEntry(id: string, updates: Partial<IncomeEntry>) {
+    const updated = entries.map(e => e.id === id ? { ...e, ...updates } : e);
+    save(updated);
     setEditingId(null);
+    if (user) {
+      await supabase.from("income_entries").update(updates).eq("id", id).eq("user_id", user.id);
+    }
   }
 
   if (!authed) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
