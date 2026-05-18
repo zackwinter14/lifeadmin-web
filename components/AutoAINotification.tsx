@@ -5,7 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Bot, X, ChevronRight } from "lucide-react";
 
-const CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_MS = 24 * 60 * 60 * 1000;
+const BLOCKED = ["/autoai", "/login", "/signup", "/", "/features", "/pricing", "/tools", "/transparency"];
 
 export default function AutoAINotification() {
   const supabase = createClient();
@@ -15,23 +16,21 @@ export default function AutoAINotification() {
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Don't show on the AutoAI page itself or on public pages
-  const blocked = ["/autoai", "/login", "/signup", "/", "/features", "/pricing", "/tools", "/transparency"];
-  if (blocked.some(p => pathname === p || pathname?.startsWith(p + "/"))) return null;
+  const isBlocked = BLOCKED.some(p => pathname === p || pathname?.startsWith(p + "/"));
 
   useEffect(() => {
+    if (isBlocked) return;
+
     async function maybeShow() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
 
-      // Check if already dismissed today
       const dismissKey = `autoai_notif_dismissed_${user.id}`;
       const cacheKey = `autoai_notif_cache_${user.id}`;
       const dismissed = parseInt(localStorage.getItem(dismissKey) || "0", 10);
       if (Date.now() - dismissed < CACHE_MS) return;
 
-      // Check if we have a cached message from today
       try {
         const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
         if (cached.ts && Date.now() - cached.ts < CACHE_MS && cached.message) {
@@ -41,7 +40,6 @@ export default function AutoAINotification() {
         }
       } catch {}
 
-      // Fetch a fresh insight — fire and don't block the page
       try {
         const res = await fetch("/api/autoai/insight", {
           method: "POST",
@@ -59,7 +57,7 @@ export default function AutoAINotification() {
     }
 
     maybeShow();
-  }, [pathname]);
+  }, [pathname, isBlocked]);
 
   function dismiss() {
     setVisible(false);
@@ -75,7 +73,6 @@ export default function AutoAINotification() {
 
   if (!visible || !message) return null;
 
-  // Truncate to first 2 sentences for the card preview
   const preview = message.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
 
   return (
