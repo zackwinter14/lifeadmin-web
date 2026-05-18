@@ -209,10 +209,10 @@ function PrivacyPage({ onBack }: { onBack: () => void }) {
       { label: "Plaid security", detail: "Bank connections use Plaid — SOC 2 Type II certified." },
     ]},
     { title: "Purchases & Refunds", items: [
-      { label: "All purchases are final — no refunds", detail: "All subscription payments — monthly ($10), quarterly ($24.99), or annual ($99.99) — are non-refundable. We offer a 7-day free trial so you can fully evaluate before any charge." },
+      { label: "All purchases are final — no refunds", detail: "All subscription payments — monthly ($6.99/mo) or annual ($49.99/yr) — are non-refundable. We offer a 7-day free trial so you can fully evaluate before any charge." },
       { label: "Cancellation policy", detail: "You may cancel at any time. Cancellation takes effect at the end of the current billing period. You retain Pro access until that date." },
-      { label: "7-day free trial", detail: "New users get a 7-day free trial. No charge during the trial. After 7 days, your plan auto-starts at the monthly rate ($10/mo) unless you selected a different plan or cancelled." },
-      { label: "Referral free month", detail: "Referred users receive 1 free month. After that, their subscription auto-renews at $10/mo. The referring user also receives 1 free month." },
+      { label: "7-day free trial", detail: "New Pro subscribers get a 7-day free trial. No charge during the trial. After 7 days, your plan auto-starts at the rate you selected ($6.99/mo or $49.99/yr) unless you cancel before the trial ends." },
+      { label: "Referral free month", detail: "Referred users receive 1 free month. After that, their subscription auto-renews at $6.99/mo. The referring user also receives 1 free month credited." },
     ]},
     { title: "Applicable Laws", items: [
       { label: "CCPA (California)", detail: "California residents have the right to know, delete, and opt out of the sale of personal information. We do not sell personal information." },

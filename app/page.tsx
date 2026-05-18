@@ -668,7 +668,7 @@ export default function Home() {
               Everything to <span className="gradient-text">take back control</span>
             </h2>
             <p className="mt-4 text-gray-400">
-              Built for people tired of $9.99 charges from apps they don&apos;t remember.
+              Free to use. Built for people tired of mystery charges from apps they forgot they had.
             </p>
           </FadeIn>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -715,11 +715,14 @@ export default function Home() {
       <section className="border-t border-white/5 bg-gradient-to-b from-transparent to-brand/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <FadeIn>
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm font-semibold text-brand mb-6">
+              No credit card required · Free forever
+            </div>
             <h2 className="text-4xl font-bold md:text-5xl">
-              We&apos;re cheaper. <br />
-              And we don&apos;t hide a paywall.
+              Free to start. <br />
+              <span className="gradient-text">No paywalls hiding the good stuff.</span>
             </h2>
-            <p className="mt-4 text-gray-400">Compare us to the others.</p>
+            <p className="mt-4 text-gray-400">The free tier is a fully working app — not a demo. Upgrade to Pro only if you want bank sync and receipt scanning.</p>
           </FadeIn>
 
           <FadeIn delay={0.1} className="mt-12 overflow-x-auto rounded-2xl border border-white/10">
@@ -743,8 +746,8 @@ export default function Home() {
                 <Row label="Household sharing" us="Yes" them1="No" them2="No" />
                 <Row label="Bill negotiation scripts" us="Yes" them1="No" them2="No" />
                 <Row label="Spending history" us="Yes" them1="Yes" them2="Limited" />
-                <Row label="Monthly cost" us="$6.99" them1="$12" them2="$3" />
-                <Row label="Yearly price" us="$49.99" them1="$72" them2="$36" />
+                <Row label="Monthly cost" us="Free / $6.99 Pro" them1="$12" them2="$3" />
+                <Row label="Yearly price" us="Free / $49.99 Pro" them1="$72" them2="$36" />
                 <Row label="No data selling" us="Yes" them1="No" them2="Yes" />
                 <Row label="iOS + Web" us="Yes" them1="Yes" them2="iOS only" />
               </tbody>
