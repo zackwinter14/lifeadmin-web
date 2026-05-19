@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Landmark, Lock, Check, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
+import { Landmark, Lock, Check, Loader2, RefreshCw, AlertTriangle, Sparkles, Trash2, X } from "lucide-react";
 import MerchantLogo from "@/components/MerchantLogo";
 import SubScanner from "@/components/SubScanner";
 import { usePlaidLink } from "react-plaid-link";
@@ -27,6 +27,9 @@ const TYPE_COLORS: Record<string, string> = {
   expense: "#FF6B35",
 };
 
+const ALL_TYPES = ["subscription", "bill", "expense"] as const;
+type ItemType = typeof ALL_TYPES[number];
+
 function fmt(n: number) {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -44,9 +47,19 @@ export default function BankPage() {
   const [plaidConnected, setPlaidConnected] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [categorizing, setCategorizing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [needsReconnect, setNeedsReconnect] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "subscription" | "bill" | "expense">("all");
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [movingId, setMovingId] = useState<string | null>(null);
+
+  async function loadItems(userId: string) {
+    const { data } = await supabase.from("items").select("*").eq("user_id", userId);
+    if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
+  }
 
   useEffect(() => {
     async function init() {
@@ -63,11 +76,9 @@ export default function BankPage() {
       const stored = localStorage.getItem(`plaid_last_synced_${user.id}`);
       if (stored) setLastSynced(stored);
 
-      const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
-      if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
+      await loadItems(user.id);
       setLoading(false);
 
-      // Auto-sync on every page visit when bank is connected so data stays fresh
       if (hasToken) {
         setSyncing(true);
         try {
@@ -79,8 +90,7 @@ export default function BankPage() {
           const now = new Date().toISOString();
           localStorage.setItem(`plaid_last_synced_${user.id}`, now);
           setLastSynced(now);
-          const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
-          if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+          await loadItems(user.id);
         } catch {}
         setSyncing(false);
       }
@@ -124,14 +134,12 @@ export default function BankPage() {
         setSyncMessage("Bank connection expired. Please reconnect.");
         return;
       }
-
       const now = new Date().toISOString();
       localStorage.setItem(`plaid_last_synced_${user.id}`, now);
       setLastSynced(now);
       setNeedsReconnect(false);
-      setSyncMessage("Bank synced.");
-      const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
-      if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+      setSyncMessage(`Synced. ${body.items_created > 0 ? `${body.items_created} new items found.` : "Up to date."}`);
+      await loadItems(user.id);
     } catch {
       setSyncMessage("Connection error. Check your network and try again.");
     } finally {
@@ -139,11 +147,55 @@ export default function BankPage() {
     }
   }
 
+  async function runAIOrganize() {
+    if (!user) return;
+    setCategorizing(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch("/api/plaid/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      setSyncMessage(`AI organized ${body.updated ?? 0} item${body.updated !== 1 ? "s" : ""} into the right categories.`);
+      await loadItems(user.id);
+    } catch {
+      setSyncMessage("AI organize failed. Try again.");
+    } finally {
+      setCategorizing(false);
+    }
+  }
+
+  async function moveItemType(itemId: string, newType: ItemType) {
+    setMovingId(itemId);
+    const color = TYPE_COLORS[newType] || "#3EA758";
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, type: newType, color } : i));
+    await supabase.from("items").update({ type: newType, color }).eq("id", itemId).eq("user_id", user.id);
+    setMovingId(null);
+  }
+
+  async function disconnectBank() {
+    if (!user) return;
+    setDisconnecting(true);
+    await fetch("/api/plaid/disconnect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    localStorage.removeItem(`plaid_last_synced_${user.id}`);
+    setPlaidConnected(false);
+    setItems([]);
+    setLastSynced(null);
+    setConfirmDisconnect(false);
+    setDisconnecting(false);
+    setSyncMessage(null);
+  }
+
   async function onPlaidSuccess(publicToken: string) {
     setDetecting(true);
     setSyncMessage("Connecting your bank...");
     try {
-      // Step 1: Exchange public token → saves access_token to profile
       const exchangeRes = await fetch("/api/plaid/exchange-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,8 +204,6 @@ export default function BankPage() {
       if (!exchangeRes.ok) throw new Error("Token exchange failed");
 
       setSyncMessage("Importing your transactions...");
-
-      // Step 2: Sync transactions, recurring, and auto-create items
       await fetch("/api/plaid/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,25 +213,25 @@ export default function BankPage() {
       const now = new Date().toISOString();
       localStorage.setItem(`plaid_last_synced_${user.id}`, now);
       setLastSynced(now);
+      await loadItems(user.id);
+      setSyncMessage("Bank connected. AI is organizing your items...");
 
-      // Step 3: Reload items from Supabase
-      const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
-      if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+      // Run AI categorization right after first connect
+      await runAIOrganize();
+      await loadItems(user.id);
+      setSyncMessage("Bank connected. Your subscriptions and bills are organized below.");
 
-      setSyncMessage("Bank connected. Review detected subscriptions below.");
-
-      // Step 4: Plaid needs 30-60s on first connect for PRODUCT_NOT_READY. Auto-retry.
+      // Retry after 45s for PRODUCT_NOT_READY
       setTimeout(async () => {
         await fetch("/api/plaid/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: user.id }),
         });
-        const { data: retryFresh } = await supabase.from("items").select("*").eq("user_id", user.id);
-        if (retryFresh) setItems((retryFresh as Item[]).filter(i => i.source && i.source !== "manual"));
+        await loadItems(user.id);
       }, 45000);
 
-    } catch (e: any) {
+    } catch {
       setSyncMessage("Something went wrong — try refreshing the page.");
     }
     setPlaidConnected(true);
@@ -213,14 +263,52 @@ export default function BankPage() {
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
 
-  const total = items.reduce((a, b) => a + b.amount, 0);
+  const subs = items.filter(i => i.type === "subscription");
+  const bills = items.filter(i => i.type === "bill");
+  const expenses = items.filter(i => i.type === "expense");
+  const displayed = activeTab === "all" ? items : items.filter(i => i.type === activeTab);
+  const total = (subs.reduce((a, b) => a + b.amount, 0) + bills.reduce((a, b) => a + b.amount, 0));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Bank Connected</h1>
-        <p className="mt-1 text-sm text-gray-400">Auto-imported from your bank account.</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Bank Accounts</h1>
+          <p className="mt-1 text-sm text-gray-400">Auto-imported from your connected bank.</p>
+        </div>
+        {plaidConnected && !confirmDisconnect && (
+          <button
+            onClick={() => setConfirmDisconnect(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition"
+          >
+            <Trash2 size={12} /> Disconnect Bank
+          </button>
+        )}
       </div>
+
+      {/* Disconnect confirmation */}
+      {confirmDisconnect && (
+        <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
+          <p className="font-semibold text-red-400 mb-1">Disconnect your bank?</p>
+          <p className="text-sm text-gray-400 mb-4">This will remove your bank connection and delete all auto-imported transactions, recurring data, and detected items. Your manually-added items will be kept.</p>
+          <div className="flex gap-3">
+            <button
+              onClick={disconnectBank}
+              disabled={disconnecting}
+              className="flex items-center gap-1.5 rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-50 transition"
+            >
+              {disconnecting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+              {disconnecting ? "Disconnecting..." : "Yes, disconnect and delete"}
+            </button>
+            <button
+              onClick={() => setConfirmDisconnect(false)}
+              className="flex items-center gap-1.5 rounded-xl border border-white/10 px-4 py-2 text-sm text-gray-400 hover:bg-white/5 transition"
+            >
+              <X size={13} /> Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {!isPro ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center">
@@ -234,7 +322,7 @@ export default function BankPage() {
       ) : (
         <>
           {/* Connect / status card */}
-          <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${needsReconnect ? "bg-yellow-500/10 border-yellow-500/20" : "bg-blue-500/10 border-blue-500/20"}`}>
@@ -269,6 +357,14 @@ export default function BankPage() {
               ) : plaidConnected ? (
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={runAIOrganize}
+                    disabled={categorizing}
+                    className="flex items-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-400 hover:bg-purple-500/15 transition disabled:opacity-50"
+                  >
+                    {categorizing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    AI Organize
+                  </button>
+                  <button
                     onClick={refreshBank}
                     className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-400 hover:bg-white/10 hover:text-white transition"
                   >
@@ -283,9 +379,8 @@ export default function BankPage() {
               )}
             </div>
 
-            {/* Sync message + reconnect nudge */}
             {syncMessage && (
-              <p className={`mt-3 text-xs ${needsReconnect ? "text-yellow-400" : "text-gray-500"}`}>{syncMessage}</p>
+              <p className={`mt-3 text-xs ${needsReconnect ? "text-yellow-400" : "text-gray-400"}`}>{syncMessage}</p>
             )}
             {plaidConnected && !needsReconnect && (
               <p className="mt-2 text-xs text-gray-600">
@@ -299,21 +394,36 @@ export default function BankPage() {
             )}
           </div>
 
+          {/* Summary chips */}
+          {items.length > 0 && (
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              {[
+                { label: "Subscriptions", count: subs.length, amt: subs.reduce((a, b) => a + b.amount, 0), color: "#3EA758", tab: "subscription" },
+                { label: "Bills",         count: bills.length, amt: bills.reduce((a, b) => a + b.amount, 0), color: "#FFB300", tab: "bill" },
+                { label: "Expenses",      count: expenses.length, amt: expenses.reduce((a, b) => a + b.amount, 0), color: "#FF6B35", tab: "expense" },
+              ].map(c => (
+                <button
+                  key={c.tab}
+                  onClick={() => setActiveTab(activeTab === c.tab as any ? "all" : c.tab as any)}
+                  className="rounded-2xl border p-3 text-left transition hover:opacity-80"
+                  style={{ borderColor: c.color + (activeTab === c.tab ? "60" : "20"), background: c.color + (activeTab === c.tab ? "18" : "08") }}
+                >
+                  <p className="font-mono text-sm font-black" style={{ color: c.color }}>{fmt(c.amt)}</p>
+                  <p className="text-xs text-gray-400">{c.label}</p>
+                  <p className="text-[10px] font-bold" style={{ color: c.color }}>{c.count} items</p>
+                </button>
+              ))}
+            </div>
+          )}
+
           {items.length === 0 && plaidConnected ? (
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
               <div className="py-12 text-center">
                 <Landmark size={28} className="mx-auto mb-3 text-gray-600" />
                 <p className="font-semibold text-gray-300">Scanning your transactions</p>
-                <p className="mt-1 text-sm text-gray-500">Confirm detected subscriptions below to add them to your list.</p>
+                <p className="mt-1 text-sm text-gray-500">Detected items appear below. Tap AI Organize to sort them automatically.</p>
               </div>
-              <SubScanner
-                userId={user.id}
-                trackedNames={items.map(i => i.name)}
-                onAdded={async () => {
-                  const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
-                  if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
-                }}
-              />
+              <SubScanner userId={user.id} trackedNames={[]} onAdded={() => loadItems(user.id)} />
             </div>
           ) : items.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-16 text-center">
@@ -322,36 +432,61 @@ export default function BankPage() {
               <p className="mt-1 text-sm text-gray-500">Connect your bank above to auto-import your recurring payments.</p>
             </div>
           ) : (
-            <>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">{items.length} items · {fmt(total)}/mo</p>
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
-                <div className="divide-y divide-white/5">
-                  {items.map(item => (
-                    <div key={item.id} className="flex items-center gap-3 px-5 py-4">
-                      <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type] || "#3EA758"} size={40} />
-                      <div className="flex-1">
-                        <p className="font-semibold">{item.name}</p>
-                        <p className="text-xs text-gray-500">
-                          <span className="capitalize" style={{ color: TYPE_COLORS[item.type] }}>{item.type}</span>
-                          {item.category ? ` · ${item.category}` : ""}
-                          {item.due_date ? ` · Due ${item.due_date}` : ""}
-                          {item.autopay ? " · Autopay" : ""}
-                        </p>
-                      </div>
-                      <span className="font-bold">{fmt(item.amount)}</span>
-                    </div>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+              {/* Tab header */}
+              <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+                <div className="flex gap-2">
+                  {(["all", "subscription", "bill", "expense"] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setActiveTab(t)}
+                      className="rounded-full px-3 py-1 text-xs font-semibold capitalize transition"
+                      style={{
+                        background: activeTab === t ? (TYPE_COLORS[t] || "#3EA758") + "25" : "rgba(255,255,255,0.05)",
+                        color: activeTab === t ? (TYPE_COLORS[t] || "#3EA758") : "#8E8E93",
+                      }}
+                    >
+                      {t === "all" ? `All (${items.length})` : `${t} (${items.filter(i => i.type === t).length})`}
+                    </button>
                   ))}
                 </div>
-                <SubScanner
-                  userId={user.id}
-                  trackedNames={items.map(i => i.name)}
-                  onAdded={async () => {
-                    const { data } = await supabase.from("items").select("*").eq("user_id", user.id);
-                    if (data) setItems((data as Item[]).filter(i => i.source && i.source !== "manual"));
-                  }}
-                />
+                <p className="text-xs text-gray-500">{fmt(total)}/mo</p>
               </div>
-            </>
+
+              <div className="divide-y divide-white/5">
+                {displayed.map(item => (
+                  <div key={item.id} className="flex items-center gap-3 px-5 py-4">
+                    <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type] || "#3EA758"} size={40} />
+                    <div className="flex-1">
+                      <p className="font-semibold">{item.name}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        {/* Inline type mover */}
+                        <select
+                          value={item.type}
+                          disabled={movingId === item.id}
+                          onChange={e => moveItemType(item.id, e.target.value as ItemType)}
+                          className="rounded-full border-0 bg-transparent py-0 pl-0 pr-4 text-xs font-semibold capitalize outline-none cursor-pointer"
+                          style={{ color: TYPE_COLORS[item.type] || "#3EA758" }}
+                        >
+                          {ALL_TYPES.map(t => (
+                            <option key={t} value={t} style={{ background: "#111", color: "#fff" }}>{t}</option>
+                          ))}
+                        </select>
+                        {item.category ? <span className="text-xs text-gray-600">· {item.category}</span> : null}
+                        {item.due_date ? <span className="text-xs text-gray-600">· Due {item.due_date}</span> : null}
+                      </div>
+                    </div>
+                    <span className="font-bold">{fmt(item.amount)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <SubScanner
+                userId={user.id}
+                trackedNames={items.map(i => i.name)}
+                onAdded={() => loadItems(user.id)}
+              />
+            </div>
           )}
         </>
       )}

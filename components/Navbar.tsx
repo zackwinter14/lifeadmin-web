@@ -146,7 +146,7 @@ export default function Navbar() {
                       </Link>
                       <Link href="/bank" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15"><Landmark size={13} className="text-blue-400" /></div>
-                        <span className="text-sm font-medium text-gray-200">Bank Connected</span>
+                        <span className="text-sm font-medium text-gray-200">Bank Accounts</span>
                       </Link>
                       <Link href="/vault" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/15"><PiggyBank size={13} className="text-brand" /></div>
@@ -272,7 +272,7 @@ export default function Navbar() {
                 <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Dashboard</p>
                 <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Overview</Link>
                 <Link href="/manual" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">My Finances</Link>
-                <Link href="/bank" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Bank Connected</Link>
+                <Link href="/bank" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Bank Accounts</Link>
                 <Link href="/vault" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Savings Vault</Link>
                 <Link href="/credit" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Credit Cards</Link>
                 <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Main</p>
