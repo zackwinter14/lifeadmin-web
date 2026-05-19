@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 
 const THROTTLE_MS = 15 * 60 * 1000;
-const EDGE_BASE = "https://roamiiqvmveykqdlwsav.supabase.co/functions/v1";
 
 export default function BankAutoSync() {
   const supabase = createClient();
@@ -32,19 +31,12 @@ export default function BankAutoSync() {
       if (!shouldSync) return;
 
       localStorage.setItem(key, String(Date.now()));
-      Promise.allSettled([
-        fetch(`${EDGE_BASE}/plaid-transactions-sync`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: user.id }),
-        }),
-        fetch(`${EDGE_BASE}/plaid-recurring-sync`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: user.id }),
-        }),
-      ]).then(async () => {
-        // Re-detect income after sync completes with fresh data
+      // Single reliable sync route — handles transactions, recurring, and auto-creates items
+      fetch("/api/plaid/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      }).then(async () => {
         await detectAndSaveIncome(user.id, profile.monthly_income || 0);
       }).catch(() => {});
     }

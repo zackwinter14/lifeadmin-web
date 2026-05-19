@@ -13,6 +13,24 @@ interface DetectedSub {
   amount: number;
   frequency: string;
   source: "plaid" | "scan";
+  category?: string;
+}
+
+function detectType(category: string | undefined, name: string): "subscription" | "bill" {
+  const cat = (category || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  if (
+    cat.includes("util") || cat.includes("rent") || cat.includes("insurance") ||
+    cat.includes("loan") || cat.includes("phone") || cat.includes("internet") ||
+    cat.includes("cable") || cat.includes("electric") || cat.includes("gas") ||
+    cat.includes("water") || cat.includes("service") ||
+    n.includes("at&t") || n.includes("verizon") || n.includes("t-mobile") ||
+    n.includes("comcast") || n.includes("spectrum") || n.includes("xfinity") ||
+    n.includes("cox") || n.includes("insurance") || n.includes("electric") ||
+    n.includes("geico") || n.includes("state farm") || n.includes("allstate") ||
+    n.includes("progressive") || n.includes("rent") || n.includes("mortgage")
+  ) return "bill";
+  return "subscription";
 }
 
 const STORAGE_KEY = "dismissed_detected_subs_v1";
@@ -81,6 +99,7 @@ export default function SubScanner({ userId, trackedNames, onAdded }: Props) {
           amount: monthly,
           frequency: FREQ_LABEL[r.frequency?.toUpperCase()] || "monthly",
           source: "plaid",
+          category: r.category,
         });
       }
     }
@@ -174,15 +193,16 @@ export default function SubScanner({ userId, trackedNames, onAdded }: Props) {
     setAdding(sub.key);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setAdding(null); return; }
+    const type = detectType(sub.category, sub.name);
     await supabase.from("items").insert({
       user_id: user.id,
       name: sub.name,
       amount: parseFloat(sub.amount.toFixed(2)),
-      type: "subscription",
-      category: "Entertainment",
+      type,
+      category: sub.category || (type === "bill" ? "Utilities" : "Entertainment"),
       status: "active",
       source: "detected",
-      color: "#3EA758",
+      color: type === "bill" ? "#FFB300" : "#3EA758",
       autopay: false,
     });
     dismiss(sub.key);

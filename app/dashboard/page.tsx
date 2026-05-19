@@ -274,6 +274,7 @@ export default function Dashboard() {
       .from("items")
       .update({ type: newType })
       .eq("id", id)
+      .eq("user_id", authUser?.id)
       .select();
 
     const debugLines = [
@@ -383,50 +384,20 @@ export default function Dashboard() {
 
   async function autoSyncRecurring(userId: string) {
     try {
-      // Fire transactions sync in parallel (don't await)
-      fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-transactions-sync", {
+      const res = await fetch("/api/plaid/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId }),
-      }).catch(() => {});
-      const res = await fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ userId }),
       });
       if (res.ok) {
-        // Auto-fill income from recurring if not set yet
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("monthly_income")
-          .eq("id", userId)
-          .single();
-        if (!profile?.monthly_income || profile.monthly_income === 0) {
-          const { data: incomeStreams } = await supabase
-            .from("recurring_transactions")
-            .select("average_amount, frequency")
-            .eq("user_id", userId)
-            .eq("category", "income")
-            .eq("is_active", true);
-          if (incomeStreams && incomeStreams.length) {
-            // Normalize to monthly
-            const monthly = incomeStreams.reduce((sum: number, s: any) => {
-              const amt = Number(s.average_amount) || 0;
-              const freq = (s.frequency || "MONTHLY").toUpperCase();
-              if (freq === "WEEKLY") return sum + amt * 4.33;
-              if (freq === "BIWEEKLY") return sum + amt * 2.17;
-              if (freq === "ANNUALLY") return sum + amt / 12;
-              return sum + amt; // MONTHLY default
-            }, 0);
-            const rounded = Math.round(monthly);
-            await supabase.from("profiles").upsert({ id: userId, monthly_income: rounded });
-            setIncome(rounded);
-            setIncomeInput(String(rounded));
-          }
+        const result = await res.json().catch(() => ({}));
+        if (result.income > 0) {
+          setIncome(result.income);
+          setIncomeInput(String(result.income));
         }
       }
     } catch (e) {
-      console.error("Recurring sync failed:", e);
+      console.error("Sync failed:", e);
     }
   }
 

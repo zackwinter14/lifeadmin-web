@@ -91,6 +91,36 @@ function detectIncome(transactions: any[]): number {
   return Math.round(Math.abs(sorted[0].amount));
 }
 
+function detectItemType(category: string | null, merchantName: string): "subscription" | "bill" {
+  const cat = (category || "").toLowerCase();
+  const name = (merchantName || "").toLowerCase();
+  if (
+    cat.includes("util") || cat.includes("rent") || cat.includes("insurance") ||
+    cat.includes("loan") || cat.includes("mortgage") || cat.includes("phone") ||
+    cat.includes("internet") || cat.includes("cable") || cat.includes("electric") ||
+    cat.includes("gas") || cat.includes("water") || cat.includes("service") ||
+    name.includes("at&t") || name.includes("verizon") || name.includes("t-mobile") ||
+    name.includes("sprint") || name.includes("comcast") || name.includes("spectrum") ||
+    name.includes("xfinity") || name.includes("cox") || name.includes("directv") ||
+    name.includes("electric") || name.includes("water") || name.includes("insurance") ||
+    name.includes("geico") || name.includes("state farm") || name.includes("allstate") ||
+    name.includes("progressive") || name.includes("liberty mutual") || name.includes("rent") ||
+    name.includes("mortgage") || name.includes("hoa") || name.includes("pgande") ||
+    name.includes("pge") || name.includes("sdge") || name.includes("con ed")
+  ) {
+    return "bill";
+  }
+  return "subscription";
+}
+
+function simplifyMerchantName(raw: string): string {
+  return (raw || "")
+    .replace(/\s+(inc\.?|llc\.?|ltd\.?|corp\.?|co\.?)$/i, "")
+    .replace(/\s*#\d+.*$/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function plaidErrorCode(e: any): string | null {
   return e?.response?.data?.error_code ?? null;
 }
@@ -196,7 +226,54 @@ export async function POST(req: NextRequest) {
     console.error("transactionsRecurringGet skipped:", plaidErrorCode(e) ?? e?.message);
   }
 
-  // Step 4: income detection (runs on raw Plaid amounts before sign flip)
+  // Step 4: Auto-create items from recurring streams (only insert new ones, never overwrite user changes)
+  let itemsCreated = 0;
+  try {
+    const { data: existingItems } = await supabase
+      .from("items")
+      .select("name")
+      .eq("user_id", userId);
+    const existingNames = new Set((existingItems || []).map((i: any) => i.name.toLowerCase().trim()));
+
+    const { data: recurringData } = await supabase
+      .from("recurring_transactions")
+      .select("merchant_name, clean_merchant_name, average_amount, last_amount, frequency, category")
+      .eq("user_id", userId)
+      .eq("is_active", true);
+
+    if (recurringData && recurringData.length > 0) {
+      const toInsert = recurringData
+        .filter((r: any) => {
+          const name = simplifyMerchantName(r.clean_merchant_name || r.merchant_name || "");
+          return name.length > 0 && !existingNames.has(name.toLowerCase());
+        })
+        .map((r: any) => {
+          const name = simplifyMerchantName(r.clean_merchant_name || r.merchant_name || "");
+          const amount = Math.abs(r.last_amount || r.average_amount || 0);
+          const type = detectItemType(r.category, name);
+          return {
+            user_id: userId,
+            name,
+            amount: parseFloat(amount.toFixed(2)),
+            type,
+            category: r.category || (type === "bill" ? "Utilities" : "Entertainment"),
+            source: "detected",
+            color: type === "bill" ? "#FFB300" : "#3EA758",
+            autopay: false,
+            status: "active",
+          };
+        });
+      if (toInsert.length > 0) {
+        const { error: insertError } = await supabase.from("items").insert(toInsert);
+        if (!insertError) itemsCreated = toInsert.length;
+        else console.error("items insert error:", insertError.message);
+      }
+    }
+  } catch (e: any) {
+    console.error("auto-insert items failed:", e?.message);
+  }
+
+  // Step 5: income detection (runs on raw Plaid amounts before sign flip)
   const income = detectIncome(transactions);
   if (income > 0) {
     await supabase.from("profiles").upsert({ id: userId, monthly_income: income });
@@ -206,6 +283,7 @@ export async function POST(req: NextRequest) {
     synced: transactions.length,
     stored,
     recurring: recurringCount,
+    items_created: itemsCreated,
     income,
     synced_at: new Date().toISOString(),
   });
