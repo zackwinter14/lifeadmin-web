@@ -186,11 +186,21 @@ export async function POST(req: NextRequest) {
       category: t.personal_finance_category?.primary || t.category?.[0] || null,
     }));
     if (rows.length > 0) {
+      // Try upsert first; if unique constraint is missing fall back to insert-ignore
       const { error } = await supabase
         .from("transactions")
-        .upsert(rows, { onConflict: "plaid_transaction_id" });
-      if (error) console.error("transactions upsert error:", error.message);
-      else stored = rows.length;
+        .upsert(rows, { onConflict: "plaid_transaction_id", ignoreDuplicates: true });
+      if (error) {
+        // Fallback: insert one by one, skip duplicates
+        let saved = 0;
+        for (const row of rows) {
+          const { error: e2 } = await supabase.from("transactions").insert(row);
+          if (!e2) saved++;
+        }
+        stored = saved;
+      } else {
+        stored = rows.length;
+      }
     }
   } catch (e: any) {
     console.error("transactions upsert exception:", e?.message);
