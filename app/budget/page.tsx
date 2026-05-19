@@ -64,8 +64,27 @@ export default function BudgetPage() {
         .select("monthly_income, emergency_savings")
         .eq("id", user.id)
         .single();
-      if (profile?.monthly_income) setIncome(profile.monthly_income);
       if (profile?.emergency_savings) setEmergencySavings(profile.emergency_savings);
+
+      // Compute income from income_entries (source of truth), fall back to profile field
+      const { data: incomeEntries } = await supabase
+        .from("income_entries")
+        .select("amount, frequency")
+        .eq("user_id", user.id);
+
+      function toMonthly(amount: number, freq: string) {
+        if (freq === "biweekly") return amount * 26 / 12;
+        if (freq === "weekly") return amount * 52 / 12;
+        if (freq === "one-time") return 0;
+        return amount;
+      }
+
+      const entriesTotal = (incomeEntries || [])
+        .filter(e => e.frequency !== "one-time")
+        .reduce((sum, e) => sum + toMonthly(e.amount, e.frequency), 0);
+
+      const resolvedIncome = entriesTotal > 0 ? entriesTotal : (profile?.monthly_income || 0);
+      setIncome(resolvedIncome);
 
       const { data: itemsData } = await supabase
         .from("items")

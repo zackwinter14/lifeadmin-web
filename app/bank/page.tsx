@@ -166,13 +166,74 @@ export default function BankPage() {
 
   async function onPlaidSuccess(publicToken: string) {
     setDetecting(true);
+    setSyncMessage("Connecting your bank...");
     try {
-      await fetch("/api/plaid/exchange-token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicToken, userId: user.id }) });
-      await fetch("/api/plaid/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      // Step 1: Exchange public token → saves access_token to profile
+      const exchangeRes = await fetch("/api/plaid/exchange-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicToken, userId: user.id }),
+      });
+      if (!exchangeRes.ok) throw new Error("Token exchange failed");
+
+      setSyncMessage("Importing your transactions...");
+
+      // Step 2: Run all three sync paths in parallel for maximum coverage
+      await Promise.allSettled([
+        fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-transactions-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        }),
+        fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        }),
+        fetch("/api/plaid/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
+        }),
+      ]);
+
       const now = new Date().toISOString();
       localStorage.setItem(`plaid_last_synced_${user.id}`, now);
       setLastSynced(now);
-    } catch {}
+
+      // Step 3: Reload items from Supabase
+      const { data: fresh } = await supabase.from("items").select("*").eq("user_id", user.id);
+      if (fresh) setItems((fresh as Item[]).filter(i => i.source && i.source !== "manual"));
+
+      setSyncMessage("Bank connected. Review detected subscriptions below.");
+
+      // Step 4: Plaid sometimes needs 30-60s to finish processing on first connect.
+      // Auto-retry once after 45 seconds to catch PRODUCT_NOT_READY cases.
+      setTimeout(async () => {
+        await Promise.allSettled([
+          fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-transactions-sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: user.id }),
+          }),
+          fetch("https://roamiiqvmveykqdlwsav.supabase.co/functions/v1/plaid-recurring-sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: user.id }),
+          }),
+          fetch("/api/plaid/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          }),
+        ]);
+        const { data: retryFresh } = await supabase.from("items").select("*").eq("user_id", user.id);
+        if (retryFresh) setItems((retryFresh as Item[]).filter(i => i.source && i.source !== "manual"));
+      }, 45000);
+
+    } catch (e: any) {
+      setSyncMessage("Something went wrong — try refreshing the page.");
+    }
     setPlaidConnected(true);
     setLinkToken(null);
     setIsReconnect(false);

@@ -7,6 +7,7 @@ import PinGate from "@/components/PinGate";
 import AdBanner from "@/components/AdBanner";
 import BankAutoSync from "@/components/BankAutoSync";
 import AutoAINotification from "@/components/AutoAINotification";
+import { Analytics } from "@vercel/analytics/next";
 
 const ADSENSE_PUBLISHER_ID = "ca-pub-5151835818661965";
 
@@ -236,6 +237,7 @@ export default function RootLayout({
           <AdBanner position="bottom" />
           <Footer />
         </PinGate>
+        <Analytics />
       </body>
     </html>
   );

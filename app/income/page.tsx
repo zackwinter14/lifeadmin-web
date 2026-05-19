@@ -73,6 +73,13 @@ export default function IncomePage() {
 
       if (dbEntries && dbEntries.length > 0) {
         setEntries(dbEntries);
+        // Sync total to profile in case budget page reads from there
+        const total = dbEntries
+          .filter((e: IncomeEntry) => e.frequency !== "one-time")
+          .reduce((sum: number, e: IncomeEntry) => sum + toMonthly(e.amount, e.frequency), 0);
+        if (total > 0) {
+          supabase.from("profiles").update({ monthly_income: Math.round(total) }).eq("id", user.id);
+        }
       } else {
         try {
           const stored = localStorage.getItem("income_entries");
@@ -117,6 +124,16 @@ export default function IncomePage() {
     init();
   }, []);
 
+  async function syncIncomeToProfile(updated: IncomeEntry[]) {
+    if (!user) return;
+    const total = updated
+      .filter(e => e.frequency !== "one-time")
+      .reduce((sum, e) => sum + toMonthly(e.amount, e.frequency), 0);
+    if (total > 0) {
+      await supabase.from("profiles").update({ monthly_income: Math.round(total) }).eq("id", user.id);
+    }
+  }
+
   async function save(updated: IncomeEntry[]) {
     setEntries(updated);
     try { localStorage.setItem("income_entries", JSON.stringify(updated)); } catch {}
@@ -142,6 +159,7 @@ export default function IncomePage() {
     save(updated);
     if (user) {
       await supabase.from("income_entries").upsert({ ...entry, user_id: user.id });
+      await syncIncomeToProfile(updated);
     }
     setForm({ source: "", amount: "", frequency: "monthly", date: "", note: "", category: "primary" });
     setShowAdd(false);
@@ -165,6 +183,7 @@ export default function IncomePage() {
     setEditingId(null);
     if (user) {
       await supabase.from("income_entries").delete().eq("id", id).eq("user_id", user.id);
+      await syncIncomeToProfile(updated);
     }
   }
 
@@ -174,6 +193,7 @@ export default function IncomePage() {
     setEditingId(null);
     if (user) {
       await supabase.from("income_entries").update(updates).eq("id", id).eq("user_id", user.id);
+      await syncIncomeToProfile(updated);
     }
   }
 
