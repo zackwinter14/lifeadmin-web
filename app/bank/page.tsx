@@ -214,27 +214,47 @@ export default function BankPage() {
       localStorage.setItem(`plaid_last_synced_${user.id}`, now);
       setLastSynced(now);
       await loadItems(user.id);
-      setSyncMessage("Bank connected. AI is organizing your items...");
+      setSyncMessage("Bank connected. Waiting for your bank to send data...");
 
-      // Run AI categorization right after first connect
-      await runAIOrganize();
-      await loadItems(user.id);
-      setSyncMessage("Bank connected. Your subscriptions and bills are organized below.");
-
-      // Retry after 45s for PRODUCT_NOT_READY
-      setTimeout(async () => {
-        await fetch("/api/plaid/sync", {
+      // Plaid takes 1-5 minutes on first connect (PRODUCT_NOT_READY).
+      // Poll every 30s for up to 5 minutes until we get real data.
+      let attempts = 0;
+      const maxAttempts = 10;
+      const poll = async (): Promise<void> => {
+        if (attempts >= maxAttempts) {
+          setSyncMessage("Bank connected. Data is loading — check back in a few minutes.");
+          return;
+        }
+        attempts++;
+        await new Promise(r => setTimeout(r, 30000));
+        const res = await fetch("/api/plaid/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: user.id }),
         });
+        const body = await res.json().catch(() => ({}));
         await loadItems(user.id);
-      }, 45000);
+        if (body?.error_code === "PRODUCT_NOT_READY") {
+          setSyncMessage(`Bank connected. Still loading... (check ${attempts}/${maxAttempts})`);
+          return poll();
+        }
+        if (body?.synced > 0 || body?.items_created > 0) {
+          // Run AI organize once we have real data
+          await fetch("/api/plaid/categorize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          await loadItems(user.id);
+          setSyncMessage("Your subscriptions and bills are ready.");
+        }
+      };
+      poll();
+      setPlaidConnected(true);
 
     } catch {
-      setSyncMessage("Something went wrong — try refreshing the page.");
+      setSyncMessage("Something went wrong connecting your bank. Please try again.");
     }
-    setPlaidConnected(true);
     setLinkToken(null);
     setIsReconnect(false);
     setDetecting(false);

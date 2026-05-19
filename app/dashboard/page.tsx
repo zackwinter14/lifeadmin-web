@@ -14,7 +14,7 @@ import MerchantLogo from "@/components/MerchantLogo";
 import PriceChangeAlert from "@/components/PriceChangeAlert";
 import HealthScore from "@/components/HealthScore";
 
-type ItemType = "subscription" | "bill" | "trial";
+type ItemType = "subscription" | "bill" | "trial" | "expense";
 
 interface Item {
   id: string;
@@ -90,7 +90,7 @@ function ModalTip() {
 const ALL_TYPES: { type: ItemType; label: string }[] = [
   { type: "subscription", label: "Subscription" },
   { type: "bill",         label: "Bill"         },
-  { type: "trial",        label: "Trial"        },
+  { type: "expense",      label: "Expense"      },
 ];
 
 function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType: ItemType) => void }) {
@@ -467,20 +467,20 @@ export default function Dashboard() {
 
   const subs     = items.filter(i => i.type === "subscription");
   const bills    = items.filter(i => i.type === "bill");
-  const trials   = items.filter(i => i.type === "trial");
-  const subsTotal   = subs.reduce((a, b) => a + b.amount, 0);
-  const billsTotal  = bills.reduce((a, b) => a + b.amount, 0);
-  const trialsTotal = trials.reduce((a, b) => a + b.amount, 0);
+  const expenses = items.filter(i => i.type === "expense");
+  const subsTotal      = subs.reduce((a, b) => a + b.amount, 0);
+  const billsTotal     = bills.reduce((a, b) => a + b.amount, 0);
+  const expensesTotal  = expenses.reduce((a, b) => a + b.amount, 0);
   const creditMinTotal = creditCards.reduce((s, c) => s + (c.min_payment || 0), 0);
   const creditBalanceTotal = creditCards.reduce((s, c) => s + (c.current_balance || 0), 0);
-  const totalSpend  = subsTotal + billsTotal + trialsTotal + creditMinTotal;
+  const totalSpend  = subsTotal + billsTotal + expensesTotal + creditMinTotal;
   const remaining   = income - totalSpend;
   const spendPct    = income > 0 ? Math.min(Math.round((totalSpend / income) * 100), 100) : 0;
 
   const donutData = [
     { name: "Subscriptions", value: subsTotal, color: TYPE_COLORS.subscription },
     { name: "Bills", value: billsTotal, color: TYPE_COLORS.bill },
-    { name: "Trials", value: trialsTotal, color: TYPE_COLORS.trial },
+    { name: "Expenses", value: expensesTotal, color: TYPE_COLORS.expense },
     { name: "Credit Payments", value: creditMinTotal, color: "#38BDF8" },
   ].filter(d => d.value > 0);
 
@@ -657,7 +657,7 @@ export default function Dashboard() {
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })} />
         <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })} />
-        <StatCard label="Trials" value={fmt(trialsTotal)} sub={`${trials.length} running`} color={TYPE_COLORS.trial} onClick={() => setActiveCard({ label: "Trials", color: TYPE_COLORS.trial, filterType: "trial" })} />
+        <StatCard label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} tracked`} color={TYPE_COLORS.expense} onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, filterType: "expense" as any })} />
         <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items + credit`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
       </div>
 
