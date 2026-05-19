@@ -66,7 +66,24 @@ export default function BudgetPage() {
         .single();
       if (profile?.emergency_savings) setEmergencySavings(profile.emergency_savings);
 
-      // Compute income from income_entries (source of truth), fall back to profile field
+      // 1. Try bank transactions first (most accurate — real deposits this month)
+      const thisMonthStart = new Date();
+      thisMonthStart.setDate(1);
+      thisMonthStart.setHours(0, 0, 0, 0);
+      const since = thisMonthStart.toISOString().slice(0, 10);
+
+      const { data: txns } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("user_id", user.id)
+        .gt("amount", 0)
+        .gte("date", since);
+
+      const bankIncome = txns && txns.length > 0
+        ? Math.round(txns.reduce((sum, t) => sum + Number(t.amount), 0))
+        : 0;
+
+      // 2. Fall back to income_entries (manually added income)
       const { data: incomeEntries } = await supabase
         .from("income_entries")
         .select("amount, frequency")
@@ -80,10 +97,11 @@ export default function BudgetPage() {
       }
 
       const entriesTotal = (incomeEntries || [])
-        .filter(e => e.frequency !== "one-time")
-        .reduce((sum, e) => sum + toMonthly(e.amount, e.frequency), 0);
+        .filter((e: any) => e.frequency !== "one-time")
+        .reduce((sum: number, e: any) => sum + toMonthly(e.amount, e.frequency), 0);
 
-      const resolvedIncome = entriesTotal > 0 ? entriesTotal : (profile?.monthly_income || 0);
+      // 3. Final fallback: profile field
+      const resolvedIncome = bankIncome > 0 ? bankIncome : entriesTotal > 0 ? entriesTotal : (profile?.monthly_income || 0);
       setIncome(resolvedIncome);
 
       const { data: itemsData } = await supabase
@@ -230,12 +248,9 @@ export default function BudgetPage() {
         </div>
 
         {income === 0 && (
-          <button
-            onClick={() => router.push("/profile")}
-            className="mt-4 w-full rounded-xl border border-brand/30 bg-brand/5 py-2.5 text-sm font-semibold text-brand hover:bg-brand/10"
-          >
-            Set your income in Profile →
-          </button>
+          <p className="mt-4 text-center text-sm text-gray-500">
+            Connect your bank on the Bank page to auto-detect income.
+          </p>
         )}
       </div>
 
