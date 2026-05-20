@@ -161,9 +161,7 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black">
       {/* Logo */}
-      <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-black text-black">
-        $
-      </div>
+      <img src="/logo-white.png" alt="Life Admin" className="mb-8 h-14 w-14 object-contain" />
 
       <p className="mb-1 text-xl font-bold text-white">Enter your PIN</p>
       <p className="mb-10 text-sm text-gray-500">Life Admin is locked</p>

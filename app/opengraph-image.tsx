@@ -38,10 +38,13 @@ export default async function Image() {
       <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 52 }}>
         <div style={{
           width: 64, height: 64, borderRadius: 18,
-          background: "linear-gradient(135deg, #3EA758, #5bdb77)",
+          background: "linear-gradient(135deg, #0D2B1A, #1A5230)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 30, fontWeight: 900, color: "#000",
-        }}>$</div>
+          border: "1.5px solid rgba(62,167,88,0.3)",
+        }}>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff", letterSpacing: -1 }}>LA</span>
+          <span style={{ fontSize: 14, fontWeight: 900, color: "#4ADE80", marginLeft: -2, marginTop: 6 }}>✓</span>
+        </div>
         <span style={{ fontSize: 34, fontWeight: 700, color: "#ffffff" }}>Life Admin</span>
         <div style={{
           marginLeft: 8, background: "rgba(62,167,88,0.2)",

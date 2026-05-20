@@ -7,9 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div>
             <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient font-bold">
-                $
-              </div>
+              <img src="/logo-white.png" alt="Life Admin" className="h-8 w-8 object-contain" />
               <span className="font-semibold">Life Admin</span>
             </div>
             <p className="mb-4 text-sm text-gray-500">

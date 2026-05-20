@@ -117,7 +117,7 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient font-bold text-black">$</div>
+          <img src="/logo-white.png" alt="Life Admin" className="h-9 w-9 object-contain" />
           <span className="text-lg font-semibold">Life Admin</span>
         </Link>
 
