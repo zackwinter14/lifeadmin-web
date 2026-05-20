@@ -29,6 +29,7 @@ export default function AutoAIPage() {
   const [user, setUser] = useState<any>(null);
   const [authed, setAuthed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingInsight, setLoadingInsight] = useState(false);
@@ -71,6 +72,7 @@ export default function AutoAIPage() {
         const data = await res.json();
         if (data.message) {
           setMessages([{ role: "assistant", content: data.message }]);
+          if (data.systemPrompt) setSystemPrompt(data.systemPrompt);
           localStorage.setItem(`${INSIGHT_CACHE_KEY}_${user.id}`, today);
           // Mark notification as read since user is on the page
           localStorage.setItem(`autoai_unread_${user.id}`, "false");
@@ -100,7 +102,7 @@ export default function AutoAIPage() {
       const res = await fetch("/api/autoai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, systemPrompt }),
       });
       if (!res.ok) throw new Error("API error");
       const { reply } = await res.json();

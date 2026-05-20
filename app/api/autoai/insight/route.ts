@@ -49,6 +49,14 @@ export async function POST(req: NextRequest) {
       efMonths !== null && efMonths > 0 ? `Emergency fund: ${efMonths} months of expenses covered` : "Emergency fund not set",
     ].filter(Boolean).join("\n");
 
+    // Build system prompt that will be reused for all subsequent chat messages
+    const systemPrompt = `You are AutoAI, a personal finance assistant inside the Life Admin app. You speak in plain English — no bullet walls, no fluff, 2-3 sentences max per reply.
+
+USER FINANCIAL SNAPSHOT:
+${context}
+
+Be specific. Reference their actual numbers when relevant. If something isn't in the snapshot, say so rather than guessing. Do NOT use emojis.`;
+
     const response = await ai.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
@@ -73,7 +81,7 @@ Do NOT use generic advice. Reference their actual numbers. Do NOT use emojis.`,
       }, { onConflict: "user_id" });
     } catch {} // table may not exist yet
 
-    return NextResponse.json({ message });
+    return NextResponse.json({ message, systemPrompt });
   } catch (e) {
     console.error("AutoAI insight error:", e);
     return NextResponse.json({ error: "Failed to generate insight" }, { status: 500 });
