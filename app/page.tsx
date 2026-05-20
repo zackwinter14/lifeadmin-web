@@ -430,8 +430,8 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-7xl"
           >
-            Stop losing money to <br />
-            things you <span className="gradient-text">forgot about</span>.
+            Find out what you&apos;re <br />
+            actually <span className="gradient-text">spending</span>.
           </motion.h1>
 
           <motion.p
@@ -440,7 +440,9 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            Connect your bank and AI automatically finds every subscription, bill, and expense — then sorts them so you always know exactly what you&apos;re paying for.
+            The average person thinks they spend $62 a month on subscriptions.{" "}
+            <span className="font-semibold text-white">They actually spend $273.</span>{" "}
+            Life Admin shows you your real number — free, no bank required.
           </motion.p>
 
           <motion.div
@@ -453,7 +455,7 @@ export default function Home() {
               href="/signup"
               className="w-full rounded-xl bg-brand-gradient px-8 py-4 text-center text-lg font-bold text-black transition hover:opacity-90 sm:w-auto"
             >
-              Start saving free
+              See your real number — free
             </Link>
             <a
               href="https://apps.apple.com/app/id6762589970"
@@ -476,10 +478,10 @@ export default function Home() {
             className="mt-16 grid grid-cols-2 gap-8 text-center sm:grid-cols-4"
           >
             {[
-              { value: <>$<CountUp end={240} />+</>, label: "average monthly savings" },
-              { value: <><CountUp end={90} />s</>, label: "to connect your bank" },
-              { value: <><CountUp end={6} />+</>, label: "forgotten charges found" },
-              { value: <>Free</>, label: "forever, no card needed" },
+              { value: <>$<CountUp end={273} /></>, label: "avg actual monthly spend" },
+              { value: <>$<CountUp end={62} /></>, label: "avg what people think they spend" },
+              { value: <><CountUp end={42} />%</>, label: "paying for something they forgot" },
+              { value: <>Free</>, label: "no bank required to start" },
             ].map((s, i) => (
               <div key={i}>
                 <div className="text-4xl font-bold gradient-text">{s.value}</div>
@@ -495,11 +497,11 @@ export default function Home() {
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
-              Your financial life,{" "}
-              <span className="gradient-text">finally organized</span>
+              Everything you pay for,{" "}
+              <span className="gradient-text">in one place</span>
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-gray-400">
-              Connect your bank once. Life Admin finds everything, AI sorts it, and you always know exactly where you stand.
+              Subscriptions, bills, upcoming charges, and your real monthly total — all visible the moment you open the app.
             </p>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
@@ -515,15 +517,15 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
-              Up and running in <span className="gradient-text">90 seconds</span>
+              How it <span className="gradient-text">works</span>
             </h2>
-            <p className="mt-4 text-gray-400">No spreadsheets. No manual entry. Just connect and go.</p>
+            <p className="mt-4 text-gray-400">Start free. No bank required. See your real number in one sitting.</p>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
             {[
-              { step: "01", icon: <Wifi size={22} className="text-brand" />, title: "Connect your bank", body: "Securely link your accounts via Plaid in under 90 seconds. Read-only access — we can never move your money." },
-              { step: "02", icon: <Bot size={22} className="text-brand" />, title: "AI organizes everything", body: "AI scans 90 days of transactions and auto-sorts every charge into subscriptions, bills, and expenses. No setup required." },
-              { step: "03", icon: <TrendingDown size={22} className="text-brand" />, title: "Cancel what you don't need", body: "See what you're paying, remove what you forgot, and get alerts before anything renews." },
+              { step: "01", icon: <Wallet size={22} className="text-brand" />, title: "Add what you pay for", body: "Enter your subscriptions and bills manually. Takes about 10-15 minutes to get everything in. Most people are surprised it's more than they thought." },
+              { step: "02", icon: <TrendingDown size={22} className="text-brand" />, title: "See your real total", body: "Life Admin shows your actual monthly cost — and what each service is really costing you per year. That number usually lands like a gut punch." },
+              { step: "03", icon: <Bot size={22} className="text-brand" />, title: "Connect your bank to find the rest", body: "Upgrade to Pro and AI scans your bank for charges you didn't add manually. Most people find 3-4 more they had completely forgotten about." },
             ].map((s, i) => (
               <FadeIn key={s.step} delay={i * 0.15}>
                 <div className="relative h-full rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -548,20 +550,20 @@ export default function Home() {
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-                Bank Accounts
+                Free — no bank required
               </div>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Find every charge you forgot about
+                Most people are off by $200 a month
               </h2>
               <p className="mb-6 text-gray-400">
-                Connect your bank and Life Admin automatically pulls in every subscription, bill, and recurring charge. Most users find at least 4 they had completely forgotten about.
+                Add your subscriptions and bills manually and Life Admin shows you the real total — monthly and annually. That number surprises almost everyone. Netflix alone is $185 a year. A gym you go to twice a month is $696.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Scans 90 days of transactions instantly",
-                  "Separates bills, subscriptions, and expenses",
-                  "Detects annual charges too",
-                  "Works across all connected accounts",
+                  "See your real monthly total in one view",
+                  "Every service shown as monthly AND yearly cost",
+                  "Bill calendar shows what hits and when",
+                  "Reminders before anything renews",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
                     <Check size={15} className="shrink-0 text-brand" />
@@ -773,14 +775,16 @@ export default function Home() {
         <div className="mx-auto max-w-3xl text-center">
           <FadeIn>
             <h2 className="text-4xl font-bold md:text-5xl">
-              Find out how much you&apos;re losing.
+              Find out what you&apos;re actually spending.
             </h2>
-            <p className="mt-4 text-lg text-gray-400">Takes 90 seconds. Free forever. No card needed.</p>
+            <p className="mt-4 text-lg text-gray-400">
+              Free. No bank required. Most people finish in one sitting.
+            </p>
             <Link
               href="/signup"
               className="mt-8 inline-block rounded-xl bg-brand-gradient px-10 py-5 text-lg font-semibold text-black transition hover:opacity-90"
             >
-              Start free
+              See your real number — free
             </Link>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
               <CheckCircle2 size={16} className="text-brand" />
