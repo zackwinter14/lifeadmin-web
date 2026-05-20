@@ -260,7 +260,7 @@ export async function POST(req: NextRequest) {
   try {
     const { data: existingItems } = await supabase
       .from("items")
-      .select("name")
+      .select("id, name, type")
       .eq("user_id", userId);
     const existingNames = new Set((existingItems || []).map((i: any) => i.name.toLowerCase().trim()));
 
@@ -271,6 +271,25 @@ export async function POST(req: NextRequest) {
       .eq("is_active", true);
 
     if (recurringData && recurringData.length > 0) {
+      // Build lookup of simplified names for incoming streams
+      const incomingNames = recurringData
+        .map((r: any) => simplifyMerchantName(r.clean_merchant_name || r.merchant_name || "").toLowerCase())
+        .filter(n => n.length > 0);
+
+      // Fetch merchant_rules for any of these merchants (community-wide corrections)
+      const { data: rulesData } = await supabase
+        .from("merchant_rules")
+        .select("merchant_name, correct_type, correct_category")
+        .in("merchant_name", incomingNames);
+
+      const rulesMap: Record<string, { type: string; category: string }> = {};
+      for (const rule of (rulesData || [])) {
+        rulesMap[rule.merchant_name.toLowerCase().trim()] = {
+          type: rule.correct_type,
+          category: rule.correct_category,
+        };
+      }
+
       const toInsert = recurringData
         .filter((r: any) => {
           const name = simplifyMerchantName(r.clean_merchant_name || r.merchant_name || "");
@@ -279,23 +298,44 @@ export async function POST(req: NextRequest) {
         .map((r: any) => {
           const name = simplifyMerchantName(r.clean_merchant_name || r.merchant_name || "");
           const amount = Math.abs(r.last_amount || r.average_amount || 0);
-          const type = detectItemType(r.category, name);
+          // merchant_rules take priority over keyword detection
+          const rule = rulesMap[name.toLowerCase()];
+          const type = (rule?.type as "subscription" | "bill" | "expense") || detectItemType(r.category, name);
+          const category = rule?.category || r.category || (type === "bill" ? "Utilities" : "Entertainment");
+          const color = type === "bill" ? "#FFB300" : type === "expense" ? "#FF6B35" : "#3EA758";
           return {
             user_id: userId,
             name,
             amount: parseFloat(amount.toFixed(2)),
             type,
-            category: r.category || (type === "bill" ? "Utilities" : "Entertainment"),
+            category,
             source: "detected",
-            color: type === "bill" ? "#FFB300" : "#3EA758",
+            color,
             autopay: false,
             status: "active",
           };
         });
+
       if (toInsert.length > 0) {
         const { error: insertError } = await supabase.from("items").insert(toInsert);
         if (!insertError) itemsCreated = toInsert.length;
         else console.error("items insert error:", insertError.message);
+      }
+
+      // Also apply rules to existing items whose type doesn't match the saved rule
+      // (fixes items that were created before the rule existed)
+      const itemsToFix = (existingItems || []).filter((i: any) => {
+        const rule = rulesMap[i.name.toLowerCase().trim()];
+        return rule && rule.type !== i.type;
+      });
+      for (const item of itemsToFix) {
+        const rule = rulesMap[item.name.toLowerCase().trim()];
+        const color = rule.type === "bill" ? "#FFB300" : rule.type === "expense" ? "#FF6B35" : "#3EA758";
+        await supabase
+          .from("items")
+          .update({ type: rule.type, category: rule.category, color })
+          .eq("id", item.id)
+          .eq("user_id", userId);
       }
     }
   } catch (e: any) {
