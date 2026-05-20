@@ -370,7 +370,7 @@ export default function SavePage() {
                           <p className={`font-mono text-sm font-bold ${isSelected ? "text-green-400" : ""}`}>
                             {isSelected ? "-" : ""}{fmt(item.amount)}
                           </p>
-                          <p className="text-xs text-gray-500">/mo</p>
+                          <p className="text-xs text-gray-500">/mo &middot; ${Math.round(item.amount * 12).toLocaleString()}/yr</p>
                         </div>
                       </div>
 

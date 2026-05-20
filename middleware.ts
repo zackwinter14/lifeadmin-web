@@ -52,20 +52,11 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const emailVerified = !!user?.email_confirmed_at;
 
-  // Logged in + verified user trying to hit /login or /signup → bounce to dashboard
-  if (user && emailVerified && (pathname === "/login" || pathname === "/signup")) {
+  // Logged in user trying to hit /login or /signup → bounce to dashboard
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
-
-  // Logged in but NOT verified → only allow public routes + /verify-email
-  // This blocks access to dashboard, vault, profile, manual, etc. until they confirm their email
-  if (user && !emailVerified && !isPublic(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/verify-email";
     return NextResponse.redirect(url);
   }
 
