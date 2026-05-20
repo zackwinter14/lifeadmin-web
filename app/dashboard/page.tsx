@@ -257,6 +257,7 @@ export default function Dashboard() {
   const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [creditCards, setCreditCards] = useState<{ id: string; name: string; last_four: string | null; credit_limit: number; current_balance: number; min_payment: number | null; due_date: string | null }[]>([]);
+  const [recurringUpcoming, setRecurringUpcoming] = useState<{ id: string; name: string; amount: number; color: string; type: ItemType; due_date: string; autopay: boolean; daysUntil: number }[]>([]);
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
@@ -354,6 +355,41 @@ export default function Dashboard() {
       .select("id, name, last_four, credit_limit, current_balance, min_payment, due_date")
       .eq("user_id", userId);
     if (ccData) setCreditCards(ccData);
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const INCOME_KWS = ["va benefit", "va payment", "veteran", "disability", "social security", "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit"];
+    const { data: recData } = await supabase
+      .from("recurring_transactions")
+      .select("id, merchant_name, clean_merchant_name, frequency, last_amount, average_amount, next_predicted_date, category")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .not("next_predicted_date", "is", null)
+      .gte("next_predicted_date", todayStr)
+      .lte("next_predicted_date", in7);
+    if (recData) {
+      const now = new Date();
+      const mapped = recData
+        .filter((r: any) => {
+          const name = (r.clean_merchant_name || r.merchant_name || "").toLowerCase();
+          return !INCOME_KWS.some(kw => name.includes(kw));
+        })
+        .map((r: any) => {
+          const d = new Date(r.next_predicted_date);
+          const daysUntil = Math.ceil((d.getTime() - now.getTime()) / 86400000);
+          return {
+            id: "rec_" + r.id,
+            name: r.clean_merchant_name || r.merchant_name,
+            amount: r.last_amount || r.average_amount || 0,
+            color: TYPE_COLORS.bill,
+            type: "bill" as ItemType,
+            due_date: r.next_predicted_date,
+            autopay: false,
+            daysUntil,
+          };
+        });
+      setRecurringUpcoming(mapped);
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -534,6 +570,7 @@ export default function Dashboard() {
     .filter(i => i.daysUntil >= 0 && i.daysUntil <= 7)
     .sort((a, b) => a.daysUntil - b.daysUntil)
     .concat(creditUpcoming as any[])
+    .concat(recurringUpcoming as any[])
     .sort((a, b) => a.daysUntil - b.daysUntil)
     .slice(0, 5);
 
@@ -756,7 +793,9 @@ export default function Dashboard() {
 
       {/* Top items by monthly cost */}
       {items.length > 0 && (() => {
+        const TOP_INCOME_KWS = ["va benefit", "va payment", "veteran", "disability", "social security", "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit"];
         const topItems = [...items]
+          .filter(i => !TOP_INCOME_KWS.some(kw => i.name.toLowerCase().includes(kw)))
           .sort((a, b) => b.amount - a.amount)
           .slice(0, 6)
           .map(i => ({

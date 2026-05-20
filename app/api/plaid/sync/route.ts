@@ -117,6 +117,20 @@ function detectItemType(category: string | null, merchantName: string): "subscri
   return "subscription";
 }
 
+function calcNextDate(lastDate: string | null | undefined, frequency: string | null | undefined): string | null {
+  if (!lastDate) return null;
+  const d = new Date(lastDate);
+  switch ((frequency || "").toUpperCase()) {
+    case "WEEKLY":       d.setDate(d.getDate() + 7);       break;
+    case "BIWEEKLY":     d.setDate(d.getDate() + 14);      break;
+    case "SEMI_MONTHLY": d.setDate(d.getDate() + 15);      break;
+    case "MONTHLY":      d.setMonth(d.getMonth() + 1);     break;
+    case "ANNUALLY":     d.setFullYear(d.getFullYear() + 1); break;
+    default:             d.setMonth(d.getMonth() + 1);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
 function simplifyMerchantName(raw: string): string {
   return (raw || "")
     .replace(/\s+(inc\.?|llc\.?|ltd\.?|corp\.?|co\.?)$/i, "")
@@ -230,6 +244,7 @@ export async function POST(req: NextRequest) {
         frequency: s.frequency,
         category: s.category?.[0] ?? null,
         is_active: true,
+        next_predicted_date: calcNextDate(s.last_date, s.frequency),
       }));
     if (recurringRows.length > 0) {
       await supabase.from("recurring_transactions").insert(recurringRows);
