@@ -342,7 +342,6 @@ export default function Dashboard() {
       .from("items")
       .select("*")
       .eq("user_id", userId)
-      .neq("type", "expense")
       .order("created_at", { ascending: true });
 
     if (itemsData) setItems(itemsData as Item[]);
