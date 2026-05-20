@@ -468,54 +468,6 @@ export default function HouseholdPage() {
         </div>
       )}
 
-      {/* SQL setup notice */}
-      {!link && (
-        <div className="mt-8 rounded-xl border border-white/5 bg-white/[0.01] p-4">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-2">Supabase Setup Required</p>
-          <p className="text-xs text-gray-600 mb-3">Run this SQL in your Supabase dashboard to enable account linking:</p>
-          <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 text-[10px] text-gray-400 leading-relaxed whitespace-pre">{SQL_SETUP}</pre>
-        </div>
-      )}
     </div>
   );
 }
-
-const SQL_SETUP = `-- 1. household_links table
-create table if not exists household_links (
-  id uuid default gen_random_uuid() primary key,
-  user_id_a uuid references auth.users not null,
-  user_id_b uuid references auth.users,
-  email_a text,
-  email_b text,
-  invite_code text unique not null,
-  status text default 'pending'
-    check (status in ('pending','accepted')),
-  created_at timestamptz default now()
-);
-alter table household_links enable row level security;
-
-create policy "hl_select" on household_links for select
-  using (auth.uid() = user_id_a
-      or auth.uid() = user_id_b
-      or status = 'pending');
-create policy "hl_insert" on household_links for insert
-  with check (auth.uid() = user_id_a);
-create policy "hl_update" on household_links for update
-  using (status = 'pending'
-      or auth.uid() = user_id_a
-      or auth.uid() = user_id_b);
-create policy "hl_delete" on household_links for delete
-  using (auth.uid() = user_id_a
-      or auth.uid() = user_id_b);
-
--- 2. Let household partners read each other's items
-create policy "items_partner_read" on items for select
-  using (
-    auth.uid() = user_id
-    or exists (
-      select 1 from household_links hl
-      where hl.status = 'accepted'
-      and ((hl.user_id_a = auth.uid() and hl.user_id_b = items.user_id)
-        or (hl.user_id_b = auth.uid() and hl.user_id_a = items.user_id))
-    )
-  );`;
