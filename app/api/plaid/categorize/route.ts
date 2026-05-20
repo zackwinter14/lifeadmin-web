@@ -20,7 +20,21 @@ export async function POST(req: NextRequest) {
 
   if (!items || items.length === 0) return NextResponse.json({ updated: 0 });
 
-  const names = items.map(i => i.name);
+  const INCOME_KEYWORDS = [
+    "va benefit", "va payment", "veteran", "veterans affairs",
+    "disability benefit", "disability payment", "social security", "ssa treas",
+    "treasury 310", "irs treas", "payroll", "direct deposit",
+    "unemployment", "government benefit", "govt benefit",
+  ];
+
+  // Skip items that look like income — they should never be reclassified as expense/bill/subscription
+  const toClassify = items.filter(i =>
+    !INCOME_KEYWORDS.some(kw => i.name.toLowerCase().includes(kw))
+  );
+
+  if (toClassify.length === 0) return NextResponse.json({ updated: 0 });
+
+  const names = toClassify.map(i => i.name);
 
   const prompt = `You are a financial data classifier. Classify each merchant/service by type.
 
@@ -57,7 +71,7 @@ Return ONLY a JSON array, no explanation:
 
   // Update items where AI disagrees with current type
   let updated = 0;
-  for (const item of items) {
+  for (const item of toClassify) {
     const aiType = typeMap[item.name.toLowerCase().trim()];
     if (!aiType || aiType === item.type) continue;
     const validTypes = ["bill", "subscription", "expense"];

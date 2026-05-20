@@ -22,6 +22,10 @@ const INCOME_CATEGORY_KEYWORDS = [
   "adp", "gusto", "paychex", "workday", "bamboohr", "zenefits",
   "intuit payroll", "quickbooks payroll", "square payroll",
   "income", "compensation", "earnings",
+  "va benefit", "va payment", "veteran", "veterans affairs", "dept of veterans",
+  "department of veterans", "disability benefit", "disability payment",
+  "social security", "ssa treas", "treasury 310", "irs treas",
+  "unemployment", "government benefit", "govt benefit",
 ];
 
 const EXCLUDE_KEYWORDS = [
@@ -216,7 +220,7 @@ export async function POST(req: NextRequest) {
     const outflowStreams = recurringRes.data.outflow_streams || [];
     await supabase.from("recurring_transactions").delete().eq("user_id", userId);
     const recurringRows = outflowStreams
-      .filter((s: any) => s.is_active && s.status !== "TOMBSTONED")
+      .filter((s: any) => s.is_active && s.status !== "TOMBSTONED" && (s.average_amount?.amount ?? 0) > 0)
       .map((s: any) => ({
         user_id: userId,
         merchant_name: s.merchant_name || s.description,
