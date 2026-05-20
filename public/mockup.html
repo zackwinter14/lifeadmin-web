@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Admin — Login Redesign Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #111;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 48px;
+  }
+  h1 {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    color: #555;
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .grid {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .label {
+    color: #3EA758;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .sublabel {
+    color: #555;
+    font-size: 11px;
+    text-align: center;
+    margin-top: 4px;
+    max-width: 240px;
+    line-height: 1.5;
+  }
+  /* Phone shell */
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    border: 2px solid #2a2a2a;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 6px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    z-index: 100;
+  }
+
+  /* ══════════════ OPTION A: Glow + Stats ══════════════ */
+  .opt-a {
+    background: #0A0A0F;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 22px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .opt-a .glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(55px);
+    opacity: 0.22;
+    pointer-events: none;
+  }
+  .opt-a .orb1 {
+    width: 220px;
+    height: 220px;
+    background: #3EA758;
+    top: -60px;
+    left: -50px;
+  }
+  .opt-a .orb2 {
+    width: 160px;
+    height: 160px;
+    background: #1e6fff;
+    bottom: -40px;
+    right: -30px;
+  }
+  .opt-a .orb3 {
+    width: 100px;
+    height: 100px;
+    background: #3EA758;
+    bottom: 120px;
+    left: -20px;
+    opacity: 0.12;
+  }
+  .opt-a .logo-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #1a2a1a, #0f1f0f);
+    border: 1.5px solid #3EA75840;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    box-shadow: 0 0 30px rgba(62,167,88,0.25);
+    position: relative;
+    z-index: 1;
+  }
+  .opt-a .logo-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+  .opt-a .app-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-a .app-tagline {
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  /* stat pills */
+  .opt-a .stats-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-a .stat-pill {
+    background: rgba(62,167,88,0.08);
+    border: 1px solid rgba(62,167,88,0.18);
+    border-radius: 20px;
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .opt-a .stat-num {
+    font-size: 13px;
+    font-weight: 800;
+    color: #3EA758;
+    letter-spacing: -0.3px;
+  }
+  .opt-a .stat-lbl {
+    font-size: 9px;
+    color: #555;
+    white-space: nowrap;
+  }
+  .opt-a .form-area {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-a .inp {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 11px;
+    padding: 11px 13px;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .opt-a .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #3EA758, #27ae60);
+    border: none;
+    border-radius: 12px;
+    padding: 13px 0;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+    display: block;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(62,167,88,0.35);
+  }
+  .opt-a .btn-face {
+    width: 100%;
+    background: rgba(62,167,88,0.08);
+    border: 1px solid rgba(62,167,88,0.2);
+    border-radius: 12px;
+    padding: 10px 0;
+    color: #3EA758;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+    display: block;
+    text-align: center;
+  }
+  .opt-a .btn-ghost {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 8px 0;
+    color: #444;
+    font-size: 12px;
+    cursor: pointer;
+    display: block;
+    text-align: center;
+  }
+
+  /* ══════════════ OPTION B: Hero Brand with Scroll ══════════════ */
+  .opt-b {
+    background: #0A0A0F;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .opt-b .hero-section {
+    flex-shrink: 0;
+    height: 240px;
+    background: linear-gradient(160deg, #0f1a0f 0%, #0A0A0F 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 22px 20px;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(62,167,88,0.12);
+  }
+  .opt-b .hero-glow {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(62,167,88,0.15) 0%, transparent 70%);
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .opt-b .mini-cards {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-b .mini-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 7px 10px;
+    min-width: 78px;
+  }
+  .opt-b .mc-label {
+    font-size: 9px;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+  .opt-b .mc-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: #3EA758;
+    letter-spacing: -0.5px;
+  }
+  .opt-b .mc-sub {
+    font-size: 8px;
+    color: #444;
+  }
+  .opt-b .hero-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .opt-b .hero-sub {
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-b .form-section {
+    flex: 1;
+    padding: 20px 22px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .opt-b .form-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  .opt-b .form-sub {
+    font-size: 11px;
+    color: #444;
+    margin-bottom: 14px;
+  }
+  .opt-b .inp {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 11px;
+    padding: 11px 13px;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .opt-b .inp-focused {
+    border-color: rgba(62,167,88,0.4);
+  }
+  .opt-b .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #3EA758, #27ae60);
+    border: none;
+    border-radius: 12px;
+    padding: 13px 0;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+    display: block;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(62,167,88,0.3);
+    margin-top: 2px;
+  }
+  .opt-b .row-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 0px;
+  }
+  .opt-b .btn-face {
+    flex: 1;
+    background: rgba(62,167,88,0.08);
+    border: 1px solid rgba(62,167,88,0.2);
+    border-radius: 11px;
+    padding: 10px 0;
+    color: #3EA758;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+  .opt-b .btn-ghost {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 11px;
+    padding: 10px 0;
+    color: #555;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  /* ══════════════ OPTION C: Dark Confidence ══════════════ */
+  .opt-c {
+    background: #08080D;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .opt-c .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(62,167,88,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(62,167,88,0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+  .opt-c .bg-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, #08080D 100%);
+    pointer-events: none;
+  }
+  .opt-c .top-badge {
+    background: rgba(62,167,88,0.1);
+    border: 1px solid rgba(62,167,88,0.25);
+    border-radius: 20px;
+    padding: 4px 12px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-c .badge-text {
+    font-size: 10px;
+    color: #3EA758;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .opt-c .logo-stack {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-c .logo-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3EA758, #27ae60);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 6px 20px rgba(62,167,88,0.4);
+  }
+  .opt-c .logo-text {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .opt-c .logo-text span {
+    color: #3EA758;
+  }
+  .opt-c .tagline {
+    font-size: 11px;
+    color: #444;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+  .opt-c .feature-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+  }
+  .opt-c .feat {
+    flex: 1;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .opt-c .feat-icon {
+    font-size: 16px;
+    margin-bottom: 4px;
+    display: block;
+  }
+  .opt-c .feat-text {
+    font-size: 9px;
+    color: #555;
+    line-height: 1.4;
+    display: block;
+  }
+  /* divider */
+  .opt-c .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(62,167,88,0.2), transparent);
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-c .inp-wrap {
+    width: 100%;
+    position: relative;
+    margin-bottom: 8px;
+    z-index: 1;
+  }
+  .opt-c .inp-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    opacity: 0.3;
+  }
+  .opt-c .inp {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 11px 13px 11px 32px;
+    color: #888;
+    font-size: 13px;
+    display: block;
+  }
+  .opt-c .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #3EA758, #27ae60);
+    border: none;
+    border-radius: 12px;
+    padding: 13px 0;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+    margin-top: 4px;
+    display: block;
+    text-align: center;
+    box-shadow: 0 6px 24px rgba(62,167,88,0.38);
+    position: relative;
+    z-index: 1;
+  }
+  .opt-c .bottom-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+  .opt-c .btn-face {
+    flex: 1;
+    background: rgba(62,167,88,0.07);
+    border: 1px solid rgba(62,167,88,0.18);
+    border-radius: 11px;
+    padding: 9px 0;
+    color: #3EA758;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+  .opt-c .btn-signup {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 11px;
+    padding: 9px 0;
+    color: #555;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .opt-c .trust-line {
+    font-size: 9px;
+    color: #333;
+    text-align: center;
+    margin-top: 12px;
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.3px;
+  }
+
+  /* current label */
+  .current-badge {
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 10px;
+    color: #555;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .recommended {
+    background: rgba(62,167,88,0.12);
+    border: 1px solid rgba(62,167,88,0.25);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 10px;
+    color: #3EA758;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<h1>Login Page Redesign — 3 Options</h1>
+<p class="subtitle">Current login is a plain centered form on dark background. All three options keep dark theme + green brand.</p>
+
+<div class="grid">
+
+  <!-- ── OPTION A ── -->
+  <div class="phone-wrap">
+    <div class="label">Option A — Glow + Stats</div>
+    <div class="sublabel">Ambient orb glows, app stats pill row, then the form. Atmospheric feel.</div>
+    <div class="phone">
+      <div class="opt-a">
+        <div class="glow-orb orb1"></div>
+        <div class="glow-orb orb2"></div>
+        <div class="glow-orb orb3"></div>
+        <!-- Logo -->
+        <div class="logo-ring">
+          <span class="logo-icon">$</span>
+        </div>
+        <div class="app-name">Life Admin</div>
+        <div class="app-tagline">Your finances, finally clear</div>
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-pill">
+            <div class="stat-num">$273</div>
+            <div class="stat-lbl">avg real spend</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-num">42%</div>
+            <div class="stat-lbl">forget a sub</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-num">Free</div>
+            <div class="stat-lbl">to start</div>
+          </div>
+        </div>
+        <!-- Form -->
+        <div class="form-area">
+          <div class="inp" style="color:#444">you@email.com</div>
+          <div class="inp" style="color:#333">••••••••</div>
+          <div class="btn-primary">Sign In</div>
+          <div class="btn-face">Sign in with Face ID</div>
+          <div class="btn-ghost">New here? Create free account</div>
+        </div>
+      </div>
+    </div>
+    <div class="sublabel" style="color:#3EA75890">Keeps the form central. Orbs are pure CSS — no images needed.</div>
+  </div>
+
+  <!-- ── OPTION B ── -->
+  <div class="phone-wrap">
+    <div class="recommended">Recommended</div>
+    <div class="label">Option B — Hero + Form</div>
+    <div class="sublabel">Top hero panel with branded stats, form below. Tells the story before you log in.</div>
+    <div class="phone">
+      <div class="opt-b">
+        <!-- Hero -->
+        <div class="hero-section">
+          <div class="hero-glow"></div>
+          <div class="mini-cards">
+            <div class="mini-card">
+              <div class="mc-label">You think</div>
+              <div class="mc-val" style="color:#FF6B35">$62</div>
+              <div class="mc-sub">per month</div>
+            </div>
+            <div class="mini-card">
+              <div class="mc-label">Reality</div>
+              <div class="mc-val">$273</div>
+              <div class="mc-sub">per month</div>
+            </div>
+            <div class="mini-card">
+              <div class="mc-label">Forgotten</div>
+              <div class="mc-val" style="color:#FFB300">42%</div>
+              <div class="mc-sub">of people</div>
+            </div>
+          </div>
+          <div class="hero-title">Find out what you're<br>actually spending</div>
+          <div class="hero-sub">Track every subscription, bill & expense</div>
+        </div>
+        <!-- Form -->
+        <div class="form-section">
+          <div class="form-title">Welcome back</div>
+          <div class="form-sub">Sign in to see your real numbers</div>
+          <div class="inp inp-focused">you@email.com</div>
+          <div class="inp">••••••••</div>
+          <div class="btn-primary">Sign In</div>
+          <div class="row-btns">
+            <div class="btn-face">Face ID</div>
+            <div class="btn-ghost">Create account</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sublabel" style="color:#3EA75890">Hero re-enforces the core value prop on every login. Highest conversion intent.</div>
+  </div>
+
+  <!-- ── OPTION C ── -->
+  <div class="phone-wrap">
+    <div class="label">Option C — Grid + Brand</div>
+    <div class="sublabel">Subtle grid background, logo lockup, 3 feature chips, then form with icon inputs.</div>
+    <div class="phone">
+      <div class="opt-c">
+        <div class="bg-grid"></div>
+        <div class="bg-vignette"></div>
+        <!-- Badge -->
+        <div class="top-badge">
+          <div class="badge-text">Free to start — No bank required</div>
+        </div>
+        <!-- Logo -->
+        <div class="logo-stack">
+          <div class="logo-box">$</div>
+          <div class="logo-text">Life<span>Admin</span></div>
+        </div>
+        <div class="tagline">Your finances, finally in one place</div>
+        <!-- Feature chips -->
+        <div class="feature-row">
+          <div class="feat">
+            <span class="feat-icon">$</span>
+            <span class="feat-text">Track subscriptions</span>
+          </div>
+          <div class="feat">
+            <span class="feat-icon">#</span>
+            <span class="feat-text">See real spend</span>
+          </div>
+          <div class="feat">
+            <span class="feat-icon">!</span>
+            <span class="feat-text">Bill alerts</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <!-- Form -->
+        <div class="inp-wrap">
+          <span class="inp-icon">@</span>
+          <div class="inp">you@email.com</div>
+        </div>
+        <div class="inp-wrap">
+          <span class="inp-icon">*</span>
+          <div class="inp">••••••••</div>
+        </div>
+        <div class="btn-primary">Sign In</div>
+        <div class="bottom-row">
+          <div class="btn-face">Face ID</div>
+          <div class="btn-signup">New account</div>
+        </div>
+        <div class="trust-line">256-bit encryption · We never sell your data</div>
+      </div>
+    </div>
+    <div class="sublabel" style="color:#3EA75890">Cleanest. Feature chips give context without being loud. Grid bg adds texture.</div>
+  </div>
+
+</div>
+
+<div style="max-width:720px;margin:40px auto 0;padding:0 24px">
+  <p style="color:#444;font-size:13px;text-align:center;line-height:1.8">
+    All options use your existing dark theme (#0A0A0F), green brand (#3EA758), and same button hierarchy.<br>
+    No images needed — all pure CSS + inline styles, same pattern as the rest of app.jsx.
+  </p>
+</div>
+</body>
+</html>
