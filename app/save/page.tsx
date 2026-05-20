@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Check, Plus, X, RefreshCw } from "lucide-react";
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+} from "recharts";
 import MerchantLogo from "@/components/MerchantLogo";
 import { getCancelLink } from "@/lib/cancelLinks";
 
@@ -203,39 +207,32 @@ export default function SavePage() {
       {/* Summary card */}
       <div className={`mb-6 rounded-2xl border p-5 transition-all ${saved > 0 ? "border-brand/40 bg-brand/5" : "border-white/10 bg-white/[0.02]"}`}>
         <div className="mb-4 flex items-center gap-5">
-          {/* Mini donut */}
-          <div className="relative shrink-0">
-            <svg width="80" height="80" viewBox="0 0 80 80">
-              {(() => {
-                const r = 30, cx = 40, cy = 40;
-                const circ = 2 * Math.PI * r;
-                const segs = [
-                  { pct: total > 0 ? subsTotal / total : 0, color: "#00C853" },
-                  { pct: total > 0 ? billsTotal / total : 0, color: "#FFB300" },
-                  { pct: total > 0 ? trialsTotal / total : 0, color: "#38BDF8" },
-                ];
-                let offset = 0;
-                return segs.map((s, i) => {
-                  const dash = s.pct * circ;
-                  const el = (
-                    <circle
-                      key={i}
-                      cx={cx} cy={cy} r={r}
-                      fill="none"
-                      stroke={s.color}
-                      strokeWidth={10}
-                      strokeDasharray={`${dash} ${circ - dash}`}
-                      strokeDashoffset={-offset}
-                      style={{ transform: "rotate(-90deg)", transformOrigin: "center" }}
-                    />
-                  );
-                  offset += dash;
-                  return el;
-                });
-              })()}
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xs text-gray-500">total</span>
+          {/* Recharts donut */}
+          <div className="relative shrink-0" style={{ width: 120, height: 120 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Subs", value: subsTotal, color: "#00C853" },
+                    { name: "Bills", value: billsTotal, color: "#FFB300" },
+                    { name: "Trials", value: trialsTotal, color: "#38BDF8" },
+                  ].filter(d => d.value > 0)}
+                  cx="50%" cy="50%"
+                  innerRadius={36} outerRadius={52}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {[
+                    { name: "Subs", value: subsTotal, color: "#00C853" },
+                    { name: "Bills", value: billsTotal, color: "#FFB300" },
+                    { name: "Trials", value: trialsTotal, color: "#38BDF8" },
+                  ].filter(d => d.value > 0).map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                </Pie>
+                <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-[10px] text-gray-500">total</span>
               <span className="font-mono text-sm font-black">${Math.round(total)}</span>
             </div>
           </div>
@@ -283,6 +280,35 @@ export default function SavePage() {
           )}
         </div>
       </div>
+
+      {/* Before/After savings chart */}
+      {saved > 0 && (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Before vs After</p>
+          <p className="mb-4 text-xs text-gray-600">Monthly and annual comparison if you cancel selected items</p>
+          <ResponsiveContainer width="100%" height={130}>
+            <BarChart
+              data={[
+                { label: "Monthly", current: parseFloat(total.toFixed(2)), after: parseFloat(newTotal.toFixed(2)) },
+                { label: "Annual", current: parseFloat((total * 12).toFixed(2)), after: parseFloat((newTotal * 12).toFixed(2)) },
+              ]}
+              margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+              barGap={4}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "#6b7280", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v}`} width={52} />
+              <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} />
+              <Bar dataKey="current" name="Current" fill="rgba(239,68,68,0.5)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="after" name="After cancelling" fill="#00C853" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-3 flex gap-5 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-sm" style={{ background: "rgba(239,68,68,0.5)" }} />Current</div>
+            <div className="flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-sm bg-[#00C853]" />After cancelling</div>
+          </div>
+        </div>
+      )}
 
       {/* Item groups */}
       {items.length === 0 ? (

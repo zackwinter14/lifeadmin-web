@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, X, Trash2, Fuel } from "lucide-react";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
+} from "recharts";
 
 interface Fillup {
   id: string;
@@ -255,6 +259,112 @@ export default function GasPage() {
           </div>
         ))}
       </div>
+
+      {/* ── Charts ─────────────────────────────────────────────────── */}
+      {txns.length >= 2 && (() => {
+        const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const now2 = new Date();
+        const monthlyChartData = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(now2.getFullYear(), now2.getMonth() - 5 + i, 1);
+          const m = MONTH_ABBR[d.getMonth()];
+          const spent = txns.filter(t => t.date.includes(m)).reduce((s, t) => s + t.amount, 0);
+          return { month: m, spent: parseFloat(spent.toFixed(2)) };
+        });
+        const hasMonthlyData = monthlyChartData.some(d => d.spent > 0);
+
+        const ppgData = [...txns].filter(t => t.pricePer > 0).reverse().slice(-12)
+          .map(t => ({ name: t.date, ppg: parseFloat(t.pricePer.toFixed(2)) }));
+
+        const STATION_COLORS = ["#F5C518","#E8A010","#FFD700","#D4891A","#C47A00","#FFC300"];
+        const stationPieData = stations.slice(0, 6).map(([name, amt], i) => ({
+          name: name.length > 14 ? name.slice(0, 14) + "…" : name,
+          value: parseFloat(amt.toFixed(2)),
+          color: STATION_COLORS[i] || "#F5C518",
+        }));
+
+        return (
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            {/* Monthly spending area chart */}
+            {hasMonthlyData && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">Monthly Spending</p>
+                <p className="mb-4 font-mono text-2xl font-black text-yellow-400">{fmt(thisTotal)}<span className="text-sm font-normal text-gray-500"> this month</span></p>
+                <ResponsiveContainer width="100%" height={140}>
+                  <AreaChart data={monthlyChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F5C518" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#F5C518" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                    <Tooltip
+                      formatter={(v: any) => [fmt(v), "Spent"]}
+                      contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+                      cursor={{ stroke: "rgba(245,197,24,0.2)", strokeWidth: 1 }}
+                    />
+                    <Area type="monotone" dataKey="spent" stroke="#F5C518" strokeWidth={2} fill="url(#gasGrad)" dot={{ fill: "#F5C518", r: 3 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Station breakdown donut */}
+            {stationPieData.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">By Station</p>
+                <p className="mb-4 font-mono text-2xl font-black text-white">{stations.length}<span className="text-sm font-normal text-gray-500"> stations logged</span></p>
+                <div className="flex items-center gap-4">
+                  <ResponsiveContainer width={120} height={120}>
+                    <PieChart>
+                      <Pie data={stationPieData} cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={3} dataKey="value">
+                        {stationPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: any) => [fmt(v), ""]} contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 11 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex-1 space-y-1.5">
+                    {stationPieData.map((s, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
+                          <span className="text-xs text-gray-400 truncate max-w-[90px]">{s.name}</span>
+                        </div>
+                        <span className="text-xs font-bold text-yellow-400">{fmt(s.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Price per gallon trend */}
+            {ppgData.length >= 2 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 md:col-span-2">
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">Price Per Gallon — Last {ppgData.length} Fill-ups</p>
+                <p className="mb-4 font-mono text-2xl font-black text-white">
+                  ${ppgData[ppgData.length - 1]?.ppg.toFixed(2)}<span className="text-sm font-normal text-gray-500"> most recent</span>
+                </p>
+                <ResponsiveContainer width="100%" height={120}>
+                  <BarChart data={ppgData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} domain={["auto", "auto"]} />
+                    <Tooltip
+                      formatter={(v: any) => [`$${Number(v).toFixed(2)}/gal`, "Price"]}
+                      contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+                    />
+                    <Bar dataKey="ppg" fill="#F5C518" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+      {/* ── End Charts ─────────────────────────────────────────────── */}
 
       <div className="mb-5 flex gap-2">
         {([["all", "All time"], ["thisMonth", thisM], ["lastMonth", lastM]] as const).map(([v, l]) => (

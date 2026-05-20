@@ -4,7 +4,10 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
+} from "recharts";
 import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X, CreditCard } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 import UpgradeBanner from "@/components/UpgradeBanner";
@@ -695,9 +698,9 @@ export default function Dashboard() {
           <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Spend Breakdown</p>
           {donutData.length > 0 ? (
             <div className="flex items-center gap-4">
-              <ResponsiveContainer width={110} height={110}>
+              <ResponsiveContainer width={160} height={160}>
                 <PieChart>
-                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={32} outerRadius={50} paddingAngle={2} dataKey="value">
+                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
                     {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
                   <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} />
@@ -750,6 +753,49 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Top items by monthly cost */}
+      {items.length > 0 && (() => {
+        const topItems = [...items]
+          .sort((a, b) => b.amount - a.amount)
+          .slice(0, 6)
+          .map(i => ({
+            name: i.name.length > 20 ? i.name.slice(0, 18) + "\u2026" : i.name,
+            amount: parseFloat(i.amount.toFixed(2)),
+            fill: TYPE_COLORS[i.type] || "#888",
+          }));
+        return (
+          <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Top Items by Monthly Cost</p>
+            <p className="mb-4 text-xs text-gray-600">Your biggest recurring charges at a glance</p>
+            <ResponsiveContainer width="100%" height={topItems.length * 34 + 8}>
+              <BarChart data={topItems} layout="vertical" margin={{ top: 0, right: 56, left: 0, bottom: 0 }}>
+                <XAxis type="number" hide domain={[0, "dataMax"]} />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  formatter={(v: any) => [fmt(v), "Monthly"]}
+                  contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+                />
+                <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={20}>
+                  {topItems.map((entry, i) => <Cell key={i} fill={entry.fill} fillOpacity={0.85} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-3 flex gap-5 text-xs text-gray-500">
+              {([
+                { label: "Subscription", color: TYPE_COLORS.subscription },
+                { label: "Bill", color: TYPE_COLORS.bill },
+                { label: "Expense", color: TYPE_COLORS.expense },
+              ] as const).map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full shrink-0" style={{ background: l.color }} />
+                  {l.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Quick links */}
       <div className="grid gap-3 sm:grid-cols-3">
