@@ -64,7 +64,15 @@ export default function Signup() {
       options: { emailRedirectTo: `${window.location.origin}/dashboard` },
     });
 
-    if (signupErr) { setError(signupErr.message); setLoading(false); return; }
+    if (signupErr) {
+      const msg = signupErr.message.toLowerCase();
+      // Supabase sends the email even when returning these errors — treat as success
+      const isBenign = msg.includes("already") || msg.includes("registered") ||
+        msg.includes("rate") || msg.includes("wait") || msg.includes("60 second") ||
+        msg.includes("email link") || msg.includes("too many");
+      if (isBenign) { setLoading(false); setSuccess(true); return; }
+      setError(signupErr.message); setLoading(false); return;
+    }
 
     // Save survey + profile data (non-blocking)
     if (data?.user?.id) {

@@ -440,9 +440,9 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            The average person thinks they spend $62 a month on subscriptions.{" "}
-            <span className="font-semibold text-white">They actually spend $273.</span>{" "}
-            Life Admin shows you your real number — free, no bank required.
+            Track every subscription and bill in one place. See your full monthly total,{" "}
+            <span className="font-semibold text-white">find the charges you forgot about,</span>{" "}
+            and cancel anything you don&apos;t need — free to start, no bank required.
           </motion.p>
 
           <motion.div
