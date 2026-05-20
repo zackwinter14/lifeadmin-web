@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase";
 
 // ── Fill these in once your AdSense account is approved ──────────────────────
-const PUBLISHER_ID = "ca-pub-5151835818661965";
+const PUBLISHER_ID = "ca-pub-1670114813056071";
 const SLOTS = {
   mid:    "XXXXXXXXXX",
   bottom: "XXXXXXXXXX",

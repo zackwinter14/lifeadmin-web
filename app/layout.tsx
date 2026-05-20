@@ -9,7 +9,7 @@ import BankAutoSync from "@/components/BankAutoSync";
 import AutoAINotification from "@/components/AutoAINotification";
 import { Analytics } from "@vercel/analytics/next";
 
-const ADSENSE_PUBLISHER_ID = "ca-pub-5151835818661965";
+const ADSENSE_PUBLISHER_ID = "ca-pub-1670114813056071";
 
 export const viewport: Viewport = {
   width: "device-width",
