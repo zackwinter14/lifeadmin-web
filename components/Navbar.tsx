@@ -20,6 +20,7 @@ const MENU_SECTIONS = [
     label: "Plan",
     items: [
       { href: "/calendar",     label: "Calendar",    icon: Calendar,      color: "#FF9500" },
+      { href: "/recurring",    label: "Recurring",   icon: Repeat,        color: "#5E8EFF" },
       { href: "/cancel",       label: "Cancel Mgr",  icon: CircleX,       color: "#FF3B30" },
       { href: "/report",       label: "Monthly",     icon: FileText,      color: "#38BDF8" },
       { href: "/wrapped",      label: "Year Review", icon: Sparkles,      color: "#F5C518" },

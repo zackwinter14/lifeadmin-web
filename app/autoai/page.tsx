@@ -1,13 +1,26 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Bot, Send, User, Sparkles, RefreshCw, Bell, BellOff, Mail } from "lucide-react";
+import { Bot, Send, User, Sparkles, RefreshCw, Bell, Mail, Check, X as XIcon, CircleX } from "lucide-react";
+
+// Tool call returned by the API. v1 supports: find_item (read-only) and mark_for_cancel (requires Confirm).
+interface ToolUse {
+  id: string;
+  name: string;
+  input: Record<string, any>;
+}
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  // Assistant-only fields for tool-call flow
+  blocks?: any[];                 // raw response.content for follow-up turns
+  toolUses?: ToolUse[];           // tools the model wants the user to confirm
+  pendingTools?: string[];        // tool_use ids still awaiting confirmation
+  resolvedTools?: Record<string, { approved: boolean; resultText: string }>;
+  systemNote?: boolean;           // small grey "Done."/"Cancelled." note bubble
 }
 
 const STARTERS = [
@@ -25,6 +38,7 @@ const INSIGHT_CACHE_KEY = "autoai_last_insight_date";
 
 export default function AutoAIPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
   const [authed, setAuthed] = useState(false);
@@ -79,7 +93,16 @@ export default function AutoAIPage() {
         }
       } catch {}
       setLoadingInsight(false);
-      setTimeout(() => inputRef.current?.focus(), 100);
+
+      // If we arrived here from /recurring (or another page) with ?ask=, prefill and send.
+      const preset = searchParams?.get("ask");
+      if (preset) {
+        setInput(preset);
+        // Fire it after the opening message renders so it lands naturally
+        setTimeout(() => sendMessage(preset), 200);
+      } else {
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
     }
     init();
   }, []);
@@ -87,6 +110,61 @@ export default function AutoAIPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, loadingInsight]);
+
+  // Map our chat history into the shape the API expects (Anthropic-compatible).
+  // For messages that carry blocks (tool_use / tool_result), pass the blocks through.
+  function buildApiPayload(history: Message[]) {
+    return history.map(m => {
+      if (m.role === "user" && Array.isArray(m.blocks)) {
+        return { role: "user", content: m.blocks };
+      }
+      if (m.role === "assistant" && Array.isArray(m.blocks)) {
+        return { role: "assistant", content: m.blocks };
+      }
+      return { role: m.role, content: m.content };
+    });
+  }
+
+  // Read-only tool: search current user's items in Supabase.
+  async function execFindItem(query: string) {
+    if (!user) return { success: false, summary: "Not logged in." };
+    const { data, error } = await supabase
+      .from("items")
+      .select("id, name, amount, type, category")
+      .eq("user_id", user.id)
+      .ilike("name", `%${query}%`)
+      .limit(5);
+    if (error) return { success: false, summary: "Search failed: " + error.message };
+    const matches = (data || []).map(d => ({ id: String(d.id), name: d.name, amount: d.amount, type: d.type, category: d.category }));
+    return { success: true, summary: `Found ${matches.length} match${matches.length === 1 ? "" : "es"}.`, matches };
+  }
+
+  // Confirm-required tool: flag an item as marked-for-cancel.
+  // We persist to localStorage (mirrors the mobile app's in-state toCancel list) so the
+  // user can find it on /cancel without requiring a schema change here.
+  async function execMarkForCancel(itemId: string) {
+    if (!user) return { success: false, summary: "Not logged in." };
+    const { data: item } = await supabase
+      .from("items")
+      .select("id, name")
+      .eq("id", itemId)
+      .eq("user_id", user.id)
+      .single();
+    if (!item) return { success: false, summary: "Item not found." };
+    try {
+      const key = `cancel_intents_${user.id}`;
+      const list: { id: string; name: string; at: string }[] = JSON.parse(localStorage.getItem(key) || "[]");
+      if (!list.some(x => x.id === itemId)) list.push({ id: itemId, name: item.name, at: new Date().toISOString() });
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch {}
+    return { success: true, summary: `Marked ${item.name} to cancel. Open Cancel Mgr to finish.` };
+  }
+
+  async function runTool(name: string, input: Record<string, any>) {
+    if (name === "find_item") return execFindItem(String(input.query || ""));
+    if (name === "mark_for_cancel") return execMarkForCancel(String(input.item_id || ""));
+    return { success: false, summary: `Unknown tool: ${name}` };
+  }
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -102,11 +180,62 @@ export default function AutoAIPage() {
       const res = await fetch("/api/autoai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, systemPrompt }),
+        body: JSON.stringify({ messages: buildApiPayload(history), systemPrompt }),
       });
       if (!res.ok) throw new Error("API error");
-      const { reply } = await res.json();
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      const { reply, toolUses, rawBlocks } = await res.json();
+
+      // Split tool uses: find_item auto-runs (read-only); others need user confirm.
+      const tools: ToolUse[] = Array.isArray(toolUses) ? toolUses : [];
+      const readOnly = tools.filter(t => t.name === "find_item");
+      const needsConfirm = tools.filter(t => t.name !== "find_item");
+
+      const assistantMsg: Message = {
+        role: "assistant",
+        content: reply || "",
+        blocks: rawBlocks,
+        toolUses: needsConfirm,
+        pendingTools: needsConfirm.map(t => t.id),
+      };
+
+      let history2 = [...history, assistantMsg];
+      setMessages(history2);
+
+      // Auto-run read-only tools, send results back for a follow-up turn.
+      if (readOnly.length > 0) {
+        const results = [];
+        for (const t of readOnly) {
+          const r = await runTool(t.name, t.input);
+          results.push({ tool_use_id: t.id, result: r });
+        }
+        const userToolResult: Message = {
+          role: "user",
+          content: "",
+          blocks: results.map(r => ({
+            type: "tool_result",
+            tool_use_id: r.tool_use_id,
+            content: JSON.stringify(r.result),
+          })),
+        };
+        history2 = [...history2, userToolResult];
+
+        const res2 = await fetch("/api/autoai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: buildApiPayload(history2), systemPrompt }),
+        });
+        if (res2.ok) {
+          const { reply: reply2, toolUses: tu2, rawBlocks: rb2 } = await res2.json();
+          const followConfirm = (tu2 || []).filter((t: ToolUse) => t.name !== "find_item");
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: reply2 || "",
+            blocks: rb2,
+            toolUses: followConfirm,
+            pendingTools: followConfirm.map((t: ToolUse) => t.id),
+          }]);
+        }
+      }
     } catch {
       setMessages(prev => [...prev, {
         role: "assistant",
@@ -116,6 +245,25 @@ export default function AutoAIPage() {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+  }
+
+  // User tapped Confirm / Cancel on a pending tool card.
+  async function handleToolDecision(msgIndex: number, tu: ToolUse, approved: boolean) {
+    let resultText = "Cancelled.";
+    if (approved) {
+      const r = await runTool(tu.name, tu.input);
+      resultText = r?.summary || (r?.success ? "Done." : "Could not complete.");
+    }
+    setMessages(prev => {
+      const next = [...prev];
+      const m = next[msgIndex];
+      if (m) {
+        m.pendingTools = (m.pendingTools || []).filter(id => id !== tu.id);
+        m.resolvedTools = { ...(m.resolvedTools || {}), [tu.id]: { approved, resultText } };
+      }
+      next.push({ role: "assistant", content: resultText, systemNote: true });
+      return next;
+    });
   }
 
   function reset() {
@@ -264,28 +412,75 @@ export default function AutoAIPage() {
       {messages.length > 0 && (
         <div className="flex-1 space-y-4 pb-4">
           {messages.map((m, i) => (
-            <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              {m.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 mt-0.5">
-                  <Bot size={15} className="text-purple-400" />
-                </div>
-              )}
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                m.role === "user"
-                  ? "rounded-tr-sm bg-purple-500/20 border border-purple-500/30 text-white"
-                  : "rounded-tl-sm bg-white/[0.04] border border-white/10 text-gray-200"
-              }`}>
-                {/* First assistant message gets a subtle "proactive" label */}
-                {m.role === "assistant" && i === 0 && (
-                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-purple-400/70">AutoAI check-in</p>
+            <div key={i} className={`flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
+              <div className={`flex w-full gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                {m.role === "assistant" && !m.systemNote && (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 mt-0.5">
+                    <Bot size={15} className="text-purple-400" />
+                  </div>
                 )}
-                {m.content.split("\n").map((line, j) => (
-                  <span key={j}>{line}{j < m.content.split("\n").length - 1 && <br />}</span>
-                ))}
+                {/* Render content unless this is a pure tool-use turn with no text */}
+                {(m.content || (!m.toolUses?.length && !m.systemNote)) && (
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    m.systemNote
+                      ? "rounded-tl-sm bg-white/[0.02] border border-white/5 text-xs italic text-gray-500"
+                      : m.role === "user"
+                      ? "rounded-tr-sm bg-purple-500/20 border border-purple-500/30 text-white"
+                      : "rounded-tl-sm bg-white/[0.04] border border-white/10 text-gray-200"
+                  }`}>
+                    {m.role === "assistant" && !m.systemNote && i === 0 && (
+                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-purple-400/70">AutoAI check-in</p>
+                    )}
+                    {(m.content || "").split("\n").map((line, j, arr) => (
+                      <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
+                    ))}
+                  </div>
+                )}
+                {m.role === "user" && !m.systemNote && (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5 border border-white/10 mt-0.5">
+                    <User size={14} className="text-gray-400" />
+                  </div>
+                )}
               </div>
-              {m.role === "user" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5 border border-white/10 mt-0.5">
-                  <User size={14} className="text-gray-400" />
+
+              {/* Pending tool confirm cards (assistant side only) */}
+              {Array.isArray(m.toolUses) && m.toolUses.length > 0 && (
+                <div className="ml-11 flex w-full max-w-[80%] flex-col gap-2">
+                  {m.toolUses.map(tu => {
+                    const pending = (m.pendingTools || []).includes(tu.id);
+                    const resolved = m.resolvedTools?.[tu.id];
+                    const label =
+                      tu.name === "mark_for_cancel"
+                        ? `Mark item ${tu.input?.item_id || ""} to cancel?`
+                        : `Run ${tu.name}?`;
+                    const icon = tu.name === "mark_for_cancel" ? <CircleX size={13} className="text-red-400" /> : <Sparkles size={13} className="text-purple-400" />;
+                    return (
+                      <div key={tu.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                        <div className="mb-2 flex items-center gap-2">
+                          {icon}
+                          <p className="text-xs font-semibold text-white">{label}</p>
+                        </div>
+                        {pending ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleToolDecision(i, tu, true)}
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-purple-400"
+                            >
+                              <Check size={12} /> Confirm
+                            </button>
+                            <button
+                              onClick={() => handleToolDecision(i, tu, false)}
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-gray-400 transition hover:bg-white/[0.06]"
+                            >
+                              <XIcon size={12} /> Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] italic text-gray-500">{resolved?.resultText || ""}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

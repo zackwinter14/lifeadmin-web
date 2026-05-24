@@ -95,6 +95,16 @@ export default function Features() {
 
         <Section title="Save Money Automatically">
           <Big
+            icon={<RefreshCw />}
+            title="Recurring tab — every charge that comes back, in one place"
+            body="Search every subscription, bill, and trial by name or price. Sort by amount or next due date. Tap any row to see what you started with, what you've paid in total, and whether the price has crept up. Stale, new, and price-jumped items get tagged so nothing hides."
+          />
+          <Big
+            icon={<Bot />}
+            title="AutoAI takes action — not just answers"
+            body="AutoAI can do more than chat. Ask it to find a subscription and it pulls it up inline. Ask it to flag something for cancellation and it shows a Confirm card before it runs. Every action requires your tap — AutoAI never moves money or cancels anything on its own."
+          />
+          <Big
             icon={<TrendingDown />}
             title="One-tap cancellation"
             body="See a sub you don't want? One tap. Life Admin handles the cancel flow, including the companies that bury cancel buttons six pages deep."
