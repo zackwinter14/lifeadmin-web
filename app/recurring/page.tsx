@@ -71,6 +71,31 @@ function initial(name: string) {
   return (name || "?").trim().charAt(0).toUpperCase() || "?";
 }
 
+// Estimate how many times an item has recurred since it was first seen.
+// Uses real first_seen_date + frequency when available, falls back to created_at + monthly.
+function timesRecurred(
+  firstSeen: string | null | undefined,
+  frequency: string | null | undefined,
+  fallbackCreatedAt?: string | null | undefined
+): number {
+  const start = firstSeen || fallbackCreatedAt;
+  if (!start) return 1;
+  const startMs = new Date(start).getTime();
+  if (!startMs || isNaN(startMs)) return 1;
+  const days = (Date.now() - startMs) / 86400000;
+  if (days < 0) return 1;
+  const f = (frequency || "monthly").toLowerCase();
+  let perDay: number;
+  if (f.includes("daily") || f === "day") perDay = 1;
+  else if (f.includes("biweek") || f.includes("bi-week")) perDay = 1 / 14;
+  else if (f.includes("week")) perDay = 1 / 7;
+  else if (f.includes("quarter")) perDay = 1 / 91;
+  else if (f.includes("year") || f.includes("annual")) perDay = 1 / 365;
+  else perDay = 1 / 30; // monthly default
+  const n = Math.floor(days * perDay) + 1; // +1 for the first charge
+  return Math.max(1, n);
+}
+
 // Build per-item insights from items list + recurring_transactions overlay.
 function buildInsights(items: Item[], rtx: RecurringTx[]): Record<string, RowInsight> {
   const out: Record<string, RowInsight> = {};
@@ -309,6 +334,12 @@ export default function RecurringPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <p className="truncate text-sm font-semibold text-white">{i.name}</p>
+                      <span
+                        title="Times charged so far"
+                        className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-[1px] font-mono text-[10px] font-bold text-gray-300"
+                      >
+                        {timesRecurred(r?.first_seen_date, r?.frequency, i.created_at)}×
+                      </span>
                       {ins?.rule === "price_jump" && (
                         <span className="rounded bg-red-500/15 px-1.5 py-[1px] text-[9px] font-bold tracking-wider text-red-400">
                           PRICE UP
@@ -342,6 +373,7 @@ export default function RecurringPage() {
                       {[
                         { l: "Current", v: fmt(i.amount), mono: true },
                         { l: "Annual", v: fmt(Number(i.amount) * 12), mono: true },
+                        { l: "Times charged", v: `${timesRecurred(r?.first_seen_date, r?.frequency, i.created_at)}×`, mono: true },
                         { l: "Started", v: fmtDate(r?.first_seen_date || i.created_at || null), mono: false },
                         { l: "Next due", v: fmtDate(r?.next_predicted_date || i.due_date || null), mono: false },
                         { l: "Frequency", v: r?.frequency || (i.type === "bill" ? "Monthly" : "Monthly"), mono: false },
