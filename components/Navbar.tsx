@@ -101,6 +101,7 @@ export default function Navbar() {
     { href: "/features",      label: "Features"      },
     { href: "/pricing",       label: "Pricing"       },
     { href: "/tools",         label: "Free Tools"    },
+    { href: "/about",         label: "About"         },
     { href: "/transparency",  label: "How we make money" },
   ];
 
