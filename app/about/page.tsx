@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { existsSync } from "fs";
+import path from "path";
 import { GraduationCap, Shield, Heart, DollarSign } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -26,6 +28,10 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
+  // Check at render time whether the founder photo is actually on disk.
+  // If not, we fall back to a tasteful initials placeholder so the page doesn't ship broken.
+  const photoExists = existsSync(path.join(process.cwd(), "public", "zack-founder.jpg"));
+
   return (
     <div className="px-6 py-16 md:py-20">
       <div className="mx-auto max-w-5xl">
@@ -62,12 +68,28 @@ export default function AboutPage() {
               }}
             />
             <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] shadow-2xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/zack-founder.jpg"
-                alt="Zachary Winter, founder of Life Admin Finance Tracker"
-                className="aspect-[3/4] w-full object-cover"
-              />
+              {photoExists ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src="/zack-founder.jpg"
+                  alt="Zachary Winter, founder of Life Admin Finance Tracker"
+                  className="aspect-[3/4] w-full object-cover"
+                />
+              ) : (
+                <div
+                  className="flex aspect-[3/4] w-full items-center justify-center"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #1a2440 0%, #0d1828 55%, #1a1230 100%)",
+                  }}
+                >
+                  <div className="flex h-32 w-32 items-center justify-center rounded-full border border-white/10 bg-white/5 backdrop-blur">
+                    <span className="font-mono text-5xl font-black tracking-tight text-white/80">
+                      ZW
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="border-t border-white/5 px-4 py-3">
                 <p className="text-sm font-semibold text-white">Zachary Winter</p>
                 <p className="text-xs text-gray-500">
