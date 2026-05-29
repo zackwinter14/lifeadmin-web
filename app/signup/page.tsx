@@ -52,6 +52,7 @@ export default function Signup() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) { setError("Name is required"); return; }
     if (!email || !password) { setError("Email and password are required"); return; }
     if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
     if (password2 && password !== password2) { setError("Passwords do not match"); return; }
@@ -66,7 +67,6 @@ export default function Signup() {
 
     if (signupErr) {
       const msg = signupErr.message.toLowerCase();
-      // Supabase sends the email even when returning these errors — treat as success
       const isBenign = msg.includes("already") || msg.includes("registered") ||
         msg.includes("rate") || msg.includes("wait") || msg.includes("60 second") ||
         msg.includes("email link") || msg.includes("too many");
@@ -74,16 +74,20 @@ export default function Signup() {
       setError(signupErr.message); setLoading(false); return;
     }
 
-    // Save survey + profile data (non-blocking)
+    // Save profile via server route so it works even before email is confirmed
     if (data?.user?.id) {
-      const uid = data.user.id;
-      const patch: Record<string, string> = { id: uid };
-      if (name.trim()) patch.full_name = name.trim();
-      if (phone.trim()) patch.phone = phone.trim();
-      if (hearAbout) patch.hear_about = hearAbout;
-      if (lookingFor.length) patch.looking_for = lookingFor.join(",");
-      if (referral.trim()) patch.referral_code = referral.trim();
-      supabase.from("profiles").upsert(patch, { onConflict: "id" }).then(() => {});
+      fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: data.user.id,
+          full_name: name.trim(),
+          phone: phone.trim(),
+          hear_about: hearAbout,
+          looking_for: lookingFor.join(","),
+          referral_code: referral.trim(),
+        }),
+      }).catch(() => {});
     }
 
     setLoading(false);
@@ -244,9 +248,10 @@ export default function Signup() {
                 <form onSubmit={handleSignup} className="space-y-4">
                   {/* Name */}
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-brand">Your Name</label>
+                    <label className="mb-1.5 block text-sm font-semibold text-brand">Your Name <span className="text-red-400">*</span></label>
                     <input
                       type="text"
+                      required
                       value={name}
                       onChange={e => setName(e.target.value)}
                       placeholder="First and last name"
