@@ -53,6 +53,7 @@ export default function AutoAIPage() {
   const [userEmail, setUserEmail] = useState("");
   const [savingPrefs, setSavingPrefs] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -108,8 +109,8 @@ export default function AutoAIPage() {
   }, []);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0 && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, [messages, loading, loadingInsight]);
 
@@ -434,7 +435,7 @@ export default function AutoAIPage() {
 
       {/* Messages */}
       {messages.length > 0 && (
-        <div className="flex-1 space-y-4 pb-4">
+        <div ref={messagesContainerRef} className="flex-1 space-y-4 overflow-y-auto pb-4" style={{ maxHeight: "60vh" }}>
           {messages.map((m, i) => (
             <div key={i} className={`flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
               <div className={`flex w-full gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
