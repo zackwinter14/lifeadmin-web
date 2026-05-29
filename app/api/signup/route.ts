@@ -12,7 +12,11 @@ export async function POST(req: NextRequest) {
 
     if (!uid) return NextResponse.json({ error: "Missing uid" }, { status: 400 });
 
-    const patch: Record<string, string> = { id: uid };
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let account_code = "LA-" + new Date().getFullYear() + "-";
+    for (let i = 0; i < 5; i++) account_code += chars[Math.floor(Math.random() * chars.length)];
+
+    const patch: Record<string, string> = { id: uid, account_code };
     if (full_name?.trim()) patch.full_name = full_name.trim();
     if (phone?.trim()) patch.phone = phone.trim();
     if (hear_about) patch.hear_about = hear_about;
