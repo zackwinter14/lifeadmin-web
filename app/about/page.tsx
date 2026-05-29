@@ -5,7 +5,7 @@ import path from "path";
 import { GraduationCap, Shield, Heart, DollarSign } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "About Zack — Founder of Life Admin Finance Tracker",
+  title: "About Zack, Founder of Life Admin Finance Tracker",
   description:
     "Why I built Life Admin Finance Tracker — from growing up broke in Los Angeles to building a free finance app that helps people keep more of what they earn.",
   keywords: [
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "free finance tracker founder",
   ],
   openGraph: {
-    title: "About Zack — Founder of Life Admin Finance Tracker",
+    title: "About Zack, Founder of Life Admin Finance Tracker",
     description:
       "Army veteran. Two associate degrees. Built a free finance tracker because nobody should pay a subscription to see their own money.",
     url: "https://lifeadminofficial.com/about",
@@ -46,7 +46,7 @@ export default function AboutPage() {
               <span className="gradient-text">existed when I was broke.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-400">
-              Hi, I&apos;m Zack — Army veteran, founder of Life Admin Finance Tracker,
+              Hi, I&apos;m Zack, Army veteran, founder of Life Admin Finance Tracker,
               and the reason the core app is free.
             </p>
 
@@ -104,7 +104,7 @@ export default function AboutPage() {
         <article className="mx-auto max-w-2xl space-y-6 text-[17px] leading-[1.75] text-gray-300">
           <p>
             My name is Zachary Winter. I&apos;m an Army veteran with two associate
-            degrees — one in professional accounting, one in business administration.
+            degrees: one in professional accounting, one in business administration.
             I&apos;m the founder and creator of Life Admin Finance Tracker.
           </p>
 
@@ -146,7 +146,7 @@ export default function AboutPage() {
           <p>
             So Life Admin Finance Tracker is free. The whole core app — track income,
             track expenses, log subscriptions, build a budget, see where your money is
-            actually going — completely free. You can pay if you want bank sync and the
+            actually going. Completely free. You can pay if you want bank sync and the
             AI features, but you will never <em>have</em> to pay just to track your own
             money.
           </p>
@@ -172,7 +172,7 @@ export default function AboutPage() {
             You earned that money. You should keep it.
           </p>
 
-          <p className="pt-2 font-mono text-sm text-gray-500">— Zack</p>
+          <p className="pt-2 font-mono text-sm text-gray-500">Zack</p>
         </article>
 
         {/* MISSION BOX */}
