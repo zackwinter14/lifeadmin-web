@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://lifeadminofficial.com/blog" },
 };
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 async function getPosts() {
   try {

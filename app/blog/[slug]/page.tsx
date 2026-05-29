@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 function getSupabase() {
   return createClient(
