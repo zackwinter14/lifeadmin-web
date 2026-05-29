@@ -7,7 +7,7 @@ import { GraduationCap, Shield, Heart, DollarSign } from "lucide-react";
 export const metadata: Metadata = {
   title: "About Zack, Founder of Life Admin Finance Tracker",
   description:
-    "Why I built Life Admin Finance Tracker — from growing up broke in Los Angeles to building a free finance app that helps people keep more of what they earn.",
+    "Why I built Life Admin Finance Tracker. From growing up broke in Los Angeles to building a free finance app that helps people keep more of what they earn.",
   keywords: [
     "Life Admin founder",
     "Zachary Winter",
@@ -109,7 +109,7 @@ export default function AboutPage() {
           </p>
 
           <p>
-            I grew up in Los Angeles without a lot of money. My mom raised me — she was
+            I grew up in Los Angeles without a lot of money. My mom raised me. She was
             a cancer survivor and she was sick a lot. I never knew my biological father,
             but I had a stepdad who stepped up and helped raise me. Money was tight, and
             when it wasn&apos;t tight, I had no idea where it was going.
@@ -127,9 +127,9 @@ export default function AboutPage() {
 
           <p>
             It clicked when my wife sat me down and explained what a budget actually
-            was. Not the word — the <em>thing</em>. Where money comes in. Where it goes
+            was. Not the word, the <em>thing</em>. Where money comes in. Where it goes
             out. What&apos;s left over. Nobody had ever broken it down for me before.
-            The second I understood it, I felt stupid for not understanding it sooner —
+            The second I understood it, I felt stupid for not understanding it sooner,
             and angry that nobody had ever bothered to show me.
           </p>
 
@@ -137,14 +137,14 @@ export default function AboutPage() {
 
           <p>
             Every app I looked at wanted my money to teach me how to manage my money.
-            Rocket Money. Copilot. The big ones charging $60 to $120 a year — five to
-            ten bucks a month — just to show me my own transactions. Growing up broke,
+            Rocket Money. Copilot. The big ones charging $60 to $120 a year, five to
+            ten bucks a month, just to show me my own transactions. Growing up broke,
             I would have killed for something that just <em>worked</em> and didn&apos;t
             cost me anything to use.
           </p>
 
           <p>
-            So Life Admin Finance Tracker is free. The whole core app — track income,
+            So Life Admin Finance Tracker is free. The whole core app: track income,
             track expenses, log subscriptions, build a budget, see where your money is
             actually going. Completely free. You can pay if you want bank sync and the
             AI features, but you will never <em>have</em> to pay just to track your own
@@ -181,7 +181,7 @@ export default function AboutPage() {
             The Mission
           </p>
           <h2 className="text-2xl font-bold leading-snug md:text-3xl">
-            Nobody should get blindsided by a charge they forgot about — and nobody
+            Nobody should get blindsided by a charge they forgot about, and nobody
             should have to{" "}
             <span className="gradient-text">pay a subscription to see their own money.</span>
           </h2>
@@ -193,7 +193,7 @@ export default function AboutPage() {
             href="/signup"
             className="rounded-xl bg-brand-gradient px-7 py-3.5 text-sm font-bold text-black transition hover:opacity-90"
           >
-            Try Life Admin Finance Tracker — Free
+            Try Life Admin Finance Tracker Free
           </Link>
           <Link
             href="/pricing"
@@ -209,7 +209,7 @@ export default function AboutPage() {
           </a>
         </div>
 
-        {/* Company info — small, at the bottom */}
+        {/* Company info */}
         <div className="mx-auto mt-16 max-w-2xl rounded-2xl border border-white/5 bg-white/[0.015] p-6 text-sm text-gray-500">
           <p className="mb-2">
             <span className="font-semibold text-gray-300">The company.</span> Life Admin
