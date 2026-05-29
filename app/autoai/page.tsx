@@ -162,9 +162,31 @@ export default function AutoAIPage() {
     return { success: true, summary: `Marked ${item.name} to cancel. Open Cancel Mgr to finish.` };
   }
 
+  async function execAddItem(name: string, amount: number, type: string, category?: string) {
+    if (!user) return { success: false, summary: "Not logged in." };
+    const TYPE_COLORS: Record<string, string> = {
+      subscription: "#3EA758",
+      bill: "#FFB300",
+      expense: "#FF6B35",
+    };
+    const { data, error } = await supabase.from("items").insert({
+      user_id: user.id,
+      name,
+      amount,
+      type,
+      category: category || (type === "subscription" ? "Entertainment" : type === "bill" ? "Utilities" : "Other"),
+      status: "active",
+      color: TYPE_COLORS[type] || "#3EA758",
+      autopay: false,
+    }).select().single();
+    if (error) return { success: false, summary: "Could not add item: " + error.message };
+    return { success: true, summary: `Added ${name} ($${amount}/mo) to your tracked items.`, item: data };
+  }
+
   async function runTool(name: string, input: Record<string, any>) {
     if (name === "find_item") return execFindItem(String(input.query || ""));
     if (name === "mark_for_cancel") return execMarkForCancel(String(input.item_id || ""));
+    if (name === "add_item") return execAddItem(String(input.name || ""), Number(input.amount || 0), String(input.type || "expense"), input.category ? String(input.category) : undefined);
     return { success: false, summary: `Unknown tool: ${name}` };
   }
 

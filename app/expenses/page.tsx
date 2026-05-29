@@ -154,7 +154,6 @@ export default function ExpensesPage() {
       status: "active",
       color: "#FF6B35",
       autopay: false,
-      source: "manual",
     };
 
     if (editingId) {

@@ -266,7 +266,6 @@ function AddExpenseModal({ userId, onClose, onSaved }: {
       status: "active",
       color: "#FF6B35",
       autopay: false,
-      source: "manual",
     };
     const { data, error: err } = await supabase.from("items").insert(payload).select().single();
     if (err) { setError(err.message); setSaving(false); return; }
@@ -745,11 +744,19 @@ export default function Dashboard() {
       )}
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          Hey, <span className="gradient-text">{profileName || user?.email?.split("@")[0]}</span>
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Hey, <span className="gradient-text">{profileName || user?.email?.split("@")[0]}</span>
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
+        </div>
+        <button
+          onClick={() => setAddExpenseOpen(true)}
+          className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-bold text-black hover:opacity-90"
+        >
+          <Plus size={15} /> Add Expense
+        </button>
       </div>
 
       <HelpTip
