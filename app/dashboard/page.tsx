@@ -614,12 +614,14 @@ export default function Dashboard() {
     const prev = income;
     setIncome(v);
     setEditingIncome(false);
-    const { error } = await supabase.from("profiles").upsert({ id: user.id, monthly_income: v });
-    if (error) {
-      // Revert if save failed
+    const res = await fetch("/api/profile/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, monthly_income: v }),
+    });
+    if (!res.ok) {
       setIncome(prev);
       setIncomeInput(String(prev));
-      console.error("saveIncome failed:", error.message);
     }
   }
 

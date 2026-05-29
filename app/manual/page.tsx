@@ -420,7 +420,13 @@ export default function ManualPage() {
     const v = parseFloat(val) || 0;
     setIncome(v);
     setEditingIncome(false);
-    if (user) await supabase.from("profiles").upsert({ id: user.id, monthly_income: v });
+    if (user) {
+      fetch("/api/profile/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, monthly_income: v }),
+      });
+    }
   }
 
   function openAdd(type: ItemType) {
