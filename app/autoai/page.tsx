@@ -181,6 +181,7 @@ export default function AutoAIPage() {
       autopay: false,
     }).select().single();
     if (error) return { success: false, summary: "Could not add item: " + error.message };
+    try { localStorage.setItem("items_version", String(Date.now())); } catch {}
     return { success: true, summary: `Added ${name} ($${amount}/mo) to your tracked items.`, item: data };
   }
 
@@ -202,10 +203,30 @@ export default function AutoAIPage() {
     setLoading(true);
 
     try {
+      // Always fetch fresh user data before sending so AutoAI has up-to-date income,
+      // items, and any changes made on other pages since the session started.
+      let freshPrompt = systemPrompt;
+      if (user?.id) {
+        try {
+          const ctxRes = await fetch("/api/autoai/context", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          if (ctxRes.ok) {
+            const ctxData = await ctxRes.json();
+            if (ctxData.systemPrompt) {
+              freshPrompt = ctxData.systemPrompt;
+              setSystemPrompt(ctxData.systemPrompt);
+            }
+          }
+        } catch {}
+      }
+
       const res = await fetch("/api/autoai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: buildApiPayload(history), systemPrompt }),
+        body: JSON.stringify({ messages: buildApiPayload(history), systemPrompt: freshPrompt }),
       });
       if (!res.ok) throw new Error("API error");
       const { reply, toolUses, rawBlocks } = await res.json();

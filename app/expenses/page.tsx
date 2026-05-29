@@ -168,6 +168,10 @@ export default function ExpensesPage() {
 
     setSaving(false);
     setModalOpen(false);
+    try {
+      localStorage.setItem("items_version", String(Date.now()));
+      window.dispatchEvent(new Event("items-updated"));
+    } catch {}
   }
 
   async function deleteExpense(id: string) {

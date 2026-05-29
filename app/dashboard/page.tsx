@@ -544,18 +544,27 @@ export default function Dashboard() {
   }, [supabase]);
 
   useEffect(() => {
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUser(user);
       await loadData(user.id);
       setLoading(false);
-      // Auto-sync DISABLED. It was overwriting manual category corrections.
-      // Use the "Sync from bank" button to manually sync.
+
+      // Supabase Realtime: auto-refresh when items or profile change from any page/device
+      realtimeChannel = supabase
+        .channel("dashboard-sync-" + user.id)
+        .on("postgres_changes", { event: "*", schema: "public", table: "items", filter: `user_id=eq.${user.id}` },
+          () => loadData(user.id))
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+          () => loadData(user.id))
+        .subscribe();
     }
     init();
 
-    // Listen for changes from other tabs/pages
+    // Also listen for same-tab events dispatched by other pages
     const onItemsUpdated = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) await loadData(user.id);
@@ -568,6 +577,7 @@ export default function Dashboard() {
     return () => {
       window.removeEventListener("items-updated", onItemsUpdated);
       window.removeEventListener("storage", onStorage);
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
     };
   }, []);
 
@@ -891,7 +901,10 @@ export default function Dashboard() {
         <AddExpenseModal
           userId={user.id}
           onClose={() => setAddExpenseOpen(false)}
-          onSaved={(item) => setItems(prev => [item, ...prev])}
+          onSaved={(item) => {
+            setItems(prev => [item, ...prev]);
+            try { localStorage.setItem("items_version", String(Date.now())); } catch {}
+          }}
         />
       )}
 
