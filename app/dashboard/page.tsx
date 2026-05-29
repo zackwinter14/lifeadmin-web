@@ -8,7 +8,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
 } from "recharts";
-import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X, CreditCard } from "lucide-react";
+import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X, CreditCard, Plus } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 import UpgradeBanner from "@/components/UpgradeBanner";
 import UpcomingCharges from "@/components/UpcomingCharges";
@@ -182,12 +182,155 @@ function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType:
   );
 }
 
-function ItemsModal({ label, color, items, onClose, onTypeChange }: {
+const EXPENSE_CATS = [
+  "Food & Dining", "Transport", "Shopping", "Entertainment",
+  "Health", "Utilities", "Travel", "Education", "Other",
+];
+
+const COMMON_NAMES = [
+  "Netflix", "Hulu", "YouTube Premium", "Disney+", "HBO Max", "Peacock",
+  "Paramount+", "Apple TV+", "Amazon Prime Video", "Crunchyroll",
+  "Spotify", "Apple Music", "Tidal", "Pandora", "SiriusXM",
+  "Amazon Prime", "Costco Membership", "Sam's Club",
+  "Adobe Creative Cloud", "Microsoft 365", "Google One", "iCloud",
+  "Dropbox", "Notion", "Canva Pro",
+  "Gym Membership", "Planet Fitness", "Peloton", "ClassPass",
+  "DoorDash", "Uber Eats", "Grubhub", "Instacart",
+  "Uber", "Lyft",
+  "Groceries", "Gas", "Electricity", "Water", "Internet",
+  "Car Insurance", "Renters Insurance", "Health Insurance",
+  "Student Loan", "Car Payment", "Mortgage", "Rent",
+  "Coffee", "Dining Out", "Fast Food",
+];
+
+const inputCls = "w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-brand";
+
+function NameAutocomplete({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const suggestions = value.trim().length > 0
+    ? COMMON_NAMES.filter(n => n.toLowerCase().includes(value.toLowerCase())).slice(0, 6)
+    : [];
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        autoFocus
+        value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="e.g. Netflix, Groceries, Haircut"
+        className={inputCls}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-xl">
+          {suggestions.map(s => (
+            <button key={s} type="button" onMouseDown={() => { onChange(s); setOpen(false); }}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddExpenseModal({ userId, onClose, onSaved }: {
+  userId: string;
+  onClose: () => void;
+  onSaved: (item: Item) => void;
+}) {
+  const supabase = createClient();
+  const [form, setForm] = useState({ name: "", amount: "", category: EXPENSE_CATS[0], due_date: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    if (!form.name || !form.amount) return;
+    setSaving(true);
+    setError(null);
+    const payload = {
+      user_id: userId,
+      name: form.name,
+      amount: parseFloat(form.amount),
+      category: form.category,
+      due_date: form.due_date || null,
+      type: "expense" as const,
+      status: "active",
+      color: "#FF6B35",
+      autopay: false,
+      source: "manual",
+    };
+    const { data, error: err } = await supabase.from("items").insert(payload).select().single();
+    if (err) { setError(err.message); setSaving(false); return; }
+    if (data) onSaved(data as Item);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-xl font-bold">Add Expense</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white"><X size={18} /></button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Name *</label>
+            <NameAutocomplete value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Amount *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <input type="number" min="0" step="0.01" value={form.amount}
+                  onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                  placeholder="0.00" className={`${inputCls} pl-7`} />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Date</label>
+              <input type="date" value={form.due_date}
+                onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
+                className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Category</label>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={inputCls}>
+              {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        {error && <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">{error}</div>}
+        <div className="mt-5 flex gap-3">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-3 text-sm hover:bg-white/5">Cancel</button>
+          <button onClick={save} disabled={saving || !form.name || !form.amount}
+            className="flex-1 rounded-xl bg-brand-gradient py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40">
+            {saving ? "Saving..." : "Add Expense"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemsModal({ label, color, items, onClose, onTypeChange, onAdd }: {
   label: string;
   color: string;
   items: Item[];
   onClose: () => void;
   onTypeChange: (id: string, newType: ItemType) => void;
+  onAdd?: () => void;
 }) {
   const total = items.reduce((a, b) => a + b.amount, 0);
   return (
@@ -231,7 +374,15 @@ function ItemsModal({ label, color, items, onClose, onTypeChange }: {
         )}
         <div className="border-t border-white/5 px-5 py-3 flex justify-between items-center">
           <span className="text-xs text-gray-500">Monthly total</span>
-          <span className="font-bold" style={{ color }}>{fmt(total)}</span>
+          <div className="flex items-center gap-3">
+            {onAdd && (
+              <button onClick={onAdd}
+                className="flex items-center gap-1.5 rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-bold text-black hover:opacity-90">
+                <Plus size={12} /> Add Expense
+              </button>
+            )}
+            <span className="font-bold" style={{ color }}>{fmt(total)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -255,6 +406,7 @@ export default function Dashboard() {
   const [detectingIncome, setDetectingIncome] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
+  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [creditCards, setCreditCards] = useState<{ id: string; name: string; last_four: string | null; credit_limit: number; current_balance: number; min_payment: number | null; due_date: string | null }[]>([]);
   const [recurringUpcoming, setRecurringUpcoming] = useState<{ id: string; name: string; amount: number; color: string; type: ItemType; due_date: string; autopay: boolean; daysUntil: number }[]>([]);
@@ -724,6 +876,15 @@ export default function Dashboard() {
           items={activeCard.filterType === "all" ? items : items.filter(i => i.type === activeCard.filterType)}
           onClose={() => setActiveCard(null)}
           onTypeChange={moveItemType}
+          onAdd={activeCard.filterType === "expense" ? () => { setActiveCard(null); setAddExpenseOpen(true); } : undefined}
+        />
+      )}
+
+      {addExpenseOpen && user && (
+        <AddExpenseModal
+          userId={user.id}
+          onClose={() => setAddExpenseOpen(false)}
+          onSaved={(item) => setItems(prev => [item, ...prev])}
         />
       )}
 

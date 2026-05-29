@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, Pencil, Trash2, X, DollarSign } from "lucide-react";
@@ -11,8 +11,7 @@ interface Expense {
   name: string;
   amount: number;
   category: string;
-  date: string | null;
-  note: string | null;
+  due_date: string | null;
   type: "expense";
 }
 
@@ -21,11 +20,71 @@ const EXPENSE_CATS = [
   "Health", "Utilities", "Travel", "Education", "Other",
 ];
 
+const COMMON_NAMES = [
+  "Netflix", "Hulu", "YouTube Premium", "Disney+", "HBO Max", "Peacock",
+  "Paramount+", "Apple TV+", "Amazon Prime Video", "Crunchyroll",
+  "Spotify", "Apple Music", "Tidal", "Pandora", "SiriusXM",
+  "Amazon Prime", "Costco Membership", "Sam's Club",
+  "Adobe Creative Cloud", "Microsoft 365", "Google One", "iCloud",
+  "Dropbox", "Notion", "Canva Pro",
+  "Gym Membership", "Planet Fitness", "Peloton", "ClassPass",
+  "DoorDash", "Uber Eats", "Grubhub", "Instacart",
+  "Uber", "Lyft",
+  "Groceries", "Gas", "Electricity", "Water", "Internet",
+  "Car Insurance", "Renters Insurance", "Health Insurance",
+  "Student Loan", "Car Payment", "Mortgage", "Rent",
+  "Coffee", "Dining Out", "Fast Food",
+];
+
 function fmt(n: number) {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 const inputCls = "w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-brand";
+
+function NameInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const suggestions = value.trim().length > 0
+    ? COMMON_NAMES.filter(n => n.toLowerCase().includes(value.toLowerCase())).slice(0, 6)
+    : [];
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        autoFocus
+        value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="e.g. Netflix, Groceries, Haircut"
+        className={inputCls}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-xl">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              onMouseDown={() => { onChange(s); setOpen(false); }}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ExpensesPage() {
   const router = useRouter();
@@ -37,8 +96,9 @@ export default function ExpensesPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", amount: "", category: EXPENSE_CATS[0], date: "", note: "" });
+  const [form, setForm] = useState({ name: "", amount: "", category: EXPENSE_CATS[0], due_date: "" });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,7 +122,8 @@ export default function ExpensesPage() {
 
   function openAdd() {
     setEditingId(null);
-    setForm({ name: "", amount: "", category: EXPENSE_CATS[0], date: "", note: "" });
+    setForm({ name: "", amount: "", category: EXPENSE_CATS[0], due_date: "" });
+    setSaveError(null);
     setModalOpen(true);
   }
 
@@ -72,34 +133,37 @@ export default function ExpensesPage() {
       name: exp.name,
       amount: String(exp.amount),
       category: exp.category || EXPENSE_CATS[0],
-      date: exp.date || "",
-      note: exp.note || "",
+      due_date: exp.due_date || "",
     });
+    setSaveError(null);
     setModalOpen(true);
   }
 
   async function save() {
     if (!form.name || !form.amount || !userId) return;
     setSaving(true);
+    setSaveError(null);
 
     const payload = {
       user_id: userId,
       name: form.name,
       amount: parseFloat(form.amount),
       category: form.category,
-      date: form.date || null,
-      note: form.note || null,
+      due_date: form.due_date || null,
       type: "expense" as const,
       status: "active",
-      color: "#007AFF",
+      color: "#FF6B35",
+      autopay: false,
       source: "manual",
     };
 
     if (editingId) {
-      await supabase.from("items").update(payload).eq("id", editingId);
+      const { error } = await supabase.from("items").update(payload).eq("id", editingId);
+      if (error) { setSaveError(error.message); setSaving(false); return; }
       setExpenses(prev => prev.map(e => e.id === editingId ? { ...e, ...payload } as Expense : e));
     } else {
-      const { data } = await supabase.from("items").insert(payload).select().single();
+      const { data, error } = await supabase.from("items").insert(payload).select().single();
+      if (error) { setSaveError(error.message); setSaving(false); return; }
       if (data) setExpenses(prev => [data as Expense, ...prev]);
     }
 
@@ -117,7 +181,6 @@ export default function ExpensesPage() {
 
   const total = expenses.reduce((a, b) => a + b.amount, 0);
 
-  // Group by category
   const byCat: Record<string, Expense[]> = {};
   expenses.forEach(e => {
     const cat = e.category || "Other";
@@ -145,11 +208,11 @@ export default function ExpensesPage() {
 
       {/* Summary bar */}
       {expenses.length > 0 && (
-        <div className="mb-6 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+        <div className="mb-6 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Total Spent</p>
-              <p className="font-mono text-2xl font-black text-blue-400">{fmt(total)}</p>
+              <p className="font-mono text-2xl font-black text-orange-400">{fmt(total)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500">{catEntries.length} categories</p>
@@ -176,22 +239,18 @@ export default function ExpensesPage() {
             return (
               <div key={cat}>
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-400">{cat}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">{cat}</p>
                   <span className="font-mono text-xs text-gray-500">{fmt(catTotal)}</span>
                 </div>
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
                   {items.map((exp, i) => (
                     <div key={exp.id} className={`flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] ${i < items.length - 1 ? "border-b border-white/5" : ""}`}>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
-                        <DollarSign size={16} className="text-blue-400" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
+                        <DollarSign size={16} className="text-orange-400" />
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-semibold">{exp.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {exp.date && <span>{exp.date}</span>}
-                          {exp.date && exp.note && <span> · </span>}
-                          {exp.note && <span>{exp.note}</span>}
-                        </p>
+                        {exp.due_date && <p className="text-xs text-gray-500">{exp.due_date}</p>}
                       </div>
                       <span className="mr-2 font-mono text-sm font-bold">{fmt(exp.amount)}</span>
                       <button onClick={() => openEdit(exp)} className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-white">
@@ -231,7 +290,7 @@ export default function ExpensesPage() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Name *</label>
-                <input autoFocus value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Groceries, Haircut, Dinner" className={inputCls} />
+                <NameInput value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -243,7 +302,7 @@ export default function ExpensesPage() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Date</label>
-                  <input value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} placeholder="Apr 27" className={inputCls} />
+                  <input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className={inputCls} />
                 </div>
               </div>
               <div>
@@ -252,15 +311,14 @@ export default function ExpensesPage() {
                   {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Note (optional)</label>
-                <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Any extra details" className={inputCls} />
-              </div>
             </div>
+            {saveError && (
+              <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">{saveError}</div>
+            )}
             <div className="mt-5 flex gap-3">
               <button onClick={() => setModalOpen(false)} className="flex-1 rounded-xl border border-white/10 py-3 text-sm hover:bg-white/5">Cancel</button>
               <button onClick={save} disabled={saving || !form.name || !form.amount} className="flex-1 rounded-xl bg-brand-gradient py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40">
-                {saving ? "Saving…" : editingId ? "Save Changes" : "Add Expense"}
+                {saving ? "Saving..." : editingId ? "Save Changes" : "Add Expense"}
               </button>
             </div>
           </div>
