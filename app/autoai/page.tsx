@@ -108,7 +108,9 @@ export default function AutoAIPage() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, loading, loadingInsight]);
 
   // Map our chat history into the shape the API expects (Anthropic-compatible).
