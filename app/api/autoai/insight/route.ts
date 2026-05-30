@@ -41,11 +41,11 @@ export async function POST(req: NextRequest) {
     const spendPct = income > 0 ? Math.round((monthlyTotal / income) * 100) : null;
     const ccDebt = cards.reduce((a: number, c: any) => a + (c.current_balance || 0), 0);
 
-    function fmtItem(i: any) {
+    const fmtItem = (i: any) => {
       let line = `  - ${i.name}: $${Number(i.amount).toFixed(2)}`;
       if (i.due_date) line += ` (due ${i.due_date})`;
       return line;
-    }
+    };
 
     const subsBlock = subs.length > 0
       ? `Subscriptions (${subs.length}, $${subs.reduce((a: number, i: any) => a + i.amount, 0).toFixed(2)}/mo):\n${subs.map(fmtItem).join("\n")}`
