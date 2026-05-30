@@ -6,16 +6,22 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+function genAccountCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "LA-" + new Date().getFullYear() + "-";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 // Updates profile fields using the service role to bypass any RLS gaps.
-// Uses UPDATE (not upsert) to avoid NOT NULL constraint failures on INSERT
-// for users whose profile row was created before the full signup flow.
-// If no row exists yet, creates a minimal one first.
+// Tries UPDATE first (safe for existing rows). If no row exists yet,
+// creates a minimal profile row with a generated account_code, then applies the fields.
 export async function POST(req: NextRequest) {
   try {
     const { userId, ...fields } = await req.json();
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 });
 
-    // Try UPDATE first — works for all users who have an existing profile row.
+    // Try UPDATE — works for all users with an existing profile row.
     const { data: updated, error: updateError } = await supabase
       .from("profiles")
       .update(fields)
@@ -27,14 +33,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    // If no row was matched, insert a minimal row then update it.
+    // No row existed — create a minimal profile and apply the fields.
     if (!updated || updated.length === 0) {
       const { error: insertError } = await supabase
         .from("profiles")
-        .insert({ id: userId, ...fields });
+        .insert({ id: userId, account_code: genAccountCode(), ...fields });
 
       if (insertError) {
-        // Insert failed (likely missing required columns). Try a bare insert with just id + fields.
         console.error("Profile insert error:", insertError.message);
         return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
