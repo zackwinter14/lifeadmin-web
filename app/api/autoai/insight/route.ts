@@ -11,7 +11,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await req.json();
+    const { userId, clientIncome } = await req.json();
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 });
 
     const [profileRes, itemsRes, ccRes] = await Promise.all([
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const items = allItems.filter((i: any) => i.status !== "cancelled");
 
-    const income = profile?.monthly_income || 0;
+    const income = Number(clientIncome) || Number(profile?.monthly_income) || 0;
     const firstName = profile?.full_name?.split(" ")[0] || null;
     const emergencySavings = profile?.emergency_savings || 0;
 

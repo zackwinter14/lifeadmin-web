@@ -52,6 +52,7 @@ export default function AutoAIPage() {
   const [emailDigest, setEmailDigest] = useState<"off" | "weekly" | "daily">("weekly");
   const [userEmail, setUserEmail] = useState("");
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const clientIncomeRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,13 +77,23 @@ export default function AutoAIPage() {
       const today = new Date().toDateString();
       const lastDate = localStorage.getItem(`${INSIGHT_CACHE_KEY}_${user.id}`);
 
+      // Read income directly with user's auth client — reliable regardless of server-side RLS
+      try {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("monthly_income")
+          .eq("id", user.id)
+          .single();
+        if (prof?.monthly_income) clientIncomeRef.current = Number(prof.monthly_income);
+      } catch {}
+
       // Always generate fresh on AutoAI page open (unlike dashboard which caches 24h)
       setLoadingInsight(true);
       try {
         const res = await fetch("/api/autoai/insight", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id }),
+          body: JSON.stringify({ userId: user.id, clientIncome: clientIncomeRef.current }),
         });
         const data = await res.json();
         if (data.message) {
@@ -211,7 +222,7 @@ export default function AutoAIPage() {
           const ctxRes = await fetch("/api/autoai/context", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id }),
+            body: JSON.stringify({ userId: user.id, clientIncome: clientIncomeRef.current }),
           });
           if (ctxRes.ok) {
             const ctxData = await ctxRes.json();
