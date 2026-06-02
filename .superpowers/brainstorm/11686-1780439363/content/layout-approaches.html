@@ -1,0 +1,109 @@
+<h2>My Finances — Layout Approaches</h2>
+<p class="subtitle">Pick the direction that feels right. We'll refine from there.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a0a;padding:16px;font-family:sans-serif;min-height:220px;">
+      <div style="background:#111;border-radius:12px;padding:12px;border:1px solid #222;">
+        <div style="font-size:10px;font-weight:700;color:#3EA758;letter-spacing:2px;margin-bottom:8px;">SETUP PROGRESS</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#3EA758;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000;font-weight:700;">1</div>
+          <div style="font-size:11px;color:#fff;font-weight:600;">Set your income</div>
+          <div style="margin-left:auto;font-size:10px;color:#3EA758;">Done</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#3EA758;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000;font-weight:700;">2</div>
+          <div style="font-size:11px;color:#fff;font-weight:600;">Add subscriptions</div>
+          <div style="margin-left:auto;font-size:10px;color:#3EA758;">3 added</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#222;border:1px solid #444;display:flex;align-items:center;justify-content:center;font-size:9px;color:#888;font-weight:700;">3</div>
+          <div style="font-size:11px;color:#888;">Add bills</div>
+          <div style="margin-left:auto;"><div style="background:#333;border-radius:6px;padding:2px 8px;font-size:9px;color:#aaa;">+ Add</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#222;border:1px solid #444;display:flex;align-items:center;justify-content:center;font-size:9px;color:#888;font-weight:700;">4</div>
+          <div style="font-size:11px;color:#888;">Add expenses</div>
+          <div style="margin-left:auto;"><div style="background:#333;border-radius:6px;padding:2px 8px;font-size:9px;color:#aaa;">+ Add</div></div>
+        </div>
+        <div style="margin-top:10px;background:#3EA75820;border-radius:6px;height:4px;">
+          <div style="width:50%;height:100%;background:#3EA758;border-radius:6px;"></div>
+        </div>
+        <div style="font-size:9px;color:#888;margin-top:4px;">2 of 4 steps complete</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Guided Checklist</h3>
+      <p>A step-by-step progress bar walks new users through setup in order. Each step expands to let you add items. Clear, hard to mess up. Best for first-time setup.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a0a;padding:16px;font-family:sans-serif;min-height:220px;">
+      <div style="background:#111;border-radius:12px;padding:12px;border:1px solid #222;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div style="background:#3EA75815;border:1px solid #3EA75840;border-radius:8px;padding:8px;">
+            <div style="font-size:9px;font-weight:700;color:#3EA758;margin-bottom:4px;">INCOME</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;">$5,200</div>
+            <div style="font-size:9px;color:#888;">per month</div>
+          </div>
+          <div style="background:#FFB30015;border:1px solid #FFB30040;border-radius:8px;padding:8px;">
+            <div style="font-size:9px;font-weight:700;color:#FFB300;margin-bottom:4px;">TOTAL COSTS</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;">$1,840</div>
+            <div style="font-size:9px;color:#888;">35% of income</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:10px;font-weight:700;color:#3EA758;">SUBSCRIPTIONS (3)</div>
+          <div style="background:#3EA75820;border-radius:6px;padding:2px 8px;font-size:9px;color:#3EA758;">+ Add</div>
+        </div>
+        <div style="font-size:10px;color:#666;margin-bottom:8px;">Netflix · Spotify · Hulu</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:10px;font-weight:700;color:#FFB300;">BILLS (2)</div>
+          <div style="background:#FFB30020;border-radius:6px;padding:2px 8px;font-size:9px;color:#FFB300;">+ Add</div>
+        </div>
+        <div style="font-size:10px;color:#666;">Rent · Internet</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Section Hub</h3>
+      <p>All categories visible at once with summary stats at the top. Each section has its own "+ Add" button. Works great as an ongoing management view, not just first setup.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a0a;padding:16px;font-family:sans-serif;min-height:220px;">
+      <div style="background:#111;border-radius:12px;padding:12px;border:1px solid #222;">
+        <div style="background:#3EA75815;border:1px dashed #3EA75860;border-radius:8px;padding:10px;margin-bottom:8px;text-align:center;">
+          <div style="font-size:10px;color:#3EA758;font-weight:600;">Get started in 2 minutes</div>
+          <div style="font-size:9px;color:#666;margin-top:2px;">Set income → Add bills → Done</div>
+          <div style="background:#3EA758;border-radius:6px;padding:3px 10px;font-size:9px;color:#000;font-weight:700;display:inline-block;margin-top:6px;">Start Setup</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <div style="flex:1;background:#1a1a1a;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#888;">Subscriptions</div>
+            <div style="font-size:13px;font-weight:700;color:#3EA758;">3</div>
+          </div>
+          <div style="flex:1;background:#1a1a1a;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#888;">Bills</div>
+            <div style="font-size:13px;font-weight:700;color:#FFB300;">2</div>
+          </div>
+          <div style="flex:1;background:#1a1a1a;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#888;">Expenses</div>
+            <div style="font-size:13px;font-weight:700;color:#FF6B35;">0</div>
+          </div>
+        </div>
+        <div style="background:#1a1a1a;border-radius:8px;padding:8px;">
+          <div style="font-size:10px;color:#fff;font-weight:600;">Recent items</div>
+          <div style="font-size:9px;color:#666;margin-top:4px;">Netflix $15.99 · Rent $1,200 · Spotify $9.99</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Dashboard + Setup Banner</h3>
+      <p>A compact overview with counts and totals. A smart banner appears only until setup is complete, then disappears. Cleanest experience once everything is filled in.</p>
+    </div>
+  </div>
+
+</div>
