@@ -359,6 +359,59 @@ function ReceiptMockup() {
   );
 }
 
+function SavingsGoalMockup() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const goals = [
+    { name: "House Down Payment", target: 40000, current: 12400, color: "#00C853", monthly: 800 },
+    { name: "New Car",            target: 8000,  current: 5200,  color: "#38BDF8", monthly: 400 },
+    { name: "Emergency Fund",     target: 15000, current: 9800,  color: "#FFB300", monthly: 300 },
+  ];
+  return (
+    <div ref={ref} className="rounded-2xl border border-white/10 bg-[#0f0f0f] p-4 shadow-2xl">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-sm font-semibold text-white">Savings Goals</span>
+        <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs font-bold text-brand">3 active</span>
+      </div>
+      {goals.map((g, i) => {
+        const pct = Math.round((g.current / g.target) * 100);
+        const months = Math.ceil((g.target - g.current) / g.monthly);
+        return (
+          <motion.div
+            key={g.name}
+            initial={{ opacity: 0, y: 12 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.15 * i, duration: 0.5 }}
+            className="mb-3 last:mb-0 rounded-xl border border-white/5 bg-white/[0.03] p-3"
+          >
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-semibold text-white">{g.name}</span>
+              <span className="text-xs font-bold" style={{ color: g.color }}>{pct}%</span>
+            </div>
+            <div className="mb-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={isInView ? { width: `${pct}%` } : {}}
+                transition={{ delay: 0.15 * i + 0.3, duration: 0.8, ease: "easeOut" }}
+                className="h-full rounded-full"
+                style={{ background: g.color }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-gray-500">
+              <span>${g.current.toLocaleString()} of ${g.target.toLocaleString()}</span>
+              <span>Done in {months} months</span>
+            </div>
+          </motion.div>
+        );
+      })}
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-brand/20 bg-brand/10 px-3 py-2.5">
+        <span className="text-xs font-semibold text-brand">Total saving per month</span>
+        <span className="text-sm font-bold text-brand">$1,500/mo</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Reusable components ──────────────────────────────────────────────────────
 
 function Feature({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
@@ -385,25 +438,25 @@ function Row({ label, us, them1, them2 }: { label: string; us: string; them1: st
 }
 
 const features = [
-  { icon: <Zap className="text-brand" />, title: "Auto-detect every charge", body: "Connect your bank and Life Admin surfaces every subscription, bill, and recurring charge from 90 days of history — including annual ones you forgot about." },
-  { icon: <Bot className="text-brand" />, title: "AI auto-organize", body: "Hit 'AI Organize' and every charge is instantly sorted into subscriptions, bills, and expenses. No manual tagging, no guessing — AI handles the whole thing." },
-  { icon: <Wallet className="text-brand" />, title: "Income detection", body: "Every paycheck and deposit is detected automatically from your bank. See your real monthly income at a glance — no manual entry needed." },
-  { icon: <Calendar className="text-brand" />, title: "Bill calendar", body: "See every upcoming charge laid out by day. Plan your cash flow and avoid overdrafts before they happen." },
-  { icon: <Receipt className="text-brand" />, title: "Receipt scanning", body: "Snap a photo of any receipt. AI reads the merchant, amount, and date automatically and logs it to your expense history." },
-  { icon: <PiggyBank className="text-brand" />, title: "Net worth tracker", body: "Add your assets and liabilities. Watch your full financial picture grow as you cancel unused services and build better habits." },
-  { icon: <Bell className="text-brand" />, title: "Bill reminders", body: "Get push notifications before any bill or subscription renews. No more surprise charges, no more 'I thought I cancelled that'." },
-  { icon: <Users className="text-brand" />, title: "Household sharing", body: "Create or join a household to see everyone's subscriptions together. Automatically detect overlapping services and stop paying for the same thing twice." },
-  { icon: <ShieldCheck className="text-brand" />, title: "Bank-grade security", body: "Read-only Plaid access. Your bank credentials never touch our servers. We can't move your money even if we tried." },
-  { icon: <Lock className="text-brand" />, title: "Privacy first", body: "We don't sell your data. We make money one way: from people who choose to upgrade. That's the entire business model." },
+  { icon: <PiggyBank className="text-brand" />, title: "Savings goals", body: "Set a goal for anything — house, car, vacation, emergency fund. Track progress and see your exact finish date update in real time as you save more." },
+  { icon: <TrendingUp className="text-brand" />, title: "Goal projections", body: "Enter your monthly contribution and Life Admin calculates exactly when you'll hit your target. Adjust anytime and the projection updates instantly." },
+  { icon: <Zap className="text-brand" />, title: "Auto-detect subscriptions", body: "Connect your bank and Life Admin surfaces every recurring charge from 90 days of history — including annual ones and ones you completely forgot about." },
+  { icon: <Bot className="text-brand" />, title: "AI auto-organize", body: "Every charge from your bank is instantly sorted into subscriptions, bills, and expenses. No manual tagging — AI handles the whole thing in seconds." },
+  { icon: <Wallet className="text-brand" />, title: "Income tracking", body: "Every paycheck is detected automatically from your bank. See your real monthly income and exactly how much is going toward savings vs bills." },
+  { icon: <Calendar className="text-brand" />, title: "Bill calendar", body: "Every upcoming bill laid out by day. Know exactly how much is safe to move to savings without risking an overdraft." },
+  { icon: <Receipt className="text-brand" />, title: "Receipt scanning", body: "Snap a photo of any receipt. AI reads the merchant, amount, and date automatically and logs it. See exactly where your spending is going." },
+  { icon: <Bell className="text-brand" />, title: "Bill reminders", body: "Get push notifications before any bill or subscription renews. No more surprise charges wiping out a month of savings progress." },
+  { icon: <Users className="text-brand" />, title: "Household sharing", body: "Save together. Create or join a household to see everyone's subscriptions and bills. Stop paying for the same streaming service twice." },
+  { icon: <ShieldCheck className="text-brand" />, title: "Bank-grade security", body: "Read-only Plaid access. Your credentials never touch our servers. We can see your transactions — we can't touch your money." },
 ];
 
 const testimonials = [
-  { name: "Marcus T.", handle: "@marcust", body: "Found $127/month I was wasting in 2 minutes. Cancelled 4 subs I completely forgot about. This app paid for itself the first day.", stars: 5 },
-  { name: "Daniel K.", handle: "@dk_finance", body: "The bill calendar alone is worth it. I haven't had a surprise charge hit my account since I started using Life Admin.", stars: 5 },
-  { name: "Ashley M.", handle: "@ashleym", body: "I had no idea I was still paying for a gym membership from two years ago. Life Admin found it instantly. Cancelled and got a partial refund.", stars: 5 },
-  { name: "Chris L.", handle: "@chrisliving", body: "I've tried Rocket Money, Mint, and a few others. None of them are this clean or this fast. Life Admin is the first one I actually kept using past a week.", stars: 5 },
-  { name: "Nina B.", handle: "@ninab", body: "Receipt scanning is unreal. I just snap a photo after every grocery run and it logs everything automatically. My expense tracking is finally accurate.", stars: 5 },
-  { name: "Jordan W.", handle: "@jordanw_", body: "Set up in under 5 minutes and it found 6 subscriptions I'd completely forgotten about. $84 a month I'm now saving. Worth every penny.", stars: 5 },
+  { name: "Marcus T.", handle: "@marcust", body: "Set a savings goal for a house down payment and Life Admin told me exactly when I'd hit $40k. Cancelled 4 forgotten subs and moved $127/month straight to the goal. Changed how I think about money.", stars: 5 },
+  { name: "Daniel K.", handle: "@dk_finance", body: "I've been trying to save for a car for two years and never felt like I was making progress. Life Admin shows me the finish date updating in real time every time I add money. That alone keeps me motivated.", stars: 5 },
+  { name: "Ashley M.", handle: "@ashleym", body: "Found a gym membership from two years ago and an app I never used. Cancelled both. That's $65/month now going to my emergency fund. I'll hit my goal 4 months earlier than I thought.", stars: 5 },
+  { name: "Chris L.", handle: "@chrisliving", body: "I've tried Rocket Money, Mint, YNAB. Life Admin is the first one where saving actually feels achievable. The goal tracker with the finish-date projection is something none of the others have.", stars: 5 },
+  { name: "Nina B.", handle: "@ninab", body: "Saving for a vacation and a new laptop at the same time. I can see both goals on one screen and exactly what month I'll have enough for each. Never felt this in control of my money.", stars: 5 },
+  { name: "Jordan W.", handle: "@jordanw_", body: "Set up took under 10 minutes. Found $84/month in forgotten subscriptions, cancelled them, and now I'm saving $84 more per month toward my emergency fund. Worth every penny.", stars: 5 },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -430,8 +483,8 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-7xl"
           >
-            Your entire financial life.<br />
-            <span className="gradient-text">One simple app.</span>
+            Save for the things<br />
+            <span className="gradient-text">that actually matter.</span>
           </motion.h1>
 
           <motion.p
@@ -440,36 +493,30 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            Track bills. Cancel waste. Build savings for the things that matter.
+            Set a savings goal — house, car, vacation, emergency fund — and Life Admin tracks your progress, shows exactly when you&apos;ll get there, and helps you find the money to get there faster.
           </motion.p>
 
-          {/* Feature pills */}
+          {/* Goal type pills */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-2"
           >
-            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
-              style={{ borderColor: "#00C85333", backgroundColor: "#00C85314", color: "#00C853" }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#00C853" }} />
-              Subscriptions
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
-              style={{ borderColor: "#FFB30033", backgroundColor: "#FFB30014", color: "#FFB300" }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#FFB300" }} />
-              Bills
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
-              style={{ borderColor: "#38BDF833", backgroundColor: "#38BDF814", color: "#38BDF8" }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#38BDF8" }} />
-              Savings Goals
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
-              style={{ borderColor: "#A855F733", backgroundColor: "#A855F714", color: "#A855F7" }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#A855F7" }} />
-              Budget
-            </span>
+            {[
+              { label: "House",         color: "#00C853" },
+              { label: "Car",           color: "#38BDF8" },
+              { label: "Vacation",      color: "#FF9800" },
+              { label: "Emergency Fund",color: "#FFB300" },
+              { label: "Education",     color: "#A855F7" },
+              { label: "Anything",      color: "#00C853" },
+            ].map(p => (
+              <span key={p.label} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
+                style={{ borderColor: p.color + "33", backgroundColor: p.color + "14", color: p.color }}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                {p.label}
+              </span>
+            ))}
           </motion.div>
 
           <motion.div
@@ -505,9 +552,9 @@ export default function Home() {
             className="mt-16 grid grid-cols-2 gap-8 text-center sm:grid-cols-4"
           >
             {[
-              { value: <>$<CountUp end={273} /></>, label: "avg actual monthly spend" },
-              { value: <>$<CountUp end={62} /></>, label: "avg what people think they spend" },
-              { value: <><CountUp end={42} />%</>, label: "paying for something they forgot" },
+              { value: <>$<CountUp end={240} /></>, label: "saved per month on average" },
+              { value: <><CountUp end={14} /></>, label: "avg subscriptions per person" },
+              { value: <><CountUp end={78} />%</>, label: "hit their first savings goal" },
               { value: <>Free</>, label: "no bank required to start" },
             ].map((s, i) => (
               <div key={i}>
@@ -524,17 +571,17 @@ export default function Home() {
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
-              Everything you pay for,{" "}
-              <span className="gradient-text">in one place</span>
+              Set a goal.{" "}
+              <span className="gradient-text">Watch it grow.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-gray-400">
-              Subscriptions, bills, upcoming charges, and your real monthly total — all visible the moment you open the app.
+              Track every savings goal alongside your bills and subscriptions. Know exactly when you&apos;ll get there — and find the money to get there faster.
             </p>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
-            <FadeIn delay={0}><SubListMockup /></FadeIn>
-            <FadeIn delay={0.15}><CalendarMockup /></FadeIn>
-            <FadeIn delay={0.3}><NetWorthMockup /></FadeIn>
+            <FadeIn delay={0}><SavingsGoalMockup /></FadeIn>
+            <FadeIn delay={0.15}><SubListMockup /></FadeIn>
+            <FadeIn delay={0.3}><CalendarMockup /></FadeIn>
           </div>
         </div>
       </section>
@@ -546,13 +593,13 @@ export default function Home() {
             <h2 className="text-4xl font-bold md:text-5xl">
               How it <span className="gradient-text">works</span>
             </h2>
-            <p className="mt-4 text-gray-400">Start free. No bank required. See your real number in one sitting.</p>
+            <p className="mt-4 text-gray-400">Start free. Pick a goal. We show you exactly when you&apos;ll get there.</p>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
             {[
-              { step: "01", icon: <Wallet size={22} className="text-brand" />, title: "Add what you pay for", body: "Enter your subscriptions and bills manually. Takes about 10-15 minutes to get everything in. Most people are surprised it's more than they thought." },
-              { step: "02", icon: <TrendingDown size={22} className="text-brand" />, title: "See your real total", body: "Life Admin shows your actual monthly cost — and what each service is really costing you per year. That number usually lands like a gut punch." },
-              { step: "03", icon: <Bot size={22} className="text-brand" />, title: "Connect your bank to find the rest", body: "Upgrade to Pro and AI scans your bank for charges you didn't add manually. Most people find 3-4 more they had completely forgotten about." },
+              { step: "01", icon: <PiggyBank size={22} className="text-brand" />, title: "Pick what you're saving for", body: "Choose a goal — house down payment, new car, emergency fund, vacation. Set your target amount and how much you can put away each month." },
+              { step: "02", icon: <TrendingDown size={22} className="text-brand" />, title: "Find money you're wasting", body: "We surface every subscription and bill you're paying. Most people find $150-300/month in charges they forgot about. Cancel them. Redirect that money to your goal." },
+              { step: "03", icon: <TrendingUp size={22} className="text-brand" />, title: "Watch your savings grow", body: "Track progress toward every goal in real time. Life Admin tells you exactly when you'll hit your target — and recalculates the moment you add more money." },
             ].map((s, i) => (
               <FadeIn key={s.step} delay={i * 0.15}>
                 <div className="relative h-full rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -571,26 +618,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 1 — Auto detect */}
+      {/* Spotlight 1 — Savings Goals */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
             <FadeIn>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-                Free — no bank required
+                Savings Goals
               </div>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Most people are off by $200 a month
+                Set a goal. Know exactly when you&apos;ll hit it.
               </h2>
               <p className="mb-6 text-gray-400">
-                Add your subscriptions and bills manually and Life Admin shows you the real total — monthly and annually. That number surprises almost everyone. Netflix alone is $185 a year. A gym you go to twice a month is $696.
+                Pick what you&apos;re saving for — a house, car, vacation, emergency fund, or anything else. Tell us your monthly contribution and Life Admin calculates your exact finish date. Add money anytime and watch your progress update instantly.
               </p>
               <ul className="space-y-3">
                 {[
-                  "See your real monthly total in one view",
-                  "Every service shown as monthly AND yearly cost",
-                  "Bill calendar shows what hits and when",
-                  "Reminders before anything renews",
+                  "House, car, vacation, emergency fund, education, and more",
+                  "Live projection — shows exactly when you'll reach your goal",
+                  "Add money in one tap with quick amounts or custom entry",
+                  "Track multiple goals at the same time",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
                     <Check size={15} className="shrink-0 text-brand" />
@@ -599,32 +646,32 @@ export default function Home() {
                 ))}
               </ul>
             </FadeIn>
-            <FadeIn delay={0.2}><SubListMockup /></FadeIn>
+            <FadeIn delay={0.2}><SavingsGoalMockup /></FadeIn>
           </div>
         </div>
       </section>
 
-      {/* Spotlight 2 — AI Organize */}
+      {/* Spotlight 2 — Find money to save */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
-            <FadeIn delay={0.2} className="order-2 md:order-1"><AIOrgMockup /></FadeIn>
+            <FadeIn delay={0.2} className="order-2 md:order-1"><SubListMockup /></FadeIn>
             <FadeIn className="order-1 md:order-2">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-                AI-powered
+                Cancel what you don&apos;t use
               </div>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                AI sorts everything the moment it connects
+                Find the money hiding in your bank account
               </h2>
               <p className="mb-6 text-gray-400">
-                Tap "AI Organize" and every merchant is instantly classified as a subscription, bill, or one-time expense. No manual setup, no categories to pick through — AI handles it in seconds.
+                The average person pays for 14 subscriptions and thinks they have 8. Life Admin surfaces every recurring charge — including the ones you completely forgot about — so you can cancel the ones draining your savings goals.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Bills: rent, utilities, insurance, phone",
-                  "Subscriptions: streaming, apps, memberships",
-                  "Expenses: one-time and irregular purchases",
-                  "You can always override any classification",
+                  "Every subscription and bill in one view",
+                  "See what each service costs per year, not just per month",
+                  "Cancel links for every major service",
+                  "Redirect cancelled charges straight to a savings goal",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
                     <Check size={15} className="shrink-0 text-brand" />
@@ -637,7 +684,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 3 — Calendar */}
+      {/* Spotlight 3 — Bill Calendar */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
@@ -646,16 +693,16 @@ export default function Home() {
                 Bill Calendar
               </div>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Never get surprised by a charge again
+                Plan your cash flow. Protect your savings.
               </h2>
               <p className="mb-6 text-gray-400">
-                Every upcoming bill laid out by day. See exactly what's hitting your account this month and plan your cash flow before it becomes a problem.
+                Every upcoming bill laid out by day so you always know what&apos;s hitting your account before it hits. No more surprise charges wiping out a month of progress toward your goals.
               </p>
               <ul className="space-y-3">
                 {[
                   "Every bill visible in one timeline",
                   "Push reminders before due dates",
-                  "Color-coded bills vs subscriptions",
+                  "Know exactly how much is safe to move to savings",
                   "Avoid overdrafts before they happen",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
@@ -670,27 +717,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 4 — Receipt scanning */}
+      {/* Spotlight 4 — AI Organize */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
-            <FadeIn delay={0.2} className="order-2 md:order-1"><ReceiptMockup /></FadeIn>
+            <FadeIn delay={0.2} className="order-2 md:order-1"><AIOrgMockup /></FadeIn>
             <FadeIn className="order-1 md:order-2">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-                AI Vision
+                AI-powered
               </div>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Snap a receipt. Done.
+                Connect your bank. AI finds everything.
               </h2>
               <p className="mb-6 text-gray-400">
-                Take a photo of any receipt or invoice. AI reads the merchant, amount, and date instantly and logs it to your expenses. No typing, no categories to pick.
+                Tap "AI Organize" and every merchant from your bank is instantly classified as a subscription, bill, or expense. Most people find 3-4 charges they completely forgot about — and cancel them on the spot.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Works with any printed or digital receipt",
-                  "Merchant, amount, and date extracted automatically",
-                  "Added to spending history instantly",
-                  "Great for cash purchases your bank can't see",
+                  "90 days of history scanned in seconds",
+                  "Every charge sorted automatically — no manual work",
+                  "Forgotten subscriptions flagged immediately",
+                  "Cancel and redirect savings to your goals",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
                     <Check size={15} className="shrink-0 text-brand" />
@@ -708,10 +755,10 @@ export default function Home() {
         <div className="mx-auto max-w-6xl">
           <FadeIn className="mb-16 text-center">
             <h2 className="text-4xl font-bold md:text-5xl">
-              Everything to <span className="gradient-text">take back control</span>
+              Everything you need to <span className="gradient-text">actually save</span>
             </h2>
             <p className="mt-4 text-gray-400">
-              Free to use. No credit card. Built for people tired of mystery charges.
+              Free to use. No credit card. Built for people who are serious about hitting their savings goals.
             </p>
           </FadeIn>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -802,16 +849,16 @@ export default function Home() {
         <div className="mx-auto max-w-3xl text-center">
           <FadeIn>
             <h2 className="text-4xl font-bold md:text-5xl">
-              Find out what you&apos;re actually spending.
+              What are you saving for?
             </h2>
             <p className="mt-4 text-lg text-gray-400">
-              Free. No bank required. Most people finish in one sitting.
+              Set your first goal in under 2 minutes. Free — no bank required.
             </p>
             <Link
               href="/signup"
               className="mt-8 inline-block rounded-xl bg-brand-gradient px-10 py-5 text-lg font-semibold text-black transition hover:opacity-90"
             >
-              See your real number — free
+              Start saving — it&apos;s free
             </Link>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
               <CheckCircle2 size={16} className="text-brand" />

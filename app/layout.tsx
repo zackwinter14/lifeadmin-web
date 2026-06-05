@@ -18,11 +18,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Life Admin — Track Bills, Cancel Subscriptions, Save Money",
+    default: "Life Admin — Savings Goals, Bill Tracker & Subscription Manager",
     template: "%s | Life Admin",
   },
   description:
-    "Life Admin connects to your bank, finds every subscription you forgot you had, and helps you cancel them in one tap. Track bills, income, gas, and net worth. Save $240+/month on average.",
+    "Life Admin helps you save for a house, car, vacation, or emergency fund. Set a savings goal, track your progress, and find money to save faster by cancelling forgotten subscriptions. Free to start.",
   keywords: [
     // Brand
     "Life Admin",
@@ -130,9 +130,9 @@ export const metadata: Metadata = {
     canonical: "https://lifeadminofficial.com",
   },
   openGraph: {
-    title: "Life Admin — Stop Bleeding Money on Forgotten Subscriptions",
+    title: "Life Admin — Save for the Things That Actually Matter",
     description:
-      "Find every recurring charge in your bank account. Cancel what you don't use. Track bills, income, gas, and net worth. Save $240+/month on average.",
+      "Set savings goals for a house, car, vacation, or anything else. Life Admin tracks your progress, shows when you'll get there, and helps you find money to save faster.",
     url: "https://lifeadminofficial.com",
     siteName: "Life Admin",
     type: "website",
