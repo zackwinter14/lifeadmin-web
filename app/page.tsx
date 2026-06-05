@@ -430,8 +430,8 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-7xl"
           >
-            Find out what you&apos;re <br />
-            actually <span className="gradient-text">spending</span>.
+            Your entire financial life.<br />
+            <span className="gradient-text">One simple app.</span>
           </motion.h1>
 
           <motion.p
@@ -440,10 +440,37 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            Track every subscription and bill in one place. See your full monthly total,{" "}
-            <span className="font-semibold text-white">find the charges you forgot about,</span>{" "}
-            and cancel anything you don&apos;t need — free to start, no bank required.
+            Track bills. Cancel waste. Build savings for the things that matter.
           </motion.p>
+
+          {/* Feature pills */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-2"
+          >
+            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
+              style={{ borderColor: "#00C85333", backgroundColor: "#00C85314", color: "#00C853" }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#00C853" }} />
+              Subscriptions
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
+              style={{ borderColor: "#FFB30033", backgroundColor: "#FFB30014", color: "#FFB300" }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#FFB300" }} />
+              Bills
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
+              style={{ borderColor: "#38BDF833", backgroundColor: "#38BDF814", color: "#38BDF8" }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#38BDF8" }} />
+              Savings Goals
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
+              style={{ borderColor: "#A855F733", backgroundColor: "#A855F714", color: "#A855F7" }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#A855F7" }} />
+              Budget
+            </span>
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -455,7 +482,7 @@ export default function Home() {
               href="/signup"
               className="w-full rounded-xl bg-brand-gradient px-8 py-4 text-center text-lg font-bold text-black transition hover:opacity-90 sm:w-auto"
             >
-              See your real number — free
+              Get started free
             </Link>
             <a
               href="https://apps.apple.com/app/id6762589970"

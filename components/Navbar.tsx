@@ -98,19 +98,15 @@ export default function Navbar() {
   const displayName = profileName || user?.email?.split("@")[0] || null;
 
   const publicLinks = [
-    { href: "/features",      label: "Features"      },
-    { href: "/pricing",       label: "Pricing"       },
-    { href: "/tools",         label: "Free Tools"    },
-    { href: "/about",         label: "About"         },
-    { href: "/transparency",  label: "How we make money" },
+    { href: "/features", label: "Features" },
+    { href: "/pricing",  label: "Pricing"  },
+    { href: "/about",    label: "About"    },
   ];
 
   const appLinks = [
-    { href: "/income",   label: "Income"   },
-    { href: "/upcoming", label: "Upcoming" },
-    { href: "/budget",   label: "Budget"   },
     { href: "/save",     label: "Save"     },
-    { href: "/gas",      label: "Gas"      },
+    { href: "/budget",   label: "Budget"   },
+    { href: "/calendar", label: "Calendar" },
   ];
 
   return (

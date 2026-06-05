@@ -1,0 +1,139 @@
+<h2>Post-Signup Setup Wizard</h2>
+<p class="subtitle">After a user creates their account, this wizard runs before they see the dashboard. Two layout options.</p>
+
+<div class="split">
+
+  <!-- Option A: Full-screen wizard -->
+  <div class="mockup">
+    <div class="mockup-header">A — Full-Screen (one step at a time)</div>
+    <div class="mockup-body" style="background:#0a0a0a;font-family:sans-serif;padding:0;overflow:hidden;">
+
+      <!-- Progress bar at top -->
+      <div style="height:3px;background:#111;"><div style="width:25%;height:100%;background:#00C853;"></div></div>
+
+      <div style="padding:20px 16px;">
+        <!-- Step indicator -->
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:20px;">
+          <div style="display:flex;gap:4px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:#00C853;color:#000;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">1</div>
+            <div style="width:22px;height:22px;border-radius:50%;background:#222;color:#555;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">2</div>
+            <div style="width:22px;height:22px;border-radius:50%;background:#222;color:#555;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">3</div>
+            <div style="width:22px;height:22px;border-radius:50%;background:#222;color:#555;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">4</div>
+          </div>
+          <div style="font-size:9px;color:#555;margin-left:4px;">Step 1 of 4</div>
+        </div>
+
+        <!-- Step 1 content -->
+        <div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:4px;">What's your monthly income?</div>
+        <div style="font-size:10px;color:#666;margin-bottom:18px;">Your take-home pay after taxes. This helps us build your full financial picture.</div>
+
+        <!-- Input -->
+        <div style="background:#111;border:1px solid #333;border-radius:10px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;font-weight:900;color:#00C853;">$</span>
+          <span style="font-size:20px;font-weight:900;color:#fff;">5,200</span>
+          <span style="font-size:10px;color:#555;margin-left:auto;">/month</span>
+        </div>
+
+        <!-- Quick picks -->
+        <div style="font-size:9px;color:#666;margin-bottom:6px;">Quick select:</div>
+        <div style="display:flex;gap:5px;margin-bottom:20px;">
+          <div style="background:#111;border:1px solid #333;border-radius:6px;padding:5px 10px;font-size:9px;color:#aaa;">$3,000</div>
+          <div style="background:#111;border:1px solid #333;border-radius:6px;padding:5px 10px;font-size:9px;color:#aaa;">$4,000</div>
+          <div style="background:#00C85320;border:1px solid #00C85350;border-radius:6px;padding:5px 10px;font-size:9px;color:#00C853;font-weight:700;">$5,200</div>
+          <div style="background:#111;border:1px solid #333;border-radius:6px;padding:5px 10px;font-size:9px;color:#aaa;">$7,000+</div>
+        </div>
+
+        <!-- Why we ask -->
+        <div style="background:#00C85308;border:1px solid #00C85320;border-radius:8px;padding:10px;margin-bottom:18px;">
+          <div style="font-size:9px;color:#00C853;font-weight:700;margin-bottom:3px;">Why we ask</div>
+          <div style="font-size:9px;color:#666;line-height:1.5;">We never share this. It's used only to calculate what % of income goes to bills and subscriptions so you can see where your money actually goes.</div>
+        </div>
+
+        <!-- CTA -->
+        <div style="background:#00C853;border-radius:10px;padding:12px;text-align:center;font-size:12px;font-weight:800;color:#000;">Continue →</div>
+        <div style="text-align:center;margin-top:10px;font-size:9px;color:#444;">Skip for now</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Dashboard with checklist -->
+  <div class="mockup">
+    <div class="mockup-header">B — Checklist on Dashboard (always visible)</div>
+    <div class="mockup-body" style="background:#0a0a0a;font-family:sans-serif;padding:14px;">
+
+      <!-- Welcome banner -->
+      <div style="background:linear-gradient(135deg,#00C85320,#00C85308);border:1px solid #00C85340;border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:2px;">Welcome, Zack!</div>
+        <div style="font-size:9px;color:#666;margin-bottom:10px;">Complete your setup to unlock your full financial picture.</div>
+
+        <!-- 4 steps -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;background:#00C85318;border-radius:8px;padding:8px 10px;border:1px solid #00C85340;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#00C853;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <div style="width:7px;height:5px;border-left:2px solid #000;border-bottom:2px solid #000;transform:rotate(-45deg);margin-top:-1px;"></div>
+            </div>
+            <div style="font-size:10px;color:#00C853;font-weight:700;flex:1;">Set your monthly income</div>
+            <div style="font-size:8px;color:#00C853;">Done</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#FFB30015;border-radius:8px;padding:8px 10px;border:1px solid #FFB30040;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#FFB300;color:#000;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+            <div style="font-size:10px;color:#FFB300;font-weight:700;flex:1;">Add your subscriptions</div>
+            <div style="font-size:8px;color:#FFB300;">Up next →</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:8px;padding:8px 10px;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#222;color:#555;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+            <div style="font-size:10px;color:#555;flex:1;">Add your bills</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:8px;padding:8px 10px;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#222;color:#555;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+            <div style="font-size:10px;color:#555;flex:1;">Create a savings goal</div>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div style="margin-top:8px;background:#ffffff10;border-radius:4px;height:3px;">
+          <div style="width:25%;height:100%;background:#00C853;border-radius:4px;"></div>
+        </div>
+        <div style="font-size:8px;color:#555;margin-top:3px;">1 of 4 steps complete</div>
+      </div>
+
+      <!-- Rest of dashboard below -->
+      <div style="background:#111;border-radius:8px;padding:10px;margin-bottom:8px;">
+        <div style="font-size:9px;font-weight:700;color:#666;margin-bottom:6px;">YOUR DASHBOARD</div>
+        <div style="display:flex;gap:6px;">
+          <div style="flex:1;background:#1a1a1a;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:8px;color:#555;">Income</div>
+            <div style="font-size:12px;font-weight:800;color:#fff;">$5,200</div>
+          </div>
+          <div style="flex:1;background:#1a1a1a;border-radius:6px;padding:8px;text-align:center;opacity:0.4;">
+            <div style="font-size:8px;color:#555;">Subs</div>
+            <div style="font-size:12px;font-weight:800;color:#fff;">—</div>
+          </div>
+          <div style="flex:1;background:#1a1a1a;border-radius:6px;padding:8px;text-align:center;opacity:0.4;">
+            <div style="font-size:8px;color:#555;">Bills</div>
+            <div style="font-size:12px;font-weight:800;color:#fff;">—</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:#444;text-align:center;">Dashboard fills in as you complete setup</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="options" style="margin-top:20px;">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full-Screen Wizard</h3>
+      <p style="color:#aaa;">Dedicated wizard runs before the dashboard. Clean, focused — one thing at a time. User can't get distracted. Best for completion rates.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Checklist on Dashboard</h3>
+      <p style="color:#aaa;">Setup lives on the dashboard as a persistent checklist. Users can start using the app immediately and finish setup at their own pace.</p>
+    </div>
+  </div>
+</div>

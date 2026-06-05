@@ -16,6 +16,7 @@ import HelpTip from "@/components/HelpTip";
 import MerchantLogo from "@/components/MerchantLogo";
 import PriceChangeAlert from "@/components/PriceChangeAlert";
 import HealthScore from "@/components/HealthScore";
+import SetupWizard from "@/components/SetupWizard";
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
 
@@ -409,6 +410,8 @@ export default function Dashboard() {
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [creditCards, setCreditCards] = useState<{ id: string; name: string; last_four: string | null; credit_limit: number; current_balance: number; min_payment: number | null; due_date: string | null }[]>([]);
   const [recurringUpcoming, setRecurringUpcoming] = useState<{ id: string; name: string; amount: number; color: string; type: ItemType; due_date: string; autopay: boolean; daysUntil: number }[]>([]);
+  const [showWizard, setShowWizard] = useState(false);
+  const [setupDone, setSetupDone] = useState(false);
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
@@ -550,6 +553,9 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUser(user);
+      const wizardDone = localStorage.getItem(`setup_wizard_done_${user.id}`) === "true";
+      if (!wizardDone) setShowWizard(true);
+      setSetupDone(wizardDone);
       await loadData(user.id);
       setLoading(false);
 
@@ -739,6 +745,22 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+
+      {/* Setup progress card */}
+      {!setupDone && !showWizard && (
+        <div className="mb-6 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-white">Finish setting up your account</p>
+            <p className="text-xs text-gray-500 mt-0.5">Add your income, subscriptions, and bills to see your full financial picture.</p>
+          </div>
+          <button
+            onClick={() => setShowWizard(true)}
+            className="shrink-0 rounded-xl bg-[#00C853] px-4 py-2 text-xs font-bold text-black hover:opacity-90 transition"
+          >
+            Resume setup
+          </button>
+        </div>
+      )}
 
       {/* DEBUG BANNER */}
       {debugInfo && (
@@ -1074,6 +1096,14 @@ export default function Dashboard() {
       </div>
 
       {user && <HealthScore userId={user.id} />}
+
+      {showWizard && user && (
+        <SetupWizard
+          userId={user.id}
+          onComplete={() => { setShowWizard(false); setSetupDone(true); }}
+          onDismiss={() => setShowWizard(false)}
+        />
+      )}
     </div>
   );
 }
