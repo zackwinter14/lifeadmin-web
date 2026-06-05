@@ -52,10 +52,11 @@ export default function Navbar() {
   ];
 
   const authLinks = [
-    { href: "/save",     label: "Save"     },
-    { href: "/finances", label: "Finances" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/tools",    label: "Tools"    },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/save",      label: "Save"      },
+    { href: "/finances",  label: "Finances"  },
+    { href: "/calendar",  label: "Calendar"  },
+    { href: "/tools",     label: "Tools"     },
   ];
 
   return (
@@ -63,7 +64,7 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
 
         {/* Logo */}
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logo-white.png" alt="Life Admin" className="h-9 w-9 object-contain" />
           <span className="text-lg font-semibold">Life Admin</span>
         </Link>
