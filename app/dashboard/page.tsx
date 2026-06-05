@@ -3,20 +3,25 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
+  BarChart, Bar, XAxis, YAxis,
 } from "recharts";
-import { Landmark, Loader2, Check, ChevronRight, AlertTriangle, Clock, Repeat, X, CreditCard, Plus } from "lucide-react";
+import {
+  Landmark, Loader2, Check, ChevronRight, Repeat, X,
+  CreditCard, Plus, PiggyBank, ArrowRight,
+} from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 import UpgradeBanner from "@/components/UpgradeBanner";
 import UpcomingCharges from "@/components/UpcomingCharges";
-import HelpTip from "@/components/HelpTip";
 import MerchantLogo from "@/components/MerchantLogo";
 import PriceChangeAlert from "@/components/PriceChangeAlert";
 import HealthScore from "@/components/HealthScore";
 import SetupWizard from "@/components/SetupWizard";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
 
@@ -34,6 +39,18 @@ interface Item {
   source: string | null;
 }
 
+interface SavingsGoal {
+  id: string;
+  name: string;
+  category: string;
+  targetAmount: number;
+  currentAmount: number;
+  monthlyContribution: number;
+  color: string;
+  emoji: string;
+  createdAt: string;
+}
+
 const TYPE_COLORS: Record<string, string> = {
   subscription: "#3EA758",
   bill: "#FFB300",
@@ -45,7 +62,106 @@ function fmt(n: number) {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function StatCard({ label, value, sub, color, onClick }: { label: string; value: string; sub: string; color: string; onClick: () => void }) {
+// ─── Savings Strip ────────────────────────────────────────────────────────────
+
+function SavingsStrip({ userId }: { userId: string }) {
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`savings_goals_${userId}`);
+      if (raw) setGoals(JSON.parse(raw));
+    } catch {}
+  }, [userId]);
+
+  if (goals.length === 0) {
+    return (
+      <Link
+        href="/save"
+        className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 px-5 py-4 transition hover:bg-[#00C853]/10"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00C853]/15">
+            <PiggyBank size={18} style={{ color: "#00C853" }} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Start your first savings goal</p>
+            <p className="text-xs text-gray-500">House, car, vacation, emergency fund — whatever you're working toward</p>
+          </div>
+        </div>
+        <ArrowRight size={16} className="shrink-0 text-[#00C853]" />
+      </Link>
+    );
+  }
+
+  const display = goals.slice(0, 3);
+  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
+  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
+
+  return (
+    <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Savings Goals</p>
+        <Link href="/save" className="text-xs font-medium text-[#00C853] hover:underline">
+          View all ({goals.length}) →
+        </Link>
+      </div>
+
+      <div className="space-y-4">
+        {display.map((goal) => {
+          const pct = goal.targetAmount > 0 ? Math.min((goal.currentAmount / goal.targetAmount) * 100, 100) : 0;
+          const remaining = goal.targetAmount - goal.currentAmount;
+          const monthsLeft = goal.monthlyContribution > 0
+            ? Math.ceil(remaining / goal.monthlyContribution)
+            : null;
+          return (
+            <div key={goal.id}>
+              <div className="mb-1.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{goal.emoji}</span>
+                  <span className="text-sm font-semibold text-white">{goal.name}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-bold text-white">{fmt(goal.currentAmount)}</span>
+                  <span className="text-xs text-gray-600"> / {fmt(goal.targetAmount)}</span>
+                </div>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%`, background: goal.color }}
+                />
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-[11px] text-gray-600">{pct.toFixed(0)}% saved</span>
+                {monthsLeft !== null && (
+                  <span className="text-[11px] text-gray-500">
+                    {monthsLeft <= 0 ? "Goal reached!" : `${monthsLeft} month${monthsLeft !== 1 ? "s" : ""} to go`}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {goals.length > 0 && (
+        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
+          <span className="text-xs text-gray-500">Total saved</span>
+          <span className="text-sm font-bold" style={{ color: "#00C853" }}>
+            {fmt(totalSaved)} <span className="text-xs font-normal text-gray-600">of {fmt(totalTarget)}</span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, sub, color, onClick }: {
+  label: string; value: string; sub: string; color: string; onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -58,44 +174,36 @@ function StatCard({ label, value, sub, color, onClick }: { label: string; value:
   );
 }
 
-function ModalTip() {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("category_tip_dismissed")) setVisible(false);
-    } catch {}
-  }, []);
-
-  function dismiss() {
-    setVisible(false);
-    try { localStorage.setItem("category_tip_dismissed", "1"); } catch {}
-  }
-
-  if (!visible) return null;
-
-  return (
-    <div className="mx-5 mt-3 mb-1 flex items-start gap-2.5 rounded-xl border border-brand/20 bg-brand/5 px-3.5 py-2.5">
-      <Repeat size={13} className="mt-0.5 shrink-0 text-brand" />
-      <p className="flex-1 text-xs leading-relaxed text-gray-400">
-        Tap the colored pill on any item to move it to the right category. The system saves your correction for future syncs.
-      </p>
-      <button
-        onClick={dismiss}
-        className="shrink-0 rounded p-0.5 text-gray-600 hover:text-gray-300"
-        aria-label="Dismiss"
-      >
-        <X size={13} />
-      </button>
-    </div>
-  );
-}
+// ─── TypeMover ────────────────────────────────────────────────────────────────
 
 const ALL_TYPES: { type: ItemType; label: string }[] = [
   { type: "subscription", label: "Subscription" },
   { type: "bill",         label: "Bill"         },
   { type: "expense",      label: "Expense"      },
 ];
+
+function ModalTip() {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    try { if (localStorage.getItem("category_tip_dismissed")) setVisible(false); } catch {}
+  }, []);
+  function dismiss() {
+    setVisible(false);
+    try { localStorage.setItem("category_tip_dismissed", "1"); } catch {}
+  }
+  if (!visible) return null;
+  return (
+    <div className="mx-5 mt-3 mb-1 flex items-start gap-2.5 rounded-xl border border-[#3EA758]/20 bg-[#3EA758]/5 px-3.5 py-2.5">
+      <Repeat size={13} className="mt-0.5 shrink-0 text-[#3EA758]" />
+      <p className="flex-1 text-xs leading-relaxed text-gray-400">
+        Tap the colored pill on any item to move it to the right category.
+      </p>
+      <button onClick={dismiss} className="shrink-0 rounded p-0.5 text-gray-600 hover:text-gray-300" aria-label="Dismiss">
+        <X size={13} />
+      </button>
+    </div>
+  );
+}
 
 function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType: ItemType) => void }) {
   const [open, setOpen] = useState(false);
@@ -147,7 +255,7 @@ function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType:
     setTimeout(() => setSaved(false), 2000);
   }
 
-  if (saved) return <span className="text-xs font-semibold text-brand">Saved</span>;
+  if (saved) return <span className="text-xs font-semibold text-[#3EA758]">Saved</span>;
 
   return (
     <>
@@ -183,6 +291,8 @@ function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType:
   );
 }
 
+// ─── Add Expense Modal ────────────────────────────────────────────────────────
+
 const EXPENSE_CATS = [
   "Food & Dining", "Transport", "Shopping", "Entertainment",
   "Health", "Utilities", "Travel", "Education", "Other",
@@ -204,7 +314,7 @@ const COMMON_NAMES = [
   "Coffee", "Dining Out", "Fast Food",
 ];
 
-const inputCls = "w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-brand";
+const inputCls = "w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-[#3EA758]";
 
 function NameAutocomplete({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -324,6 +434,8 @@ function AddExpenseModal({ userId, onClose, onSaved }: {
   );
 }
 
+// ─── Items Modal ──────────────────────────────────────────────────────────────
+
 function ItemsModal({ label, color, items, onClose, onTypeChange, onAdd }: {
   label: string;
   color: string;
@@ -389,6 +501,8 @@ function ItemsModal({ label, color, items, onClose, onTypeChange, onAdd }: {
   );
 }
 
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
 export default function Dashboard() {
   const router = useRouter();
   const supabase = createClient();
@@ -404,7 +518,6 @@ export default function Dashboard() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [plaidConnected, setPlaidConnected] = useState(false);
   const [detectingIncome, setDetectingIncome] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
@@ -415,19 +528,11 @@ export default function Dashboard() {
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
-    if (!item) {
-      setDebugInfo("ERROR: Item not in state. ID: " + id);
-      return;
-    }
+    if (!item) { setDebugInfo("ERROR: Item not in state. ID: " + id); return; }
     const oldType = item.type;
-
-    // Optimistic update
     setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
 
-    // Get current auth user for diagnostics
     const { data: { user: authUser } } = await supabase.auth.getUser();
-
-    // Persist to items table
     const { data: updated, error, status, statusText } = await supabase
       .from("items")
       .update({ type: newType })
@@ -435,40 +540,29 @@ export default function Dashboard() {
       .eq("user_id", authUser?.id)
       .select();
 
-    const debugLines = [
-      "=== MOVE DEBUG ===",
-      "Item ID: " + id,
-      "Item name: " + item.name,
-      "Old type: " + oldType + " → New type: " + newType,
-      "Item user_id: " + (item as any).user_id,
-      "Auth user_id: " + (authUser?.id || "NOT LOGGED IN"),
-      "User IDs match: " + ((item as any).user_id === authUser?.id ? "YES ✓" : "NO ✗"),
-      "Item source: " + (item.source || "null"),
-      "HTTP status: " + status + " " + (statusText || ""),
-      "Rows updated: " + (updated?.length ?? 0),
-      "Error: " + (error ? JSON.stringify(error) : "none"),
-    ];
-    const debugText = debugLines.join("\n");
-
     if (error || !updated || updated.length === 0) {
       setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      setDebugInfo(debugText);
+      setDebugInfo([
+        "=== MOVE DEBUG ===",
+        "Item ID: " + id,
+        "Old type: " + oldType + " → New type: " + newType,
+        "HTTP status: " + status + " " + (statusText || ""),
+        "Rows updated: " + (updated?.length ?? 0),
+        "Error: " + (error ? JSON.stringify(error) : "none"),
+      ].join("\n"));
       return;
     }
 
-    // Force a fresh reload from the database to confirm save stuck
     setTimeout(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) await loadData(user.id);
     }, 500);
 
-    // Tell other open tabs/pages to refresh
     try {
       localStorage.setItem("items_version", String(Date.now()));
       window.dispatchEvent(new Event("items-updated"));
     } catch {}
 
-    // Save merchant rule (best effort — won't fail the move if table is missing)
     try {
       const key = (item.name || "").toLowerCase().trim();
       if (key) {
@@ -501,7 +595,6 @@ export default function Dashboard() {
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
-
     if (itemsData) setItems(itemsData as Item[]);
 
     const { data: ccData } = await supabase
@@ -559,7 +652,6 @@ export default function Dashboard() {
       await loadData(user.id);
       setLoading(false);
 
-      // Supabase Realtime: auto-refresh when items or profile change from any page/device
       realtimeChannel = supabase
         .channel("dashboard-sync-" + user.id)
         .on("postgres_changes", { event: "*", schema: "public", table: "items", filter: `user_id=eq.${user.id}` },
@@ -570,7 +662,6 @@ export default function Dashboard() {
     }
     init();
 
-    // Also listen for same-tab events dispatched by other pages
     const onItemsUpdated = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) await loadData(user.id);
@@ -586,34 +677,6 @@ export default function Dashboard() {
       if (realtimeChannel) supabase.removeChannel(realtimeChannel);
     };
   }, []);
-
-  async function autoSyncRecurring(userId: string) {
-    try {
-      const res = await fetch("/api/plaid/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.ok) {
-        const result = await res.json().catch(() => ({}));
-        if (result.income > 0) {
-          setIncome(result.income);
-          setIncomeInput(String(result.income));
-        }
-      }
-    } catch (e) {
-      console.error("Sync failed:", e);
-    }
-  }
-
-  async function refreshRecurring() {
-    if (!user) return;
-    setSyncing(true);
-    await autoSyncRecurring(user.id);
-    setSyncing(false);
-    // Force reload to pick up new data
-    window.location.reload();
-  }
 
   async function saveIncome(val: string) {
     const v = parseFloat(val) || 0;
@@ -651,7 +714,6 @@ export default function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publicToken, userId: user.id }),
       });
-      // sync populates transactions + recurring + income in one pass
       const res = await fetch("/api/plaid/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -670,8 +732,15 @@ export default function Dashboard() {
     onSuccess: (public_token) => onPlaidSuccess(public_token),
   });
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      </div>
+    );
+  }
 
+  // ── Computed values ──────────────────────────────────────────────────────────
   const subs     = items.filter(i => i.type === "subscription");
   const bills    = items.filter(i => i.type === "bill");
   const expenses = items.filter(i => i.type === "expense");
@@ -691,10 +760,8 @@ export default function Dashboard() {
     { name: "Credit Payments", value: creditMinTotal, color: "#38BDF8" },
   ].filter(d => d.value > 0);
 
-  // Upcoming due in next 7 days
   const today = new Date();
 
-  // Credit card upcoming payments
   const creditUpcoming = creditCards
     .filter(c => c.due_date)
     .map(c => {
@@ -737,21 +804,33 @@ export default function Dashboard() {
       return { ...i, daysUntil: day };
     })
     .filter(i => i.daysUntil >= 0 && i.daysUntil <= 7)
-    .sort((a, b) => a.daysUntil - b.daysUntil)
     .concat(creditUpcoming as any[])
     .concat(recurringUpcoming as any[])
     .sort((a, b) => a.daysUntil - b.daysUntil)
-    .slice(0, 5);
+    .slice(0, 6);
+
+  const INCOME_KWS_FILTER = ["va benefit", "va payment", "veteran", "disability", "social security", "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit"];
+  const topItems = [...items]
+    .filter(i => !INCOME_KWS_FILTER.some(kw => i.name.toLowerCase().includes(kw)))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 6)
+    .map(i => ({
+      name: i.name.length > 20 ? i.name.slice(0, 18) + "\u2026" : i.name,
+      amount: parseFloat(i.amount.toFixed(2)),
+      fill: TYPE_COLORS[i.type] || "#888",
+    }));
+
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
 
-      {/* Setup progress card */}
+      {/* Setup not done banner */}
       {!setupDone && !showWizard && (
         <div className="mb-6 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 p-4 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-white">Finish setting up your account</p>
-            <p className="text-xs text-gray-500 mt-0.5">Add your income, subscriptions, and bills to see your full financial picture.</p>
+            <p className="text-xs text-gray-500 mt-0.5">Add your income, subscriptions, and bills to see your full picture.</p>
           </div>
           <button
             onClick={() => setShowWizard(true)}
@@ -762,15 +841,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* DEBUG BANNER */}
+      {/* Debug banner */}
       {debugInfo && (
         <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
           <div className="flex items-start justify-between gap-3 mb-2">
-            <p className="text-sm font-bold text-red-400">Couldn't save that change</p>
+            <p className="text-sm font-bold text-red-400">Could not save that change</p>
             <button onClick={() => setDebugInfo(null)} className="text-xs text-gray-500 hover:text-white">close</button>
           </div>
-          <p className="text-xs text-gray-400 mb-3">This item couldn't be moved. Your changes have been undone. If this keeps happening, contact support.</p>
-          <details className="group">
+          <p className="text-xs text-gray-400 mb-3">Your changes have been undone. If this keeps happening, contact support.</p>
+          <details>
             <summary className="text-xs text-gray-600 cursor-pointer hover:text-gray-400 select-none">Show details</summary>
             <pre className="mt-2 text-xs text-gray-500 whitespace-pre-wrap font-mono overflow-auto max-h-48">{debugInfo}</pre>
           </details>
@@ -783,7 +862,7 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold">
             Hey, <span className="gradient-text">{profileName || user?.email?.split("@")[0]}</span>
           </h1>
-          <p className="mt-1 text-sm text-gray-400">Here's your financial snapshot.</p>
+          <p className="mt-1 text-sm text-gray-400">Here's your full financial picture.</p>
         </div>
         <button
           onClick={() => setAddExpenseOpen(true)}
@@ -793,25 +872,20 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <HelpTip
-        storageKey="dashboard_welcome"
-        title="Start here — set your monthly income"
-        body={
-          <>
-            <p>This is your financial command center. Tap <span className="text-white font-medium">Set income</span> above to enter your monthly take-home pay — that&apos;s your paycheck after taxes, not your salary.</p>
-            <p className="mt-1">Once you set it, the progress bar shows exactly how much of your income goes to bills, subscriptions, and credit card minimums — and what&apos;s left over to save or spend freely. The bar turns yellow at 70% and red at 90%.</p>
-          </>
-        }
-      />
+      {/* ── 1. SAVINGS GOALS (top priority) ────────────────────────────────── */}
+      {user && <SavingsStrip userId={user.id} />}
 
-      {/* Income hero */}
+      {/* ── 2. INCOME & SPENDING ─────────────────────────────────────────────── */}
       <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Monthly Budget</div>
+
+        <div className="mt-3 flex items-start justify-between gap-4 flex-wrap">
+          {/* Income */}
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Monthly Income</p>
+            <p className="text-xs text-gray-600 mb-1">Take-home income</p>
             {editingIncome ? (
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-400">$</span>
+                <span className="text-xl font-bold text-gray-400">$</span>
                 <input
                   autoFocus
                   type="number"
@@ -819,28 +893,36 @@ export default function Dashboard() {
                   onChange={e => setIncomeInput(e.target.value)}
                   onBlur={() => saveIncome(incomeInput)}
                   onKeyDown={e => { if (e.key === "Enter") saveIncome(incomeInput); if (e.key === "Escape") setEditingIncome(false); }}
-                  className="w-40 bg-transparent text-3xl font-bold outline-none border-b border-brand"
+                  className="w-36 bg-transparent text-2xl font-bold outline-none border-b border-[#3EA758]"
                 />
               </div>
             ) : (
               <button onClick={() => { setEditingIncome(true); setIncomeInput(income ? String(income) : ""); }} className="text-left group">
-                <span className="text-3xl font-black">{income > 0 ? fmt(income) : <span className="text-gray-500">Set income</span>}</span>
-                <span className="ml-2 text-xs text-brand opacity-0 group-hover:opacity-100 transition">edit</span>
+                <span className="text-2xl font-black">{income > 0 ? fmt(income) : <span className="text-gray-500 text-lg">Set income</span>}</span>
+                <span className="ml-2 text-xs text-[#3EA758] opacity-0 group-hover:opacity-100 transition">edit</span>
               </button>
             )}
           </div>
+
+          {/* Tracked spend */}
+          <div className="text-center">
+            <p className="text-xs text-gray-600 mb-1">Tracked spending</p>
+            <p className="text-2xl font-black text-white">{fmt(totalSpend)}</p>
+          </div>
+
+          {/* Left over */}
           {income > 0 && (
             <div className="text-right">
-              <p className="text-xs text-gray-500 mb-1">{spendPct}% used</p>
-              <p className={`text-lg font-bold ${remaining < 0 ? "text-red-400" : "text-brand"}`}>
-                {remaining < 0 ? "-" : "+"}{fmt(Math.abs(remaining))} {remaining < 0 ? "over" : "left"}
+              <p className="text-xs text-gray-600 mb-1">{remaining >= 0 ? "Available to save" : "Over budget"}</p>
+              <p className={`text-2xl font-black ${remaining < 0 ? "text-red-400" : "text-[#00C853]"}`}>
+                {remaining < 0 ? "-" : "+"}{fmt(Math.abs(remaining))}
               </p>
             </div>
           )}
         </div>
 
         {income > 0 && (
-          <div className="mt-4">
+          <div className="mt-5">
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
               <div
                 className="h-full rounded-full transition-all duration-700"
@@ -851,26 +933,26 @@ export default function Dashboard() {
               />
             </div>
             <div className="mt-2 flex justify-between text-xs text-gray-500">
-              <span>{fmt(totalSpend)} tracked spend</span>
-              <span>{fmt(income)} income</span>
+              <span>{spendPct}% of income tracked</span>
+              {remaining > 0 && <span className="text-[#00C853]">Move {fmt(remaining)} to savings →</span>}
             </div>
           </div>
         )}
 
-        {/* Bank connect */}
+        {/* Bank connect row */}
         <div className="mt-4 border-t border-white/5 pt-4">
           {detectingIncome ? (
             <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Loader2 size={14} className="animate-spin text-brand" /> Detecting your income…
+              <Loader2 size={14} className="animate-spin text-[#3EA758]" /> Detecting your income...
             </div>
           ) : plaidConnected ? (
-            <div className="flex items-center gap-2 text-sm text-brand"><Check size={14} /> Bank connected · Income auto-detected</div>
+            <div className="flex items-center gap-2 text-sm text-[#3EA758]"><Check size={14} /> Bank connected · Income auto-detected</div>
           ) : linkToken && plaidReady ? (
             <button onClick={() => openPlaid()} className="flex items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2 text-sm font-bold text-black hover:opacity-90">
               <Landmark size={14} /> Open Bank Login
             </button>
           ) : (
-            <button onClick={createLinkToken} className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-semibold text-brand hover:bg-brand/15">
+            <button onClick={createLinkToken} className="flex items-center gap-2 rounded-xl border border-[#3EA758]/30 bg-[#3EA758]/10 px-4 py-2 text-sm font-semibold text-[#3EA758] hover:bg-[#3EA758]/15">
               <Landmark size={14} /> Auto-detect income from bank
             </button>
           )}
@@ -878,24 +960,39 @@ export default function Dashboard() {
       </div>
 
       {user && <PriceChangeAlert userId={user.id} />}
-
-      {/* Upcoming recurring charges from Plaid */}
       <UpcomingCharges />
-
-      {/* Upgrade banner — hidden for Pro users */}
       <UpgradeBanner />
 
-      {/* Stat cards */}
+      {/* ── 3. STAT CARDS ─────────────────────────────────────────────────────── */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`} color={TYPE_COLORS.subscription} onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })} />
-        <StatCard label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`} color={TYPE_COLORS.bill} onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })} />
-        <StatCard label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} tracked`} color={TYPE_COLORS.expense} onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, filterType: "expense" as any })} />
-        <StatCard label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items + credit`} color="#AF52DE" onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })} />
+        <StatCard
+          label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`}
+          color={TYPE_COLORS.subscription}
+          onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })}
+        />
+        <StatCard
+          label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`}
+          color={TYPE_COLORS.bill}
+          onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })}
+        />
+        <StatCard
+          label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} logged`}
+          color={TYPE_COLORS.expense}
+          onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, filterType: "expense" as any })}
+        />
+        <StatCard
+          label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`}
+          color="#AF52DE"
+          onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })}
+        />
       </div>
 
-      {/* Credit card summary strip */}
+      {/* ── 4. CREDIT CARD STRIP ──────────────────────────────────────────────── */}
       {creditCards.length > 0 && (
-        <div className="mb-6 flex items-center justify-between rounded-2xl border border-[#38BDF8]/20 bg-[#38BDF8]/5 px-5 py-4 cursor-pointer hover:bg-[#38BDF8]/10 transition" onClick={() => router.push("/credit")}>
+        <div
+          className="mb-6 flex items-center justify-between rounded-2xl border border-[#38BDF8]/20 bg-[#38BDF8]/5 px-5 py-4 cursor-pointer hover:bg-[#38BDF8]/10 transition"
+          onClick={() => router.push("/credit")}
+        >
           <div className="flex items-center gap-3">
             <CreditCard size={18} className="text-[#38BDF8]" />
             <div>
@@ -910,6 +1007,161 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ── 5. SPEND BREAKDOWN + DUE THIS WEEK ───────────────────────────────── */}
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+
+        {/* Donut */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Spend Breakdown</p>
+          {donutData.length > 0 ? (
+            <div className="flex items-center gap-4">
+              <ResponsiveContainer width={160} height={160}>
+                <PieChart>
+                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
+                    {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v: any) => fmt(v)}
+                    contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex-1 space-y-2.5">
+                {donutData.map(row => (
+                  <div key={row.name} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: row.color }} />
+                      <span className="text-gray-300">{row.name}</span>
+                    </div>
+                    <span className="font-semibold">{fmt(row.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-32 items-center justify-center">
+              <p className="text-sm text-gray-500">No items yet — add from Finances.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Due this week */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Due This Week</p>
+          {upcoming.length === 0 ? (
+            <div className="flex h-32 items-center justify-center">
+              <p className="text-sm text-gray-500">Nothing due in the next 7 days.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcoming.map(item => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type]} size={32} />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-semibold">{item.name}</p>
+                    <p className="text-xs text-gray-500">{item.due_date}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold">{fmt(item.amount)}</p>
+                    <p className={`text-xs font-semibold ${item.daysUntil === 0 ? "text-red-400" : item.daysUntil <= 2 ? "text-orange-400" : "text-gray-500"}`}>
+                      {item.daysUntil === 0 ? "Today" : item.daysUntil === 1 ? "Tomorrow" : `${item.daysUntil}d`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── 6. TOP ITEMS BAR CHART ────────────────────────────────────────────── */}
+      {topItems.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Biggest Monthly Charges</p>
+          <p className="mb-4 text-xs text-gray-600">Your top recurring costs at a glance</p>
+          <ResponsiveContainer width="100%" height={topItems.length * 34 + 8}>
+            <BarChart data={topItems} layout="vertical" margin={{ top: 0, right: 56, left: 0, bottom: 0 }}>
+              <XAxis type="number" hide domain={[0, "dataMax"]} />
+              <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                formatter={(v: any) => [fmt(v), "Monthly"]}
+                contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+              />
+              <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={20}>
+                {topItems.map((entry, i) => <Cell key={i} fill={entry.fill} fillOpacity={0.85} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-3 flex gap-5 text-xs text-gray-500">
+            {([
+              { label: "Subscription", color: TYPE_COLORS.subscription },
+              { label: "Bill", color: TYPE_COLORS.bill },
+              { label: "Expense", color: TYPE_COLORS.expense },
+            ] as const).map(l => (
+              <div key={l.label} className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: l.color }} />
+                {l.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── 7. QUICK LINKS ────────────────────────────────────────────────────── */}
+      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        <button
+          onClick={() => router.push("/save")}
+          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00C853]/10 border border-[#00C853]/20">
+              <PiggyBank size={16} style={{ color: "#00C853" }} />
+            </div>
+            <div>
+              <p className="font-semibold">Savings Goals</p>
+              <p className="text-xs text-gray-500">Track your progress</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
+
+        <button
+          onClick={() => router.push("/finances")}
+          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#38BDF8]/10 border border-[#38BDF8]/20">
+              <Repeat size={16} className="text-[#38BDF8]" />
+            </div>
+            <div>
+              <p className="font-semibold">Finances</p>
+              <p className="text-xs text-gray-500">{items.length} items tracked</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
+
+        <button
+          onClick={() => router.push("/bank")}
+          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5E8EFF]/10 border border-[#5E8EFF]/20">
+              <Landmark size={16} className="text-[#5E8EFF]" />
+            </div>
+            <div>
+              <p className="font-semibold">Bank Accounts</p>
+              <p className="text-xs text-gray-500">{isPro ? "Auto-imported" : "Connect to auto-detect"}</p>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
+      </div>
+
+      {/* ── 8. HEALTH SCORE ───────────────────────────────────────────────────── */}
+      {user && <HealthScore userId={user.id} />}
+
+      {/* ── Modals ─────────────────────────────────────────────────────────────── */}
       {activeCard && (
         <ItemsModal
           label={activeCard.label}
@@ -931,171 +1183,6 @@ export default function Dashboard() {
           }}
         />
       )}
-
-      {/* Donut + Upcoming row */}
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
-
-        {/* Donut breakdown */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Spend Breakdown</p>
-          {donutData.length > 0 ? (
-            <div className="flex items-center gap-4">
-              <ResponsiveContainer width={160} height={160}>
-                <PieChart>
-                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
-                    {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-2.5">
-                {donutData.map(row => (
-                  <div key={row.name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: row.color }} />
-                      <span className="text-gray-300">{row.name}</span>
-                    </div>
-                    <span className="font-semibold">{fmt(row.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-24 items-center justify-center">
-              <p className="text-sm text-gray-500">No items yet — add from Manual Entries.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Due This Week</p>
-          {upcoming.length === 0 ? (
-            <div className="flex h-24 items-center justify-center">
-              <p className="text-sm text-gray-500">Nothing due in the next 7 days.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {upcoming.map(item => (
-                <div key={item.id} className="flex items-center gap-3">
-                  <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type]} size={32} />
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-semibold">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.due_date}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">{fmt(item.amount)}</p>
-                    <p className={`text-xs font-semibold ${item.daysUntil === 0 ? "text-red-400" : item.daysUntil <= 2 ? "text-orange-400" : "text-gray-500"}`}>
-                      {item.daysUntil === 0 ? "Today" : item.daysUntil === 1 ? "Tomorrow" : `${item.daysUntil}d`}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Top items by monthly cost */}
-      {items.length > 0 && (() => {
-        const TOP_INCOME_KWS = ["va benefit", "va payment", "veteran", "disability", "social security", "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit"];
-        const topItems = [...items]
-          .filter(i => !TOP_INCOME_KWS.some(kw => i.name.toLowerCase().includes(kw)))
-          .sort((a, b) => b.amount - a.amount)
-          .slice(0, 6)
-          .map(i => ({
-            name: i.name.length > 20 ? i.name.slice(0, 18) + "\u2026" : i.name,
-            amount: parseFloat(i.amount.toFixed(2)),
-            fill: TYPE_COLORS[i.type] || "#888",
-          }));
-        return (
-          <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Top Items by Monthly Cost</p>
-            <p className="mb-4 text-xs text-gray-600">Your biggest recurring charges at a glance</p>
-            <ResponsiveContainer width="100%" height={topItems.length * 34 + 8}>
-              <BarChart data={topItems} layout="vertical" margin={{ top: 0, right: 56, left: 0, bottom: 0 }}>
-                <XAxis type="number" hide domain={[0, "dataMax"]} />
-                <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  formatter={(v: any) => [fmt(v), "Monthly"]}
-                  contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
-                />
-                <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={20}>
-                  {topItems.map((entry, i) => <Cell key={i} fill={entry.fill} fillOpacity={0.85} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="mt-3 flex gap-5 text-xs text-gray-500">
-              {([
-                { label: "Subscription", color: TYPE_COLORS.subscription },
-                { label: "Bill", color: TYPE_COLORS.bill },
-                { label: "Expense", color: TYPE_COLORS.expense },
-              ] as const).map(l => (
-                <div key={l.label} className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full shrink-0" style={{ background: l.color }} />
-                  {l.label}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Quick links */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <button
-          onClick={() => router.push("/manual")}
-          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 border border-brand/20">
-              <Repeat size={16} className="text-brand" />
-            </div>
-            <div>
-              <p className="font-semibold">Manual Entries</p>
-              <p className="text-xs text-gray-500">{items.filter(i => !i.source || i.source === "manual").length} items tracked</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-
-        <button
-          onClick={() => router.push("/bank")}
-          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <Landmark size={16} className="text-blue-400" />
-            </div>
-            <div className="flex items-center gap-2">
-              <div>
-                <p className="font-semibold">Bank Connected</p>
-                <p className="text-xs text-gray-500">{isPro ? "Auto-imported entries" : "Upgrade to Pro"}</p>
-              </div>
-              {isPro && <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-yellow-400">Pro</span>}
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-
-        <button
-          onClick={() => router.push("/credit")}
-          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#38BDF8]/10 border border-[#38BDF8]/20">
-              <CreditCard size={16} className="text-[#38BDF8]" />
-            </div>
-            <div>
-              <p className="font-semibold">Credit Cards</p>
-              <p className="text-xs text-gray-500">Track balances & utilization</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-      </div>
-
-      {user && <HealthScore userId={user.id} />}
 
       {showWizard && user && (
         <SetupWizard
