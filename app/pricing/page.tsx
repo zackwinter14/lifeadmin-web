@@ -98,6 +98,7 @@ export default function Pricing() {
             <ul className="mt-6 space-y-3">
               {[
                 "Everything in Free",
+                "No ads",
                 "Connect unlimited banks via Plaid",
                 "Auto-detect every recurring charge",
                 "AI organize subs, bills, gas, expenses",
@@ -133,8 +134,8 @@ export default function Pricing() {
             <ul className="mt-6 space-y-3">
               {[
                 "Everything in Monthly",
+                "No ads",
                 "Lock in your rate — no price increases",
-                "60-day money-back guarantee",
                 "Priority support",
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">

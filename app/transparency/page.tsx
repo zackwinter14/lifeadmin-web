@@ -54,24 +54,29 @@ export default function TransparencyPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
               <CreditCard size={18} className="text-brand" />
             </div>
-            <h2 className="text-xl font-bold">We charge a subscription. That&apos;s it.</h2>
+            <h2 className="text-xl font-bold">Two revenue sources. Both disclosed.</h2>
           </div>
           <p className="text-gray-400 mb-5">
-            Life Admin has one revenue source: users who choose to upgrade to Pro.
-            If you never upgrade, you use the app free forever. We make money when
-            we build something valuable enough that you <em>want</em> to pay for it.
-            That&apos;s the entire business model.
+            Life Admin has two revenue sources. First, display ads shown to free users — standard
+            Google AdSense ads, the same kind you see on any website. Second, Pro subscriptions
+            for users who want bank automation and an ad-free experience. That&apos;s it.
+            No data selling. No hidden fees. No tricks.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-xs text-gray-500 mb-1">Monthly plan</p>
+              <p className="text-xs text-gray-500 mb-1">Free tier</p>
+              <p className="text-lg font-black text-white">Display ads</p>
+              <p className="text-xs text-gray-500 mt-1">Standard Google AdSense</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <p className="text-xs text-gray-500 mb-1">Monthly Pro</p>
               <p className="text-2xl font-black text-brand">$6.99</p>
-              <p className="text-xs text-gray-500 mt-1">Cancel anytime</p>
+              <p className="text-xs text-gray-500 mt-1">No ads · cancel anytime</p>
             </div>
             <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">
-              <p className="text-xs text-gray-500 mb-1">Annual plan</p>
+              <p className="text-xs text-gray-500 mb-1">Annual Pro</p>
               <p className="text-2xl font-black text-brand">$49.99</p>
-              <p className="text-xs text-brand mt-1">Save $70 vs monthly</p>
+              <p className="text-xs text-brand mt-1">No ads · save $33.89/yr</p>
             </div>
           </div>
         </Section>
@@ -87,7 +92,7 @@ export default function TransparencyPage() {
           <ul className="space-y-3">
             <No text="Sell your financial data to advertisers, data brokers, or third parties" />
             <No text="Share your bank transactions with anyone outside Life Admin's infrastructure" />
-            <No text="Use your spending patterns to serve you targeted ads" />
+            <No text="Use your financial data or spending patterns to target ads at you" />
             <No text="Charge hidden fees or auto-enroll you in paid features" />
             <No text="Move money from your accounts — our Plaid connection is read-only, always" />
           </ul>
@@ -154,6 +159,7 @@ export default function TransparencyPage() {
               <p className="text-sm font-bold text-brand mb-3">Pro — adds automation</p>
               <ul className="space-y-2 text-sm text-gray-300">
                 {[
+                  "No ads",
                   "Auto-detect all subscriptions from bank",
                   "AI categorizes every transaction",
                   "Income auto-detected from deposits",
@@ -186,8 +192,9 @@ export default function TransparencyPage() {
             thing — a finance tracker that respects your data. We use industry-standard
             infrastructure (Plaid for bank connections, Supabase for secure data storage,
             Apple for iOS payments) and we don&apos;t share your information with marketing
-            partners or data brokers. Our only revenue comes from people who choose to
-            upgrade to Pro — that&apos;s the entire model.
+            partners or data brokers. Our revenue comes from two sources: display ads shown
+            to free users (standard Google AdSense, not tied to your financial data) and Pro
+            subscriptions that remove ads and unlock bank automation.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <Link href="/privacy" className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold hover:bg-white/10">
