@@ -1,0 +1,99 @@
+<h2>Navigation Merge Plan</h2>
+<p class="subtitle">Current: 30 pages, no clear hierarchy. Proposed: 5 tabs, everything grouped logically.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+  <!-- Current mess -->
+  <div>
+    <div class="label" style="margin-bottom:10px;">Current — 30 scattered pages</div>
+    <div style="background:#111;border-radius:12px;padding:14px;font-size:10px;color:#666;line-height:2;">
+      /dashboard &nbsp;/manual &nbsp;/income &nbsp;/expenses &nbsp;/history<br/>
+      /save &nbsp;/vault &nbsp;/budget &nbsp;/networth &nbsp;/gas<br/>
+      /cancel &nbsp;/recurring &nbsp;/upcoming &nbsp;/bank &nbsp;/credit<br/>
+      /calendar &nbsp;/report &nbsp;/wrapped &nbsp;/insights &nbsp;/rewards<br/>
+      /autoai &nbsp;/negotiation &nbsp;/tools &nbsp;/school<br/>
+      /household &nbsp;/profile &nbsp;/features &nbsp;/pricing &nbsp;/about
+    </div>
+  </div>
+
+  <!-- Proposed 5 tabs -->
+  <div>
+    <div class="label" style="margin-bottom:10px;">Proposed — 5 tabs, clean</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="background:#00C85315;border:1px solid #00C85340;border-radius:8px;padding:8px 12px;font-size:11px;color:#00C853;font-weight:700;">Save</div>
+      <div style="background:#38BDF815;border:1px solid #38BDF840;border-radius:8px;padding:8px 12px;font-size:11px;color:#38BDF8;font-weight:700;">Finances</div>
+      <div style="background:#FF980015;border:1px solid #FF980040;border-radius:8px;padding:8px 12px;font-size:11px;color:#FF9800;font-weight:700;">Calendar</div>
+      <div style="background:#A855F715;border:1px solid #A855F740;border-radius:8px;padding:8px 12px;font-size:11px;color:#A855F7;font-weight:700;">Tools</div>
+      <div style="background:#ffffff08;border:1px solid #ffffff15;border-radius:8px;padding:8px 12px;font-size:11px;color:#aaa;font-weight:700;">Profile</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Detailed breakdown -->
+<div style="display:flex;flex-direction:column;gap:10px;">
+
+  <div style="background:#111;border-radius:12px;padding:14px;border-left:3px solid #00C853;">
+    <div style="font-size:11px;font-weight:800;color:#00C853;margin-bottom:8px;">SAVE — Merges 4 pages into 1</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;">
+      <div style="background:#00C85310;border-radius:6px;padding:5px 8px;color:#ccc;">/save — Savings goals (keep as main tab)</div>
+      <div style="background:#00C85310;border-radius:6px;padding:5px 8px;color:#ccc;">/vault — Savings accounts (merge into /save)</div>
+      <div style="background:#00C85310;border-radius:6px;padding:5px 8px;color:#ccc;">/budget — Budget planner (merge into /save)</div>
+      <div style="background:#00C85310;border-radius:6px;padding:5px 8px;color:#ccc;">/networth — Net worth (merge into /save)</div>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:#555;">All savings-related. One tab with sub-sections: Goals / Vault / Budget / Net Worth</div>
+  </div>
+
+  <div style="background:#111;border-radius:12px;padding:14px;border-left:3px solid #38BDF8;">
+    <div style="font-size:11px;font-weight:800;color:#38BDF8;margin-bottom:8px;">FINANCES — Merges 9 pages into 1</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;">
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/manual — My Finances (subscriptions + bills)</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/income — Income tracking</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/expenses — Add expense</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/history — Expense history</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/cancel — Cancel manager</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/recurring — Recurring charges</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/upcoming — Upcoming charges</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/bank — Bank accounts</div>
+      <div style="background:#38BDF810;border-radius:6px;padding:5px 8px;color:#ccc;">/gas — Gas tracking</div>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:#555;">All money tracking. Sub-tabs: Overview / Income / Expenses / Bills & Subs / Accounts</div>
+  </div>
+
+  <div style="background:#111;border-radius:12px;padding:14px;border-left:3px solid #FF9800;">
+    <div style="font-size:11px;font-weight:800;color:#FF9800;margin-bottom:8px;">CALENDAR — Merges 2 pages into 1</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;">
+      <div style="background:#FF980010;border-radius:6px;padding:5px 8px;color:#ccc;">/calendar — Bill calendar (keep)</div>
+      <div style="background:#FF980010;border-radius:6px;padding:5px 8px;color:#ccc;">/upcoming — Upcoming (merge in)</div>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:#555;">Calendar already shows upcoming charges. /upcoming becomes a section inside /calendar.</div>
+  </div>
+
+  <div style="background:#111;border-radius:12px;padding:14px;border-left:3px solid #A855F7;">
+    <div style="font-size:11px;font-weight:800;color:#A855F7;margin-bottom:8px;">TOOLS — Merges 8 pages into 1</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;">
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/autoai — AutoAI</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/negotiation — Bill negotiation</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/tools — Free tools</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/school — Financial education</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/insights — Spending insights</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/rewards — Rewards</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/report — Monthly report</div>
+      <div style="background:#A855F710;border-radius:6px;padding:5px 8px;color:#ccc;">/wrapped — Year review</div>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:#555;">Everything that isn't core tracking. A grid of cards, each opens its own view.</div>
+  </div>
+
+  <div style="background:#111;border-radius:12px;padding:14px;border-left:3px solid #666;">
+    <div style="font-size:11px;font-weight:800;color:#aaa;margin-bottom:8px;">PROFILE — Merges 2 pages</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;">
+      <div style="background:#ffffff08;border-radius:6px;padding:5px 8px;color:#ccc;">/profile — Settings & account</div>
+      <div style="background:#ffffff08;border-radius:6px;padding:5px 8px;color:#ccc;">/household — Household sharing</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:16px;background:#1a1a1a;border-radius:10px;padding:12px;font-size:10px;color:#666;">
+  Existing URLs don't break — they redirect to the right section inside the new merged page. Old bookmarks still work.
+</div>

@@ -1,59 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { Menu, X, User, DollarSign, TrendingUp, Calendar, Bot, GraduationCap, Handshake, Trophy, LayoutGrid, ChevronDown, Repeat, Landmark, Wallet, Users, History, Calculator, PiggyBank, CreditCard, BarChart2, CircleX, FileText, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, User } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-const MENU_SECTIONS = [
-  {
-    label: "Track",
-    items: [
-      { href: "/expenses",  label: "Add Expense", icon: DollarSign,    color: "#007AFF" },
-      { href: "/history",   label: "History",     icon: History,       color: "#38BDF8" },
-      { href: "/networth",  label: "Net Worth",   icon: TrendingUp,    color: "#64D2FF" },
-      { href: "/household", label: "Household",   icon: Users,         color: "#30D158" },
-    ],
-  },
-  {
-    label: "Plan",
-    items: [
-      { href: "/calendar",     label: "Calendar",    icon: Calendar,      color: "#FF9500" },
-      { href: "/recurring",    label: "Recurring",   icon: Repeat,        color: "#5E8EFF" },
-      { href: "/cancel",       label: "Cancel Mgr",  icon: CircleX,       color: "#FF3B30" },
-      { href: "/report",       label: "Monthly",     icon: FileText,      color: "#38BDF8" },
-      { href: "/wrapped",      label: "Year Review", icon: Sparkles,      color: "#F5C518" },
-    ],
-  },
-  {
-    label: "Tools",
-    items: [
-      { href: "/autoai",      label: "AutoAI",      icon: Bot,           color: "#AF52DE" },
-      { href: "/negotiation", label: "Negotiation", icon: Handshake,     color: "#FF6B35" },
-      { href: "/tools",       label: "Free Tools",  icon: Calculator,    color: "#3EA758" },
-      { href: "/school",      label: "School",      icon: GraduationCap, color: "#38BDF8" },
-    ],
-  },
-  {
-    label: "Insights",
-    items: [
-      { href: "/insights", label: "Insights", icon: BarChart2, color: "#AF52DE" },
-      { href: "/rewards",  label: "Rewards",  icon: Trophy,    color: "#F5C518" },
-    ],
-  },
-];
-
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [dashOpen, setDashOpen] = useState(false);
-  const dashRef = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<any>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [autoaiUnread, setAutoaiUnread] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -78,16 +36,6 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Close menus on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-      if (dashRef.current && !dashRef.current.contains(e.target as Node)) setDashOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
   async function handleLogout() {
     await supabase.auth.signOut();
     setUser(null);
@@ -103,10 +51,11 @@ export default function Navbar() {
     { href: "/about",    label: "About"    },
   ];
 
-  const appLinks = [
+  const authLinks = [
     { href: "/save",     label: "Save"     },
-    { href: "/budget",   label: "Budget"   },
+    { href: "/finances", label: "Finances" },
     { href: "/calendar", label: "Calendar" },
+    { href: "/tools",    label: "Tools"    },
   ];
 
   return (
@@ -114,7 +63,7 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0">
           <img src="/logo-white.png" alt="Life Admin" className="h-9 w-9 object-contain" />
           <span className="text-lg font-semibold">Life Admin</span>
         </Link>
@@ -123,92 +72,11 @@ export default function Navbar() {
         <div className="hidden items-center gap-6 md:flex">
           {user ? (
             <>
-              {/* Dashboard dropdown */}
-              <div className="relative" ref={dashRef}>
-                <button
-                  onClick={() => setDashOpen(o => !o)}
-                  className={`flex items-center gap-1 text-sm transition ${dashOpen ? "text-white" : "text-gray-300 hover:text-white"}`}
-                >
-                  Dashboard <ChevronDown size={13} className={`transition-transform ${dashOpen ? "rotate-180" : ""}`} />
-                </button>
-                {dashOpen && (
-                  <div className="absolute left-0 top-8 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
-                    <div className="p-2">
-                      <Link href="/dashboard" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/15"><LayoutGrid size={13} className="text-brand" /></div>
-                        <span className="text-sm font-medium text-gray-200">Overview</span>
-                      </Link>
-                      <Link href="/manual" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-green-500/15"><Repeat size={13} className="text-green-400" /></div>
-                        <span className="text-sm font-medium text-gray-200">My Finances</span>
-                      </Link>
-                      <Link href="/bank" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15"><Landmark size={13} className="text-blue-400" /></div>
-                        <span className="text-sm font-medium text-gray-200">Bank Accounts</span>
-                      </Link>
-                      <Link href="/vault" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/15"><PiggyBank size={13} className="text-brand" /></div>
-                        <span className="text-sm font-medium text-gray-200">Savings Vault</span>
-                      </Link>
-                      <Link href="/credit" onClick={() => setDashOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#38BDF8]/15"><CreditCard size={13} className="text-[#38BDF8]" /></div>
-                        <span className="text-sm font-medium text-gray-200">Credit Cards</span>
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {appLinks.map(l => (
+              {authLinks.map(l => (
                 <Link key={l.href} href={l.href} className="text-sm text-gray-300 transition hover:text-white">
                   {l.label}
                 </Link>
               ))}
-
-              {/* Menu button + dropdown */}
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setMenuOpen(o => !o)}
-                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${menuOpen ? "border-brand/50 bg-brand/10 text-brand" : "border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"}`}
-                >
-                  <LayoutGrid size={14} />
-                  Menu
-                </button>
-
-                {menuOpen && (
-                  <div className="absolute right-0 top-10 z-50 w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
-                    <div className="p-3 space-y-3">
-                      {MENU_SECTIONS.map(section => (
-                        <div key={section.label}>
-                          <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-widest text-gray-600">{section.label}</p>
-                          <div className="grid grid-cols-2 gap-1">
-                            {section.items.map(item => {
-                              const Icon = item.icon;
-                              const isAutoAI = item.href === "/autoai";
-                              return (
-                                <Link
-                                  key={item.href}
-                                  href={item.href}
-                                  onClick={() => { setMenuOpen(false); if (isAutoAI) setAutoaiUnread(false); }}
-                                  className="flex items-center gap-2 rounded-xl px-2.5 py-2 transition hover:bg-white/5"
-                                >
-                                  <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
-                                    <Icon size={13} style={{ color: item.color }} />
-                                    {isAutoAI && autoaiUnread && (
-                                      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-purple-500 ring-1 ring-black" />
-                                    )}
-                                  </div>
-                                  <span className="text-xs font-medium text-gray-200">{item.label}</span>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Profile */}
               <Link
@@ -267,40 +135,13 @@ export default function Navbar() {
           <div className="flex flex-col gap-1 p-4 max-h-[75vh] overflow-y-auto">
             {user ? (
               <>
-                <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Dashboard</p>
-                <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Overview</Link>
-                <Link href="/manual" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">My Finances</Link>
-                <Link href="/bank" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Bank Accounts</Link>
-                <Link href="/vault" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Savings Vault</Link>
-                <Link href="/credit" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">Credit Cards</Link>
-                <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Main</p>
-                {appLinks.map(l => (
+                {authLinks.map(l => (
                   <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">
                     {l.label}
                   </Link>
                 ))}
-                {MENU_SECTIONS.map(section => (
-                  <div key={section.label}>
-                    <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-widest text-gray-600">{section.label}</p>
-                    {section.items.map(item => {
-                      const Icon = item.icon;
-                      const isAutoAI = item.href === "/autoai";
-                      return (
-                        <Link key={item.href} href={item.href} onClick={() => { setMobileOpen(false); if (isAutoAI) setAutoaiUnread(false); }} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-white/5">
-                          <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: item.color + "20" }}>
-                            <Icon size={13} style={{ color: item.color }} />
-                            {isAutoAI && autoaiUnread && (
-                              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-purple-500 ring-1 ring-black" />
-                            )}
-                          </div>
-                          <span className="text-sm text-gray-300">{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ))}
                 <div className="my-2 border-t border-white/5" />
-                <Link href="/profile" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5">
+                <Link href="/profile" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white">
                   Profile ({displayName})
                 </Link>
                 <button onClick={handleLogout} className="rounded-xl border border-white/10 px-3 py-2.5 text-left text-sm text-gray-400 hover:bg-white/5">

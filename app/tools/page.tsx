@@ -385,6 +385,52 @@ function BudgetPlanner() {
 export default function ToolsPage() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-16">
+
+      {/* Tools Hub */}
+      <h1 className="text-3xl font-black text-white mb-2">Tools</h1>
+      <p className="text-sm text-gray-500 mb-8">AI features, insights, education, and financial utilities.</p>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        {[
+          { href:"/autoai",      color:"#AF52DE", label:"AutoAI",         desc:"AI scans your bank automatically" },
+          { href:"/negotiation", color:"#FF6B35", label:"Negotiation",    desc:"Scripts to lower your bills" },
+          { href:"/insights",    color:"#AF52DE", label:"Insights",       desc:"Spending patterns and trends" },
+          { href:"/rewards",     color:"#F5C518", label:"Rewards",        desc:"Points and cashback tracker" },
+          { href:"/report",      color:"#38BDF8", label:"Monthly Report", desc:"Full breakdown each month" },
+          { href:"/wrapped",     color:"#F5C518", label:"Year Review",    desc:"Your financial year in review" },
+          { href:"/school",      color:"#38BDF8", label:"School",         desc:"Learn personal finance basics" },
+          { href:"/household",   color:"#30D158", label:"Household",      desc:"Share finances with family" },
+        ].map(card => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-4 hover:bg-white/[0.06] transition"
+            style={{ textDecoration:"none" }}
+          >
+            <div
+              className="rounded-full mb-3"
+              style={{
+                width: 20,
+                height: 20,
+                background: card.color + "26",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                className="rounded-full"
+                style={{ width: 10, height: 10, background: card.color }}
+              />
+            </div>
+            <p className="text-sm font-semibold text-white">{card.label}</p>
+            <p className="text-xs text-gray-500 mt-1">{card.desc}</p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="border-t border-white/[0.08] my-8" />
+
       <div className="mb-12 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-300">
           Free tools — no account required

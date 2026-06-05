@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Plus, X, ChevronRight, ChevronLeft, Check, Target, TrendingUp, Calendar, DollarSign } from "lucide-react";
 
@@ -664,6 +665,32 @@ export default function SavePage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
+
+      {/* Sub-nav */}
+      <div style={{ display:"flex", gap:0, borderBottom:"1.5px solid rgba(255,255,255,0.08)", marginBottom:24 }}>
+        {[
+          { label:"Goals",     href:"/save"     },
+          { label:"Vault",     href:"/vault"    },
+          { label:"Budget",    href:"/budget"   },
+          { label:"Net Worth", href:"/networth" },
+        ].map(tab => {
+          const active = tab.href === "/save";
+          return (
+            <Link key={tab.href} href={tab.href} style={{
+              padding:"10px 18px",
+              fontSize:14,
+              fontWeight: active ? 700 : 500,
+              color: active ? "#00C853" : "#888",
+              borderBottom: active ? "2px solid #00C853" : "2px solid transparent",
+              marginBottom: -1.5,
+              whiteSpace:"nowrap",
+              textDecoration:"none",
+            }}>
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
 
       {/* Modals */}
       {showWizard && (
