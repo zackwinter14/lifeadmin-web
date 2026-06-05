@@ -93,14 +93,14 @@ export default function FinancesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] px-4 py-12">
+    <main className="px-4 py-12">
       <div className="mx-auto max-w-4xl">
 
         {/* Header */}
