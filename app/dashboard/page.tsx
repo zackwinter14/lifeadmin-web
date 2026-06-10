@@ -397,6 +397,7 @@ function AddExpenseModal({ userId, onClose, onSaved }: {
 function BalanceBar({
   isConnected, plaidBalance, balanceUpdatedAt, accountName, accountMask,
   income, spentThisMonth, onConnect, linkToken, plaidReady, detectingIncome, plaidJustConnected,
+  updating,
 }: {
   isConnected: boolean;
   plaidBalance: number | null;
@@ -410,14 +411,14 @@ function BalanceBar({
   plaidReady: boolean;
   detectingIncome: boolean;
   plaidJustConnected: boolean;
+  updating: boolean;
 }) {
   const leftToSave = income > 0 ? income - spentThisMonth : null;
 
   if (isConnected) {
-    const displayBalance = plaidBalance;
     const updatedLabel = balanceUpdatedAt
       ? "Updated " + new Date(balanceUpdatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-      : "Updated on last sync";
+      : null;
 
     return (
       <div className="mb-4 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#a78bfa]/15 px-6 py-5"
@@ -431,11 +432,15 @@ function BalanceBar({
             </span>
           </div>
           <div className="font-mono text-4xl font-black tracking-tight">
-            {displayBalance != null ? fmt(displayBalance) : (
-              <span className="text-2xl text-gray-500">Hit Update to see balance</span>
+            {plaidBalance != null ? fmt(plaidBalance) : (
+              <span className="text-2xl text-gray-500">
+                {updating ? "Loading balance..." : "Fetching balance..."}
+              </span>
             )}
           </div>
-          <p className="mt-1 text-[10px] font-semibold text-[#3EA758]">{updatedLabel}</p>
+          {updatedLabel && (
+            <p className="mt-1 text-[10px] font-semibold text-[#3EA758]">{updatedLabel}</p>
+          )}
         </div>
         <div className="flex gap-8">
           {spentThisMonth > 0 && (
@@ -876,6 +881,7 @@ export default function Dashboard() {
   const [showWizard, setShowWizard]       = useState(false);
   const [setupDone, setSetupDone]         = useState(false);
   const [debugInfo, setDebugInfo]         = useState<string | null>(null);
+  const autoSyncFired = useRef(false);
 
   // ── Load data ───────────────────────────────────────────────────────────────
 
@@ -885,9 +891,8 @@ export default function Dashboard() {
     const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
 
     const [profileRes, itemsRes, txRes, ccRes, recRes] = await Promise.all([
-      supabase.from("profiles")
-        .select("monthly_income,full_name,is_pro,plaid_access_token,plaid_balance,plaid_balance_updated_at,plaid_account_name,plaid_account_mask")
-        .eq("id", userId).single(),
+      // select("*") so the query doesn't break if optional columns (plaid_balance etc) haven't been migrated yet
+      supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("items").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
       supabase.from("transactions").select("*").eq("user_id", userId)
         .gte("date", since90).order("date", { ascending: false }).limit(500),
@@ -955,17 +960,38 @@ export default function Dashboard() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
+  // Auto-sync once on page load when connected but balance hasn't been fetched yet
+  useEffect(() => {
+    if (!isConnected || plaidBalance !== null || !user || autoSyncFired.current) return;
+    autoSyncFired.current = true;
+    setUpdating(true);
+    fetch("/api/plaid/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.income > 0) setIncome(data.income);
+        return loadData(user.id);
+      })
+      .catch(() => {})
+      .finally(() => setUpdating(false));
+  }, [isConnected, plaidBalance, user]);
+
   // ── Update button ─────────────────────────────────────────────────────────
 
   async function handleUpdate() {
     if (!user || updating) return;
     setUpdating(true);
     try {
-      await fetch("/api/plaid/sync", {
+      const res = await fetch("/api/plaid/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id }),
       });
+      const data = await res.json();
+      if (data.income > 0) setIncome(data.income);
       await loadData(user.id);
     } catch (e: any) {
       setDebugInfo("Update failed: " + e?.message);
@@ -1170,6 +1196,7 @@ export default function Dashboard() {
         plaidReady={plaidReady}
         detectingIncome={detectingIncome}
         plaidJustConnected={plaidJustConnected}
+        updating={updating}
       />
 
       {/* Savings strip */}
