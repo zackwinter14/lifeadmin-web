@@ -1,27 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
-import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis,
-} from "recharts";
-import {
-  Landmark, Loader2, Check, ChevronRight, Repeat, X,
-  CreditCard, Plus, PiggyBank, ArrowRight,
-} from "lucide-react";
+import { Plus, Landmark, Loader2, Check, RefreshCw, X, DollarSign, PiggyBank, ArrowRight } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
-import UpgradeBanner from "@/components/UpgradeBanner";
-import UpcomingCharges from "@/components/UpcomingCharges";
-import MerchantLogo from "@/components/MerchantLogo";
-import PriceChangeAlert from "@/components/PriceChangeAlert";
-import HealthScore from "@/components/HealthScore";
 import SetupWizard from "@/components/SetupWizard";
+import MerchantLogo from "@/components/MerchantLogo";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type ItemType = "subscription" | "bill" | "trial" | "expense";
 
@@ -35,34 +23,190 @@ interface Item {
   due_date: string | null;
   autopay: boolean;
   status: string;
-  trial_days: number | null;
   source: string | null;
 }
 
 interface SavingsGoal {
   id: string;
   name: string;
-  category: string;
   targetAmount: number;
   currentAmount: number;
   monthlyContribution: number;
   color: string;
   emoji: string;
-  createdAt: string;
 }
 
+interface UpcomingItem {
+  id: string;
+  name: string;
+  amount: number;
+  color: string;
+  type: ItemType;
+  due_date: string | null;
+  autopay: boolean;
+  daysUntil: number;
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
 const TYPE_COLORS: Record<string, string> = {
-  subscription: "#3EA758",
-  bill: "#FFB300",
+  subscription: "#a78bfa",
+  bill: "#60a5fa",
   trial: "#38BDF8",
-  expense: "#FF6B35",
+  expense: "#34d399",
 };
+
+const INCOME_KWS = [
+  "va benefit", "va payment", "veteran", "disability", "social security",
+  "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit",
+];
+
+const EXPENSE_CATS = [
+  "Food & Dining", "Transport", "Shopping", "Entertainment",
+  "Health", "Utilities", "Travel", "Education", "Other",
+];
+
+const COMMON_NAMES = [
+  "Netflix", "Hulu", "Disney+", "HBO Max", "Peacock", "Paramount+", "Apple TV+",
+  "Amazon Prime Video", "Spotify", "Apple Music", "Amazon Prime", "Costco Membership",
+  "Adobe Creative Cloud", "Microsoft 365", "Google One", "iCloud", "Dropbox",
+  "Gym Membership", "Planet Fitness", "Peloton", "DoorDash", "Uber Eats", "Instacart",
+  "Uber", "Lyft", "Groceries", "Gas", "Electricity", "Water", "Internet",
+  "Car Insurance", "Renters Insurance", "Health Insurance", "Student Loan",
+  "Car Payment", "Mortgage", "Rent", "Coffee", "Dining Out",
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// ─── Savings Strip ────────────────────────────────────────────────────────────
+function fmtShort(n: number) {
+  if (n >= 1000) return "$" + (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return fmt(n);
+}
+
+function fmtDate(d: string | null) {
+  if (!d) return null;
+  try { return new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+  catch { return null; }
+}
+
+function fmtDayLabel(dateStr: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const label = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (dateStr === today) return `Today — ${label}`;
+  if (dateStr === yest) return `Yesterday — ${label}`;
+  return label;
+}
+
+function isIncomeTx(t: any): boolean {
+  const cat = (t.category || "").toUpperCase();
+  return cat.includes("INCOME") || cat.includes("TRANSFER_IN");
+}
+
+function txCatColor(t: any): string {
+  const cat = (t.category || "").toUpperCase();
+  if (cat.includes("INCOME")) return "#3EA758";
+  if (cat.includes("FOOD") || cat.includes("DINING") || cat.includes("RESTAURANT")) return "#f59e0b";
+  if (cat.includes("TRAVEL") || cat.includes("TRANSPORT") || cat.includes("GAS") || cat.includes("FUEL")) return "#60a5fa";
+  if (cat.includes("SHOP") || cat.includes("MERCHANDISE") || cat.includes("RETAIL")) return "#f87171";
+  if (cat.includes("ENTERTAIN") || cat.includes("SUBSCRIPTION")) return "#a78bfa";
+  if (cat.includes("HEALTH") || cat.includes("MEDICAL")) return "#34d399";
+  if (cat.includes("UTILITIES") || cat.includes("BILL")) return "#60a5fa";
+  return "#6b7280";
+}
+
+function txCatLabel(t: any): string {
+  const raw = (t.category || "").toLowerCase();
+  if (raw.includes("income") || raw.includes("transfer_in")) return "Income";
+  if (raw.includes("groceries") || raw.includes("grocery")) return "Groceries";
+  if (raw.includes("food") || raw.includes("dining") || raw.includes("restaurant")) return "Dining";
+  if (raw.includes("gas") || raw.includes("fuel")) return "Gas";
+  if (raw.includes("transport")) return "Transport";
+  if (raw.includes("travel")) return "Travel";
+  if (raw.includes("shop") || raw.includes("merchandise") || raw.includes("retail")) return "Shopping";
+  if (raw.includes("entertain")) return "Entertainment";
+  if (raw.includes("subscription")) return "Subscription";
+  if (raw.includes("health") || raw.includes("medical")) return "Health";
+  if (raw.includes("utilities") || raw.includes("bill")) return "Bill";
+  const parts = raw.split(/[_\s]+/).filter(Boolean);
+  if (parts.length) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  return "Other";
+}
+
+function txInitials(name: string): string {
+  const words = (name || "?").trim().split(/\s+/);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return (name || "?").slice(0, 2).toUpperCase();
+}
+
+function isTracked(txName: string, items: Item[]): boolean {
+  const lc = (txName || "").toLowerCase().trim();
+  if (lc.length < 3) return false;
+  return items.some(i => {
+    const name = i.name.toLowerCase().trim();
+    const shorter = name.length < lc.length ? name : lc;
+    const longer = name.length < lc.length ? lc : name;
+    return shorter.length >= 4 && longer.includes(shorter);
+  });
+}
+
+// ── MiniDonut ─────────────────────────────────────────────────────────────────
+
+function MiniDonut({ subs, bills, expenses, income }: {
+  subs: number; bills: number; expenses: number; income: number;
+}) {
+  const size = 44;
+  const r = 17;
+  const circ = 2 * Math.PI * r;
+  const cx = size / 2;
+  const total = subs + bills + expenses;
+  const spentPct = income > 0 ? Math.min(Math.round((total / income) * 100), 100) : 0;
+
+  const subsArc   = total > 0 ? (subs / total) * circ : 0;
+  const billsArc  = total > 0 ? (bills / total) * circ : 0;
+  const expArc    = total > 0 ? (expenses / total) * circ : 0;
+
+  const subsRot  = 0;
+  const billsRot = total > 0 ? (subs / total) * 360 : 0;
+  const expRot   = total > 0 ? ((subs + bills) / total) * 360 : 0;
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={5} />
+        {total > 0 && <>
+          {subsArc > 0 && (
+            <circle cx={cx} cy={cx} r={r} fill="none" stroke="#a78bfa" strokeWidth={5}
+              strokeDasharray={circ} strokeDashoffset={circ - subsArc} strokeLinecap="butt" opacity={0.9}
+              style={{ transformOrigin: `${cx}px ${cx}px`, transform: `rotate(${subsRot}deg)` }} />
+          )}
+          {billsArc > 0 && (
+            <circle cx={cx} cy={cx} r={r} fill="none" stroke="#60a5fa" strokeWidth={5}
+              strokeDasharray={circ} strokeDashoffset={circ - billsArc} strokeLinecap="butt" opacity={0.9}
+              style={{ transformOrigin: `${cx}px ${cx}px`, transform: `rotate(${billsRot}deg)` }} />
+          )}
+          {expArc > 0 && (
+            <circle cx={cx} cy={cx} r={r} fill="none" stroke="#34d399" strokeWidth={5}
+              strokeDasharray={circ} strokeDashoffset={circ - expArc} strokeLinecap="butt" opacity={0.9}
+              style={{ transformOrigin: `${cx}px ${cx}px`, transform: `rotate(${expRot}deg)` }} />
+          )}
+        </>}
+      </svg>
+      <div style={{
+        position: "absolute", inset: 0, display: "flex", alignItems: "center",
+        justifyContent: "center", fontSize: 9, fontWeight: 800, color: "#fff",
+      }}>
+        {total > 0 ? `${spentPct}%` : "—"}
+      </div>
+    </div>
+  );
+}
+
+// ── SavingsStrip ──────────────────────────────────────────────────────────────
 
 function SavingsStrip({ userId }: { userId: string }) {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
@@ -78,7 +222,7 @@ function SavingsStrip({ userId }: { userId: string }) {
     return (
       <Link
         href="/save"
-        className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 px-5 py-4 transition hover:bg-[#00C853]/10"
+        className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 px-5 py-4 transition hover:bg-[#00C853]/10"
       >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00C853]/15">
@@ -86,7 +230,7 @@ function SavingsStrip({ userId }: { userId: string }) {
           </div>
           <div>
             <p className="text-sm font-bold text-white">Start your first savings goal</p>
-            <p className="text-xs text-gray-500">House, car, vacation, emergency fund  -  whatever you're working toward</p>
+            <p className="text-xs text-gray-500">House, car, vacation, emergency fund</p>
           </div>
         </div>
         <ArrowRight size={16} className="shrink-0 text-[#00C853]" />
@@ -94,227 +238,48 @@ function SavingsStrip({ userId }: { userId: string }) {
     );
   }
 
-  const display = goals.slice(0, 3);
-  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
-  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
-
   return (
-    <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Savings Goals</p>
-        <Link href="/save" className="text-xs font-medium text-[#00C853] hover:underline">
-          View all ({goals.length}) →
+    <div className="mb-4 rounded-2xl border border-[#00C853]/15 bg-[#00C853]/[0.04] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#00C853]">Savings Goals</p>
+        <Link href="/save" className="text-[10px] font-semibold text-[#00C853] opacity-60 hover:opacity-100">
+          View all →
         </Link>
       </div>
-
-      <div className="space-y-4">
-        {display.map((goal) => {
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+        {goals.slice(0, 4).map(goal => {
           const pct = goal.targetAmount > 0 ? Math.min((goal.currentAmount / goal.targetAmount) * 100, 100) : 0;
           const remaining = goal.targetAmount - goal.currentAmount;
-          const monthsLeft = goal.monthlyContribution > 0
-            ? Math.ceil(remaining / goal.monthlyContribution)
-            : null;
+          const monthsLeft = goal.monthlyContribution > 0 ? Math.ceil(remaining / goal.monthlyContribution) : null;
           return (
             <div key={goal.id}>
               <div className="mb-1.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{goal.emoji}</span>
-                  <span className="text-sm font-semibold text-white">{goal.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">{goal.emoji}</span>
+                  <span className="text-xs font-semibold text-white">{goal.name}</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-white">{fmt(goal.currentAmount)}</span>
-                  <span className="text-xs text-gray-600"> / {fmt(goal.targetAmount)}</span>
-                </div>
+                <span className="text-[10px] text-gray-500">
+                  <strong className="text-gray-300">{fmtShort(goal.currentAmount)}</strong>
+                  {" "}/{" "}{fmtShort(goal.targetAmount)}
+                </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, background: goal.color }}
-                />
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: goal.color }} />
               </div>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-[11px] text-gray-600">{pct.toFixed(0)}% saved</span>
-                {monthsLeft !== null && (
-                  <span className="text-[11px] text-gray-500">
-                    {monthsLeft <= 0 ? "Goal reached!" : `${monthsLeft} month${monthsLeft !== 1 ? "s" : ""} to go`}
-                  </span>
-                )}
-              </div>
+              {monthsLeft !== null && (
+                <p className="mt-1 text-[10px] text-gray-600">
+                  {monthsLeft <= 0 ? "Goal reached!" : `~${monthsLeft} mo to go`}
+                </p>
+              )}
             </div>
           );
         })}
       </div>
-
-      {goals.length > 0 && (
-        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-          <span className="text-xs text-gray-500">Total saved</span>
-          <span className="text-sm font-bold" style={{ color: "#00C853" }}>
-            {fmt(totalSaved)} <span className="text-xs font-normal text-gray-600">of {fmt(totalTarget)}</span>
-          </span>
-        </div>
-      )}
     </div>
   );
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function StatCard({ label, value, sub, color, onClick }: {
-  label: string; value: string; sub: string; color: string; onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.04] active:scale-[0.98] w-full"
-    >
-      <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color }}>{label}</p>
-      <p className="font-mono text-2xl font-black text-white">{value}</p>
-      <p className="mt-0.5 text-xs text-gray-500">{sub} · tap to view</p>
-    </button>
-  );
-}
-
-// ─── TypeMover ────────────────────────────────────────────────────────────────
-
-const ALL_TYPES: { type: ItemType; label: string }[] = [
-  { type: "subscription", label: "Subscription" },
-  { type: "bill",         label: "Bill"         },
-  { type: "expense",      label: "Expense"      },
-];
-
-function ModalTip() {
-  const [visible, setVisible] = useState(true);
-  useEffect(() => {
-    try { if (localStorage.getItem("category_tip_dismissed")) setVisible(false); } catch {}
-  }, []);
-  function dismiss() {
-    setVisible(false);
-    try { localStorage.setItem("category_tip_dismissed", "1"); } catch {}
-  }
-  if (!visible) return null;
-  return (
-    <div className="mx-5 mt-3 mb-1 flex items-start gap-2.5 rounded-xl border border-[#3EA758]/20 bg-[#3EA758]/5 px-3.5 py-2.5">
-      <Repeat size={13} className="mt-0.5 shrink-0 text-[#3EA758]" />
-      <p className="flex-1 text-xs leading-relaxed text-gray-400">
-        Tap the colored pill on any item to move it to the right category.
-      </p>
-      <button onClick={dismiss} className="shrink-0 rounded p-0.5 text-gray-600 hover:text-gray-300" aria-label="Dismiss">
-        <X size={13} />
-      </button>
-    </div>
-  );
-}
-
-function TypeMover({ item, onMove }: { item: Item; onMove: (id: string, newType: ItemType) => void }) {
-  const [open, setOpen] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    function close(e: MouseEvent) {
-      const t = e.target as Node;
-      if (buttonRef.current && !buttonRef.current.contains(t)) {
-        const popover = document.getElementById(`type-popover-${item.id}`);
-        if (!popover || !popover.contains(t)) setOpen(false);
-      }
-    }
-    function reposition() {
-      if (buttonRef.current) {
-        const r = buttonRef.current.getBoundingClientRect();
-        setPos({ top: r.bottom + 6, left: Math.max(8, r.right - 160) });
-      }
-    }
-    document.addEventListener("mousedown", close);
-    window.addEventListener("scroll", reposition, true);
-    window.addEventListener("resize", reposition);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      window.removeEventListener("scroll", reposition, true);
-      window.removeEventListener("resize", reposition);
-    };
-  }, [open, item.id]);
-
-  function toggle(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (buttonRef.current) {
-      const r = buttonRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: Math.max(8, r.right - 160) });
-    }
-    setOpen(o => !o);
-  }
-
-  function move(newType: ItemType) {
-    setOpen(false);
-    onMove(item.id, newType);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  if (saved) return <span className="text-xs font-semibold text-[#3EA758]">Saved</span>;
-
-  return (
-    <>
-      <button
-        ref={buttonRef}
-        onClick={toggle}
-        className="rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize transition hover:opacity-80"
-        style={{ background: TYPE_COLORS[item.type] + "25", color: TYPE_COLORS[item.type] }}
-      >
-        {item.type}
-      </button>
-      {mounted && open && pos && createPortal(
-        <div
-          id={`type-popover-${item.id}`}
-          className="fixed z-[300] w-40 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-2xl"
-          style={{ top: pos.top, left: pos.left }}
-        >
-          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">Move to</p>
-          {ALL_TYPES.filter(t => t.type !== item.type).map(t => (
-            <button
-              key={t.type}
-              onClick={e => { e.stopPropagation(); move(t.type); }}
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-white transition hover:bg-white/5"
-            >
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: TYPE_COLORS[t.type] }} />
-              {t.label}
-            </button>
-          ))}
-        </div>,
-        document.body
-      )}
-    </>
-  );
-}
-
-// ─── Add Expense Modal ────────────────────────────────────────────────────────
-
-const EXPENSE_CATS = [
-  "Food & Dining", "Transport", "Shopping", "Entertainment",
-  "Health", "Utilities", "Travel", "Education", "Other",
-];
-
-const COMMON_NAMES = [
-  "Netflix", "Hulu", "YouTube Premium", "Disney+", "HBO Max", "Peacock",
-  "Paramount+", "Apple TV+", "Amazon Prime Video", "Crunchyroll",
-  "Spotify", "Apple Music", "Tidal", "Pandora", "SiriusXM",
-  "Amazon Prime", "Costco Membership", "Sam's Club",
-  "Adobe Creative Cloud", "Microsoft 365", "Google One", "iCloud",
-  "Dropbox", "Notion", "Canva Pro",
-  "Gym Membership", "Planet Fitness", "Peloton", "ClassPass",
-  "DoorDash", "Uber Eats", "Grubhub", "Instacart",
-  "Uber", "Lyft",
-  "Groceries", "Gas", "Electricity", "Water", "Internet",
-  "Car Insurance", "Renters Insurance", "Health Insurance",
-  "Student Loan", "Car Payment", "Mortgage", "Rent",
-  "Coffee", "Dining Out", "Fast Food",
-];
-
-const inputCls = "w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-[#3EA758]";
+// ── NameAutocomplete ──────────────────────────────────────────────────────────
 
 function NameAutocomplete({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -329,20 +294,20 @@ function NameAutocomplete({ value, onChange }: { value: string; onChange: (v: st
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, []);
+  const cls = "w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-white/20";
   return (
     <div className="relative" ref={ref}>
-      <input
-        autoFocus
-        value={value}
+      <input autoFocus value={value}
         onChange={e => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
-        placeholder="e.g. Netflix, Groceries, Haircut"
-        className={inputCls}
+        placeholder="e.g. Netflix, Groceries"
+        className={cls}
       />
       {open && suggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-xl">
           {suggestions.map(s => (
-            <button key={s} type="button" onMouseDown={() => { onChange(s); setOpen(false); }}
+            <button key={s} type="button"
+              onMouseDown={() => { onChange(s); setOpen(false); }}
               className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white">
               {s}
             </button>
@@ -353,32 +318,25 @@ function NameAutocomplete({ value, onChange }: { value: string; onChange: (v: st
   );
 }
 
+// ── AddExpenseModal ───────────────────────────────────────────────────────────
+
 function AddExpenseModal({ userId, onClose, onSaved }: {
-  userId: string;
-  onClose: () => void;
-  onSaved: (item: Item) => void;
+  userId: string; onClose: () => void; onSaved: (item: Item) => void;
 }) {
   const supabase = createClient();
   const [form, setForm] = useState({ name: "", amount: "", category: EXPENSE_CATS[0], due_date: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cls = "w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-white/20";
 
   async function save() {
     if (!form.name || !form.amount) return;
-    setSaving(true);
-    setError(null);
-    const payload = {
-      user_id: userId,
-      name: form.name,
-      amount: parseFloat(form.amount),
-      category: form.category,
-      due_date: form.due_date || null,
-      type: "expense" as const,
-      status: "active",
-      color: "#FF6B35",
-      autopay: false,
-    };
-    const { data, error: err } = await supabase.from("items").insert(payload).select().single();
+    setSaving(true); setError(null);
+    const { data, error: err } = await supabase.from("items").insert({
+      user_id: userId, name: form.name, amount: parseFloat(form.amount),
+      category: form.category, due_date: form.due_date || null,
+      type: "expense", status: "active", color: "#34d399", autopay: false,
+    }).select().single();
     if (err) { setError(err.message); setSaving(false); return; }
     if (data) onSaved(data as Item);
     onClose();
@@ -404,28 +362,28 @@ function AddExpenseModal({ userId, onClose, onSaved }: {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                 <input type="number" min="0" step="0.01" value={form.amount}
                   onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                  placeholder="0.00" className={`${inputCls} pl-7`} />
+                  placeholder="0.00" className={`${cls} pl-7`} />
               </div>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Date</label>
               <input type="date" value={form.due_date}
                 onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-                className={inputCls} />
+                className={cls} />
             </div>
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-gray-500">Category</label>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={inputCls}>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={cls}>
               {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
         </div>
-        {error && <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">{error}</div>}
+        {error && <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">{error}</div>}
         <div className="mt-5 flex gap-3">
           <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-3 text-sm hover:bg-white/5">Cancel</button>
           <button onClick={save} disabled={saving || !form.name || !form.amount}
-            className="flex-1 rounded-xl bg-brand-gradient py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40">
+            className="flex-1 rounded-xl bg-[#3EA758] py-3 text-sm font-bold text-black hover:opacity-90 disabled:opacity-40">
             {saving ? "Saving..." : "Add Expense"}
           </button>
         </div>
@@ -434,237 +392,548 @@ function AddExpenseModal({ userId, onClose, onSaved }: {
   );
 }
 
-// ─── Items Modal ──────────────────────────────────────────────────────────────
+// ── BalanceBar ────────────────────────────────────────────────────────────────
 
-function ItemsModal({ label, color, items, onClose, onTypeChange, onAdd }: {
-  label: string;
-  color: string;
-  items: Item[];
-  onClose: () => void;
-  onTypeChange: (id: string, newType: ItemType) => void;
-  onAdd?: () => void;
+function BalanceBar({
+  isConnected, plaidBalance, balanceUpdatedAt, accountName, accountMask,
+  income, spentThisMonth, onConnect, linkToken, plaidReady, detectingIncome, plaidJustConnected,
+}: {
+  isConnected: boolean;
+  plaidBalance: number | null;
+  balanceUpdatedAt: string | null;
+  accountName: string | null;
+  accountMask: string | null;
+  income: number;
+  spentThisMonth: number;
+  onConnect: () => void;
+  linkToken: string | null;
+  plaidReady: boolean;
+  detectingIncome: boolean;
+  plaidJustConnected: boolean;
 }) {
-  const total = items.reduce((a, b) => a + b.amount, 0);
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 pb-4 sm:pb-0"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-          <div>
-            <p className="font-bold" style={{ color }}>{label}</p>
-            <p className="text-xs text-gray-500">{items.length} item{items.length !== 1 ? "s" : ""} · {fmt(total)}/mo</p>
+  const leftToSave = income > 0 ? income - spentThisMonth : null;
+
+  if (isConnected) {
+    const displayBalance = plaidBalance;
+    const updatedLabel = balanceUpdatedAt
+      ? "Updated " + new Date(balanceUpdatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+      : "Updated on last sync";
+
+    return (
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#a78bfa]/15 px-6 py-5"
+        style={{ background: "linear-gradient(135deg, #0f0c29, #1a1040, #0c1a2e)" }}>
+        <div>
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#3EA758]" />
+            <span className="text-xs font-semibold text-[#8899bb]">
+              {accountName || "Checking"}
+              {accountMask ? ` ···· ${accountMask}` : ""}
+            </span>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-gray-500 hover:bg-white/10 hover:text-white">
-            <X size={16} />
-          </button>
-        </div>
-        {items.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-500">Nothing here yet.</div>
-        ) : (
-          <>
-            <ModalTip />
-            <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
-              {items.map(item => (
-                <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type]} size={36} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{item.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {item.category}
-                      {item.due_date ? ` · Due ${item.due_date}` : ""}
-                      {item.autopay ? " · Autopay" : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <TypeMover item={item} onMove={onTypeChange} />
-                    <p className="font-bold text-sm">{fmt(item.amount)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-        <div className="border-t border-white/5 px-5 py-3 flex justify-between items-center">
-          <span className="text-xs text-gray-500">Monthly total</span>
-          <div className="flex items-center gap-3">
-            {onAdd && (
-              <button onClick={onAdd}
-                className="flex items-center gap-1.5 rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-bold text-black hover:opacity-90">
-                <Plus size={12} /> Add Expense
-              </button>
+          <div className="font-mono text-4xl font-black tracking-tight">
+            {displayBalance != null ? fmt(displayBalance) : (
+              <span className="text-2xl text-gray-500">Hit Update to see balance</span>
             )}
-            <span className="font-bold" style={{ color }}>{fmt(total)}</span>
           </div>
+          <p className="mt-1 text-[10px] font-semibold text-[#3EA758]">{updatedLabel}</p>
         </div>
+        <div className="flex gap-8">
+          {spentThisMonth > 0 && (
+            <div className="text-right">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#445566]">Spent This Month</p>
+              <p className="font-mono text-xl font-black text-[#f87171]">-{fmt(spentThisMonth)}</p>
+            </div>
+          )}
+          {leftToSave !== null && (
+            <div className="text-right">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#445566]">Left to Save</p>
+              <p className={`font-mono text-xl font-black ${leftToSave < 0 ? "text-[#f87171]" : "text-[#3EA758]"}`}>
+                {leftToSave < 0 ? "-" : "+"}{fmt(Math.abs(leftToSave))}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Free / disconnected
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/7 bg-white/[0.025] px-6 py-5">
+      <div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Monthly Income</p>
+        <p className="font-mono text-4xl font-black">{income > 0 ? fmt(income) : <span className="text-2xl text-gray-500">Set income</span>}</p>
+        <p className="mt-1 text-xs text-gray-600">No bank connected · showing manual data only</p>
+      </div>
+      <div>
+        {detectingIncome ? (
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <Loader2 size={14} className="animate-spin text-[#3EA758]" /> Detecting income...
+          </div>
+        ) : plaidJustConnected ? (
+          <div className="flex items-center gap-2 text-sm text-[#3EA758]"><Check size={14} /> Bank connected</div>
+        ) : linkToken && plaidReady ? (
+          <button onClick={onConnect}
+            className="flex items-center gap-2 rounded-xl bg-[#3EA758] px-5 py-2.5 text-sm font-bold text-black hover:opacity-90">
+            <Landmark size={14} /> Open Bank Login
+          </button>
+        ) : (
+          <button onClick={onConnect}
+            className="flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-5 py-2.5 text-sm font-semibold text-indigo-400 hover:bg-indigo-500/15 transition">
+            <Landmark size={14} /> Connect Bank — it&apos;s free
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// ── TxRow ─────────────────────────────────────────────────────────────────────
+
+function TxRow({ tx, items }: { tx: any; items: Item[] }) {
+  const name = tx.clean_merchant_name || tx.merchant_name || tx.description || "Unknown";
+  const income = isIncomeTx(tx);
+  const tracked = !income && isTracked(name, items);
+  const catColor = txCatColor(tx);
+  const catLabel = txCatLabel(tx);
+  const timeStr = tx.authorized_datetime || tx.datetime
+    ? new Date(tx.authorized_datetime || tx.datetime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+    : null;
+
+  return (
+    <div className="flex items-center gap-3 border-b border-white/[0.025] px-4 py-2.5 transition hover:bg-white/[0.025] last:border-0">
+      <div
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] text-xs font-black"
+        style={{ background: catColor + "18", color: catColor }}
+      >
+        {txInitials(name)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold leading-tight">{name}</p>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          <span
+            className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+            style={{ background: catColor + "18", color: catColor }}
+          >
+            {catLabel}
+          </span>
+          {tracked && (
+            <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
+              Tracked
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex-shrink-0 text-right">
+        <p className={`text-sm font-bold tabular-nums ${income ? "text-[#3EA758]" : "text-[#f87171]"}`}>
+          {income ? "+" : "-"}{fmt(Math.abs(tx.amount))}
+        </p>
+        {timeStr && <p className="mt-0.5 text-[9px] text-gray-600">{timeStr}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ── TxFeedConnected ───────────────────────────────────────────────────────────
+
+function TxFeedConnected({ transactions, items, updating, onUpdate, onLoadMore, hasMore }: {
+  transactions: any[];
+  items: Item[];
+  updating: boolean;
+  onUpdate: () => void;
+  onLoadMore: () => void;
+  hasMore: boolean;
+}) {
+  // Group by date
+  const groups: { date: string; txs: any[]; dayTotal: number }[] = [];
+  for (const tx of transactions) {
+    const last = groups[groups.length - 1];
+    if (last && last.date === tx.date) {
+      last.txs.push(tx);
+      last.dayTotal += isIncomeTx(tx) ? Math.abs(tx.amount) : -Math.abs(tx.amount);
+    } else {
+      groups.push({
+        date: tx.date,
+        txs: [tx],
+        dayTotal: isIncomeTx(tx) ? Math.abs(tx.amount) : -Math.abs(tx.amount),
+      });
+    }
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "rgba(255,255,255,0.025)" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Live Activity</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#3EA758]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3EA758]" />
+            Connected
+          </div>
+        </div>
+        <button
+          onClick={onUpdate}
+          disabled={updating}
+          className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 transition hover:border-white/15 hover:text-white disabled:opacity-50"
+        >
+          <RefreshCw size={10} className={updating ? "animate-spin" : ""} />
+          {updating ? "Updating..." : "Update"}
+        </button>
+      </div>
+
+      {/* Feed */}
+      {transactions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-sm text-gray-500">No transactions yet</p>
+          <p className="mt-1 text-xs text-gray-600">Click Update to pull from your bank</p>
+        </div>
+      ) : (
+        <>
+          {groups.map(group => (
+            <div key={group.date}>
+              <div className="flex items-center justify-between px-4 py-2 pt-3">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-gray-700">
+                  {fmtDayLabel(group.date)}
+                </span>
+                <span className={`text-[9px] font-bold tabular-nums ${group.dayTotal >= 0 ? "text-[#3EA758]" : "text-gray-700"}`}>
+                  {group.dayTotal >= 0 ? "+" : ""}{fmt(Math.abs(group.dayTotal))}
+                </span>
+              </div>
+              {group.txs.map((tx, i) => <TxRow key={tx.id || tx.plaid_transaction_id || i} tx={tx} items={items} />)}
+            </div>
+          ))}
+          {hasMore && (
+            <div className="border-t border-white/5 px-4 py-3 text-center">
+              <button
+                onClick={onLoadMore}
+                className="text-xs font-semibold text-gray-600 transition hover:text-gray-300"
+              >
+                Load more
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── TxFeedFree ────────────────────────────────────────────────────────────────
+
+function TxFeedFree({ items, onConnectBank }: { items: Item[]; onConnectBank: () => void }) {
+  const manualItems = items.filter(i => i.status !== "cancelled").slice(0, 10);
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "rgba(255,255,255,0.025)" }}>
+      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Activity</span>
+        <span className="rounded-md bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gray-600">
+          Manual only
+        </span>
+      </div>
+
+      {/* Nudge banner */}
+      <div className="m-3 flex items-start gap-3 rounded-xl border border-indigo-500/18 bg-indigo-500/7 p-4">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-base">
+          🏦
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">See every purchase automatically</p>
+          <p className="mt-0.5 text-xs text-gray-500 leading-relaxed">
+            Connect your bank and this feed fills with real transactions — live balance, every charge, auto-categorized.
+          </p>
+          <button
+            onClick={onConnectBank}
+            className="mt-2.5 rounded-lg border border-indigo-500/35 bg-indigo-500/15 px-3 py-1.5 text-xs font-bold text-indigo-400 transition hover:bg-indigo-500/25"
+          >
+            Connect Bank — it&apos;s free
+          </button>
+        </div>
+      </div>
+
+      {/* Manual items */}
+      {manualItems.length > 0 && (
+        <>
+          <div className="px-4 pb-1 pt-2 text-[9px] font-bold uppercase tracking-widest text-gray-700">
+            Manually added
+          </div>
+          {manualItems.map(item => (
+            <div key={item.id} className="flex items-center gap-3 border-b border-white/[0.025] px-4 py-2.5 last:border-0">
+              <div
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] text-xs font-black"
+                style={{ background: (TYPE_COLORS[item.type] || "#888") + "18", color: TYPE_COLORS[item.type] || "#888" }}
+              >
+                {txInitials(item.name)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{item.name}</p>
+                <span
+                  className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                  style={{ background: (TYPE_COLORS[item.type] || "#888") + "18", color: TYPE_COLORS[item.type] || "#888" }}
+                >
+                  {item.type}
+                </span>
+              </div>
+              <p className="flex-shrink-0 text-sm font-bold tabular-nums text-[#f87171]">
+                -{fmt(item.amount)}
+              </p>
+            </div>
+          ))}
+        </>
+      )}
+
+      {manualItems.length === 0 && (
+        <div className="pb-8 pt-4 text-center">
+          <p className="text-xs text-gray-600">No items added yet</p>
+          <Link href="/tracker" className="mt-1 block text-xs font-semibold text-indigo-400 hover:underline">
+            Add from the tracker →
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TrackedSpending ───────────────────────────────────────────────────────────
+
+function TrackedSpending({ items, monthlyTxTotal, income }: {
+  items: Item[];
+  monthlyTxTotal: number;
+  income: number;
+}) {
+  const subs    = items.filter(i => i.type === "subscription" || i.type === "trial").reduce((s, i) => s + i.amount, 0);
+  const bills   = items.filter(i => i.type === "bill").reduce((s, i) => s + i.amount, 0);
+  const tracked = items.filter(i => i.type === "expense").reduce((s, i) => s + i.amount, 0);
+  const expenses = tracked + monthlyTxTotal;
+  const total   = subs + bills + expenses;
+  const leftToSave = income > 0 ? income - total : null;
+
+  const subsCount  = items.filter(i => i.type === "subscription" || i.type === "trial").length;
+  const billsCount = items.filter(i => i.type === "bill").length;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "rgba(255,255,255,0.025)" }}>
+      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Tracked Spending</span>
+        <Link href="/tracker" className="text-[10px] font-semibold text-gray-500 transition hover:text-white">
+          Tracker →
+        </Link>
+      </div>
+
+      <div className="divide-y divide-white/[0.04]">
+        {[
+          { label: "Subscriptions", count: `${subsCount} active`, amount: subs, color: "#a78bfa" },
+          { label: "Bills", count: `${billsCount} tracked`, amount: bills, color: "#60a5fa" },
+          { label: "Bank Expenses", count: "This month", amount: expenses, color: "#34d399" },
+        ].map(row => (
+          <div key={row.label} className="flex items-center justify-between px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: row.color }} />
+              <div>
+                <p className="text-sm text-gray-200">{row.label}</p>
+                <p className="text-[10px] text-gray-600">{row.count}</p>
+              </div>
+            </div>
+            <p className="text-sm font-bold tabular-nums" style={{ color: row.color }}>{fmt(row.amount)}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Total row with mini donut */}
+      <div className="flex items-center justify-between border-t border-white/[0.06] bg-white/[0.02] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <MiniDonut subs={subs} bills={bills} expenses={expenses} income={income} />
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Monthly Total</p>
+            <p className="text-lg font-black tabular-nums">{fmt(total)}</p>
+          </div>
+        </div>
+        {leftToSave !== null && (
+          <div className="text-right">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-600">of income</p>
+            <p className={`text-sm font-bold ${leftToSave < 0 ? "text-[#f87171]" : "text-[#3EA758]"}`}>
+              {leftToSave < 0 ? "-" : "+"}{fmt(Math.abs(leftToSave))} left
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── UpcomingChargesPanel ──────────────────────────────────────────────────────
+
+function UpcomingChargesPanel({ upcoming, upcomingMonth }: {
+  upcoming: UpcomingItem[];
+  upcomingMonth: UpcomingItem[];
+}) {
+  const [view, setView] = useState<"week" | "month">("week");
+  const list = view === "week" ? upcoming : upcomingMonth;
+  const monthTotal = upcomingMonth.reduce((s, i) => s + i.amount, 0);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07]" style={{ background: "rgba(255,255,255,0.025)" }}>
+      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Upcoming Charges</span>
+        <div className="flex items-center gap-0.5 rounded-lg bg-white/[0.04] p-0.5">
+          {(["week", "month"] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className="rounded-md px-3 py-1 text-[10px] font-bold capitalize transition"
+              style={{
+                background: view === v ? "rgba(255,255,255,0.08)" : "transparent",
+                color: view === v ? "#fff" : "#666",
+              }}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {list.length === 0 ? (
+        <div className="py-10 text-center">
+          <p className="text-sm text-gray-600">
+            {view === "week" ? "Nothing due in the next 7 days" : "Nothing due this month"}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="divide-y divide-white/[0.04]">
+            {list.map(item => {
+              const urgency = item.daysUntil <= 2 ? "#f87171" : item.daysUntil <= 5 ? "#f59e0b" : "#6b7280";
+              const bgUrgency = item.daysUntil <= 2 ? "rgba(239,68,68,0.12)" : item.daysUntil <= 5 ? "rgba(245,158,11,0.12)" : "rgba(107,114,128,0.08)";
+              return (
+                <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <div className="flex h-10 w-10 flex-shrink-0 flex-col items-center justify-center rounded-xl text-center"
+                    style={{ background: bgUrgency }}>
+                    {view === "week" ? (
+                      <>
+                        <p className="text-sm font-black leading-none" style={{ color: urgency }}>
+                          {item.daysUntil === 0 ? "Now" : `${item.daysUntil}d`}
+                        </p>
+                        <p className="text-[8px] font-semibold uppercase opacity-70" style={{ color: urgency }}>left</p>
+                      </>
+                    ) : (
+                      <p className="text-[10px] font-black leading-tight" style={{ color: urgency }}>
+                        {fmtDate(item.due_date) || `${item.daysUntil}d`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{item.name}</p>
+                    <p className="text-[10px] text-gray-600">
+                      {item.due_date}
+                      {item.autopay ? " · Autopay on" : " · No autopay"}
+                    </p>
+                  </div>
+                  <p className="flex-shrink-0 text-sm font-bold tabular-nums" style={{ color: item.daysUntil <= 2 ? "#f87171" : "#ccc" }}>
+                    {fmt(item.amount)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          {view === "month" && monthTotal > 0 && (
+            <div className="flex items-center justify-between border-t border-white/5 bg-white/[0.02] px-4 py-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Month total</span>
+              <span className="text-sm font-black tabular-nums">{fmt(monthTotal)}</span>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [user, setUser] = useState<any>(null);
-  const [profileName, setProfileName] = useState<string | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
-  const [income, setIncome] = useState(0);
-  const [incomeInput, setIncomeInput] = useState("");
-  const [editingIncome, setEditingIncome] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isPro, setIsPro] = useState(false);
-  const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [plaidConnected, setPlaidConnected] = useState(false);
+  const [user, setUser]                   = useState<any>(null);
+  const [profileName, setProfileName]     = useState<string | null>(null);
+  const [items, setItems]                 = useState<Item[]>([]);
+  const [income, setIncome]               = useState(0);
+  const [loading, setLoading]             = useState(true);
+  const [isConnected, setIsConnected]     = useState(false);
+  const [plaidBalance, setPlaidBalance]   = useState<number | null>(null);
+  const [balanceUpdatedAt, setBalanceUpdatedAt] = useState<string | null>(null);
+  const [accountName, setAccountName]     = useState<string | null>(null);
+  const [accountMask, setAccountMask]     = useState<string | null>(null);
+  const [transactions, setTransactions]   = useState<any[]>([]);
+  const [txOffset, setTxOffset]           = useState(500);
+  const [txHasMore, setTxHasMore]         = useState(true);
+  const [monthlyTxTotal, setMonthlyTxTotal] = useState(0);
+  const [creditCards, setCreditCards]     = useState<any[]>([]);
+  const [recurringAll, setRecurringAll]   = useState<any[]>([]);
+  const [updating, setUpdating]           = useState(false);
+  const [linkToken, setLinkToken]         = useState<string | null>(null);
   const [detectingIncome, setDetectingIncome] = useState(false);
-  const [activeCard, setActiveCard] = useState<{ label: string; color: string; filterType: ItemType | "all" } | null>(null);
+  const [plaidJustConnected, setPlaidJustConnected] = useState(false);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  const [creditCards, setCreditCards] = useState<{ id: string; name: string; last_four: string | null; credit_limit: number; current_balance: number; min_payment: number | null; due_date: string | null }[]>([]);
-  const [recurringUpcoming, setRecurringUpcoming] = useState<{ id: string; name: string; amount: number; color: string; type: ItemType; due_date: string; autopay: boolean; daysUntil: number }[]>([]);
-  const [showWizard, setShowWizard] = useState(false);
-  const [setupDone, setSetupDone] = useState(false);
-  const [monthlyTx, setMonthlyTx] = useState({ total: 0, merchantCount: 0 });
+  const [showWizard, setShowWizard]       = useState(false);
+  const [setupDone, setSetupDone]         = useState(false);
+  const [debugInfo, setDebugInfo]         = useState<string | null>(null);
 
-  async function moveItemType(id: string, newType: ItemType) {
-    const item = items.find(i => i.id === id);
-    if (!item) { setDebugInfo("ERROR: Item not in state. ID: " + id); return; }
-    const oldType = item.type;
-    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
-
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    const { data: updated, error, status, statusText } = await supabase
-      .from("items")
-      .update({ type: newType })
-      .eq("id", id)
-      .eq("user_id", authUser?.id)
-      .select();
-
-    if (error || !updated || updated.length === 0) {
-      setItems(prev => prev.map(i => i.id === id ? { ...i, type: oldType } : i));
-      setDebugInfo([
-        "=== MOVE DEBUG ===",
-        "Item ID: " + id,
-        "Old type: " + oldType + " → New type: " + newType,
-        "HTTP status: " + status + " " + (statusText || ""),
-        "Rows updated: " + (updated?.length ?? 0),
-        "Error: " + (error ? JSON.stringify(error) : "none"),
-      ].join("\n"));
-      return;
-    }
-
-    setTimeout(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) await loadData(user.id);
-    }, 500);
-
-    try {
-      localStorage.setItem("items_version", String(Date.now()));
-      window.dispatchEvent(new Event("items-updated"));
-    } catch {}
-
-    try {
-      const key = (item.name || "").toLowerCase().trim();
-      if (key) {
-        await supabase.from("merchant_rules").upsert(
-          { merchant_name: key, correct_type: newType, correct_category: item.category, last_updated: new Date().toISOString() },
-          { onConflict: "merchant_name" }
-        );
-      }
-    } catch (e) {
-      console.warn("Merchant rule save skipped:", e);
-    }
-  }
+  // ── Load data ───────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async (userId: string) => {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("monthly_income, full_name, is_pro")
-      .eq("id", userId)
-      .single();
-
-    if (profileData?.full_name) setProfileName(profileData.full_name);
-    if (profileData?.is_pro) setIsPro(true);
-    if (profileData?.monthly_income) {
-      setIncome(profileData.monthly_income);
-      setIncomeInput(String(profileData.monthly_income));
-    }
-
-    const { data: itemsData } = await supabase
-      .from("items")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true });
-    if (itemsData) setItems(itemsData as Item[]);
-
-    // Pull current-month bank transactions for the Expenses total.
-    // The sync route sign-flips Plaid amounts, so expenses are stored negative.
-    const monthStartStr = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
-    const { data: txData } = await supabase
-      .from("transactions")
-      .select("amount,clean_merchant_name,merchant_name,category")
-      .eq("user_id", userId)
-      .lt("amount", 0)
-      .gte("date", monthStartStr)
-      .limit(500);
-    if (txData && txData.length > 0) {
-      const filtered = (txData as any[]).filter(t => {
-        const cat = (t.category || "").toUpperCase();
-        return !cat.includes("INCOME") && !cat.includes("TRANSFER_IN");
-      });
-      const total = filtered.reduce((s: number, t: any) => s + Math.abs(t.amount), 0);
-      const merchants = new Set(
-        filtered.map((t: any) => (t.clean_merchant_name || t.merchant_name || "").toLowerCase().trim()).filter(Boolean)
-      );
-      setMonthlyTx({ total: Math.round(total * 100) / 100, merchantCount: merchants.size });
-    }
-
-    const { data: ccData } = await supabase
-      .from("credit_cards")
-      .select("id, name, last_four, credit_limit, current_balance, min_payment, due_date")
-      .eq("user_id", userId);
-    if (ccData) setCreditCards(ccData);
-
+    const since90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
     const todayStr = new Date().toISOString().slice(0, 10);
-    const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-    const INCOME_KWS = ["va benefit", "va payment", "veteran", "disability", "social security", "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit"];
-    const { data: recData } = await supabase
-      .from("recurring_transactions")
-      .select("id, merchant_name, clean_merchant_name, frequency, last_amount, average_amount, next_predicted_date, category")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .not("next_predicted_date", "is", null)
-      .gte("next_predicted_date", todayStr)
-      .lte("next_predicted_date", in7);
-    if (recData) {
-      const now = new Date();
-      const mapped = recData
-        .filter((r: any) => {
-          const name = (r.clean_merchant_name || r.merchant_name || "").toLowerCase();
-          return !INCOME_KWS.some(kw => name.includes(kw));
-        })
-        .map((r: any) => {
-          const d = new Date(r.next_predicted_date);
-          const daysUntil = Math.ceil((d.getTime() - now.getTime()) / 86400000);
-          return {
-            id: "rec_" + r.id,
-            name: r.clean_merchant_name || r.merchant_name,
-            amount: r.last_amount || r.average_amount || 0,
-            color: TYPE_COLORS.bill,
-            type: "bill" as ItemType,
-            due_date: r.next_predicted_date,
-            autopay: false,
-            daysUntil,
-          };
-        });
-      setRecurringUpcoming(mapped);
+    const in30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+
+    const [profileRes, itemsRes, txRes, ccRes, recRes] = await Promise.all([
+      supabase.from("profiles")
+        .select("monthly_income,full_name,is_pro,plaid_access_token,plaid_balance,plaid_balance_updated_at,plaid_account_name,plaid_account_mask")
+        .eq("id", userId).single(),
+      supabase.from("items").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
+      supabase.from("transactions").select("*").eq("user_id", userId)
+        .gte("date", since90).order("date", { ascending: false }).limit(500),
+      supabase.from("credit_cards").select("*").eq("user_id", userId),
+      supabase.from("recurring_transactions").select("*").eq("user_id", userId)
+        .eq("is_active", true).not("next_predicted_date", "is", null)
+        .gte("next_predicted_date", todayStr).lte("next_predicted_date", in30),
+    ]);
+
+    const profile = profileRes.data;
+    if (profile) {
+      if (profile.full_name)       setProfileName(profile.full_name);
+      if (profile.monthly_income)  setIncome(profile.monthly_income);
+      if (profile.plaid_access_token) setIsConnected(true);
+      // Balance columns — may not exist yet, handled gracefully
+      if ((profile as any).plaid_balance != null)             setPlaidBalance((profile as any).plaid_balance);
+      if ((profile as any).plaid_balance_updated_at)          setBalanceUpdatedAt((profile as any).plaid_balance_updated_at);
+      if ((profile as any).plaid_account_name)                setAccountName((profile as any).plaid_account_name);
+      if ((profile as any).plaid_account_mask)                setAccountMask((profile as any).plaid_account_mask);
     }
+
+    const allItems = ((itemsRes.data as Item[]) ?? []).filter(i => i.status !== "cancelled");
+    setItems(allItems);
+    setCreditCards(ccRes.data ?? []);
+    setRecurringAll(recRes.data ?? []);
+
+    // Transactions
+    const txData = (txRes.data as any[]) ?? [];
+    setTransactions(txData);
+    setTxHasMore(txData.length === 500);
+
+    // Monthly total for TrackedSpending (expenses only, current month)
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+    const monthExpenses = txData.filter(t => {
+      if (t.date < monthStart) return false;
+      if (t.amount >= 0) return false; // stored negative = expense
+      const cat = (t.category || "").toUpperCase();
+      return !cat.includes("INCOME") && !cat.includes("TRANSFER_IN");
+    });
+    setMonthlyTxTotal(monthExpenses.reduce((s: number, t: any) => s + Math.abs(t.amount), 0));
   }, [supabase]);
 
-  useEffect(() => {
-    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+  // ── Init ─────────────────────────────────────────────────────────────────────
 
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
@@ -675,53 +944,58 @@ export default function Dashboard() {
       await loadData(user.id);
       setLoading(false);
 
-      realtimeChannel = supabase
-        .channel("dashboard-sync-" + user.id)
+      channel = supabase.channel("dash-live-" + user.id)
         .on("postgres_changes", { event: "*", schema: "public", table: "items", filter: `user_id=eq.${user.id}` },
           () => loadData(user.id))
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
           () => loadData(user.id))
         .subscribe();
     }
     init();
-
-    const onItemsUpdated = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) await loadData(user.id);
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "items_version") onItemsUpdated();
-    };
-    window.addEventListener("items-updated", onItemsUpdated);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener("items-updated", onItemsUpdated);
-      window.removeEventListener("storage", onStorage);
-      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-    };
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
-  async function saveIncome(val: string) {
-    const v = parseFloat(val) || 0;
-    const prev = income;
-    setIncome(v);
-    setEditingIncome(false);
-    const res = await fetch("/api/profile/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, monthly_income: v }),
-    });
-    if (!res.ok) {
-      setIncome(prev);
-      setIncomeInput(String(prev));
+  // ── Update button ─────────────────────────────────────────────────────────
+
+  async function handleUpdate() {
+    if (!user || updating) return;
+    setUpdating(true);
+    try {
+      await fetch("/api/plaid/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      await loadData(user.id);
+    } catch (e: any) {
+      setDebugInfo("Update failed: " + e?.message);
+    } finally {
+      setUpdating(false);
     }
   }
+
+  // ── Load more transactions ────────────────────────────────────────────────
+
+  async function loadMoreTx() {
+    if (!user) return;
+    const since90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+    const { data } = await supabase.from("transactions").select("*").eq("user_id", user.id)
+      .gte("date", since90).order("date", { ascending: false }).range(txOffset, txOffset + 499);
+    if (data && data.length > 0) {
+      setTransactions(prev => [...prev, ...(data as any[])]);
+      setTxOffset(prev => prev + 500);
+      setTxHasMore(data.length === 500);
+    } else {
+      setTxHasMore(false);
+    }
+  }
+
+  // ── Plaid connect ─────────────────────────────────────────────────────────
 
   async function createLinkToken() {
     if (!user) return;
     const res = await fetch("/api/plaid/create-link-token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id }),
     });
     const data = await res.json();
@@ -733,21 +1007,26 @@ export default function Dashboard() {
     setDetectingIncome(true);
     try {
       await fetch("/api/plaid/exchange-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publicToken, userId: user.id }),
       });
       const res = await fetch("/api/plaid/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id }),
       });
       const data = await res.json();
-      if (data.income > 0) { setIncome(data.income); setIncomeInput(String(data.income)); }
+      if (data.income > 0) setIncome(data.income);
+      setIsConnected(true);
+      await loadData(user.id);
     } catch {}
-    setPlaidConnected(true);
     setDetectingIncome(false);
+    setPlaidJustConnected(true);
     setLinkToken(null);
+  }
+
+  function handleConnectBank() {
+    if (linkToken && plaidReady) { openPlaid(); return; }
+    createLinkToken();
   }
 
   const { open: openPlaid, ready: plaidReady } = usePlaidLink({
@@ -755,110 +1034,99 @@ export default function Dashboard() {
     onSuccess: (public_token) => onPlaidSuccess(public_token),
   });
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-      </div>
-    );
-  }
+  // When link token becomes ready, auto-open the modal
+  useEffect(() => {
+    if (linkToken && plaidReady) openPlaid();
+  }, [linkToken, plaidReady]);
 
-  // ── Computed values ──────────────────────────────────────────────────────────
-  const subs     = items.filter(i => i.type === "subscription");
-  const bills    = items.filter(i => i.type === "bill");
-  const expenses = items.filter(i => i.type === "expense");
-  const subsTotal      = subs.reduce((a, b) => a + b.amount, 0);
-  const billsTotal     = bills.reduce((a, b) => a + b.amount, 0);
-  const expensesTotal  = expenses.reduce((a, b) => a + b.amount, 0) + monthlyTx.total;
-  const creditMinTotal = creditCards.reduce((s, c) => s + (c.min_payment || 0), 0);
-  const creditBalanceTotal = creditCards.reduce((s, c) => s + (c.current_balance || 0), 0);
-  const totalSpend  = subsTotal + billsTotal + expensesTotal + creditMinTotal;
-  const remaining   = income - totalSpend;
-  const spendPct    = income > 0 ? Math.min(Math.round((totalSpend / income) * 100), 100) : 0;
-
-  const donutData = [
-    { name: "Subscriptions", value: subsTotal, color: TYPE_COLORS.subscription },
-    { name: "Bills", value: billsTotal, color: TYPE_COLORS.bill },
-    { name: "Expenses", value: expensesTotal, color: TYPE_COLORS.expense },
-    { name: "Credit Payments", value: creditMinTotal, color: "#38BDF8" },
-  ].filter(d => d.value > 0);
+  // ── Upcoming charges ──────────────────────────────────────────────────────
 
   const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
 
-  const creditUpcoming = creditCards
-    .filter(c => c.due_date)
-    .map(c => {
-      const day = parseInt(c.due_date!);
-      if (isNaN(day)) return null;
-      let target = new Date(today.getFullYear(), today.getMonth(), day);
-      if (target <= today) target.setMonth(target.getMonth() + 1);
-      const daysUntil = Math.ceil((target.getTime() - today.getTime()) / 86400000);
-      if (daysUntil < 0 || daysUntil > 7) return null;
-      return {
-        id: "cc_" + c.id,
-        name: c.name + (c.last_four ? ` ···· ${c.last_four}` : ""),
-        amount: c.min_payment || c.current_balance || 0,
-        color: "#38BDF8",
-        type: "bill" as ItemType,
-        due_date: c.due_date,
-        autopay: false,
-        daysUntil,
-      };
-    })
-    .filter(Boolean) as { id: string; name: string; amount: number; color: string; type: ItemType; due_date: string | null; autopay: boolean; daysUntil: number }[];
+  function computeUpcoming(maxDays: number): UpcomingItem[] {
+    const cutoff = new Date(Date.now() + maxDays * 86400000).toISOString().slice(0, 10);
 
-  const upcoming = items
-    .filter(i => i.due_date)
-    .map(i => {
-      const parts = i.due_date!.trim().split(" ");
-      const MONTH_MAP: Record<string, number> = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      let day = 0;
-      if (parts.length === 2 && MONTH_MAP[parts[0]] !== undefined) {
-        const d = new Date(today.getFullYear(), MONTH_MAP[parts[0]], parseInt(parts[1]));
-        day = Math.ceil((d.getTime() - today.getTime()) / 86400000);
-      } else {
+    const fromItems: UpcomingItem[] = items
+      .filter(i => i.due_date)
+      .flatMap(i => {
         const n = parseInt(i.due_date!);
-        if (!isNaN(n)) {
-          const d = new Date(today.getFullYear(), today.getMonth(), n);
-          if (d < today) d.setMonth(d.getMonth() + 1);
-          day = Math.ceil((d.getTime() - today.getTime()) / 86400000);
-        }
-      }
-      return { ...i, daysUntil: day };
-    })
-    .filter(i => i.daysUntil >= 0 && i.daysUntil <= 7)
-    .concat(creditUpcoming as any[])
-    .concat(recurringUpcoming as any[])
-    .sort((a, b) => a.daysUntil - b.daysUntil)
-    .slice(0, 6);
+        if (isNaN(n)) return [];
+        let d = new Date(today.getFullYear(), today.getMonth(), n);
+        if (d.toISOString().slice(0, 10) < todayStr) d.setMonth(d.getMonth() + 1);
+        const daysUntil = Math.ceil((d.getTime() - today.getTime()) / 86400000);
+        if (daysUntil < 0 || daysUntil > maxDays) return [];
+        const due_date = `${d.getMonth() + 1}/${d.getDate()}`;
+        return [{ id: i.id, name: i.name, amount: i.amount, color: i.color, type: i.type, due_date, autopay: i.autopay, daysUntil }];
+      });
 
-  const INCOME_KWS_FILTER = ["va benefit", "va payment", "veteran", "disability", "social security", "ssa", "payroll", "direct deposit", "unemployment", "treasury", "government benefit"];
-  const topItems = [...items]
-    .filter(i => !INCOME_KWS_FILTER.some(kw => i.name.toLowerCase().includes(kw)))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 6)
-    .map(i => ({
-      name: i.name.length > 20 ? i.name.slice(0, 18) + "\u2026" : i.name,
-      amount: parseFloat(i.amount.toFixed(2)),
-      fill: TYPE_COLORS[i.type] || "#888",
-    }));
+    const fromCC: UpcomingItem[] = creditCards
+      .filter(c => c.due_date)
+      .flatMap(c => {
+        const n = parseInt(c.due_date);
+        if (isNaN(n)) return [];
+        let d = new Date(today.getFullYear(), today.getMonth(), n);
+        if (d.toISOString().slice(0, 10) < todayStr) d.setMonth(d.getMonth() + 1);
+        const daysUntil = Math.ceil((d.getTime() - today.getTime()) / 86400000);
+        if (daysUntil < 0 || daysUntil > maxDays) return [];
+        return [{
+          id: "cc_" + c.id, name: c.name + (c.last_four ? ` ···· ${c.last_four}` : ""),
+          amount: (c.min_payment || c.current_balance || 0) as number,
+          color: "#38BDF8", type: "bill" as ItemType,
+          due_date: `${d.getMonth() + 1}/${d.getDate()}`,
+          autopay: false, daysUntil,
+        }];
+      });
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+    const fromRec: UpcomingItem[] = recurringAll
+      .filter(r => r.next_predicted_date && r.next_predicted_date <= cutoff)
+      .filter(r => !INCOME_KWS.some(kw => (r.clean_merchant_name || r.merchant_name || "").toLowerCase().includes(kw)))
+      .map(r => {
+        const d = new Date(r.next_predicted_date + "T12:00:00");
+        const daysUntil = Math.ceil((d.getTime() - today.getTime()) / 86400000);
+        return {
+          id: "rec_" + r.id, name: r.clean_merchant_name || r.merchant_name,
+          amount: r.last_amount || r.average_amount || 0,
+          color: TYPE_COLORS.bill, type: "bill" as ItemType,
+          due_date: fmtDate(r.next_predicted_date),
+          autopay: false, daysUntil,
+        };
+      });
+
+    return [...fromItems, ...fromCC, ...fromRec]
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+  }
+
+  const upcomingWeek  = computeUpcoming(7);
+  const upcomingMonth = computeUpcoming(30);
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+
+  const spentThisMonth = (() => {
+    const subs  = items.filter(i => i.type === "subscription" || i.type === "trial").reduce((s, i) => s + i.amount, 0);
+    const bills = items.filter(i => i.type === "bill").reduce((s, i) => s + i.amount, 0);
+    const exp   = items.filter(i => i.type === "expense").reduce((s, i) => s + i.amount, 0);
+    return subs + bills + exp + monthlyTxTotal;
+  })();
+
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+    </div>
+  );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-8">
 
-      {/* Setup not done banner */}
+      {/* Setup banner */}
       {!setupDone && !showWizard && (
-        <div className="mb-6 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 p-4 flex items-center justify-between gap-4">
+        <div className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-[#00C853]/20 bg-[#00C853]/5 p-4">
           <div>
             <p className="text-sm font-bold text-white">Finish setting up your account</p>
-            <p className="text-xs text-gray-500 mt-0.5">Add your income, subscriptions, and bills to see your full picture.</p>
+            <p className="mt-0.5 text-xs text-gray-500">Add your income, subscriptions, and bills to see your full picture.</p>
           </div>
-          <button
-            onClick={() => setShowWizard(true)}
-            className="shrink-0 rounded-xl bg-[#00C853] px-4 py-2 text-xs font-bold text-black hover:opacity-90 transition"
-          >
+          <button onClick={() => setShowWizard(true)}
+            className="shrink-0 rounded-xl bg-[#00C853] px-4 py-2 text-xs font-bold text-black hover:opacity-90 transition">
             Resume setup
           </button>
         </div>
@@ -866,343 +1134,79 @@ export default function Dashboard() {
 
       {/* Debug banner */}
       {debugInfo && (
-        <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <p className="text-sm font-bold text-red-400">Could not save that change</p>
+        <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/5 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold text-red-400">Something went wrong</p>
             <button onClick={() => setDebugInfo(null)} className="text-xs text-gray-500 hover:text-white">close</button>
           </div>
-          <p className="text-xs text-gray-400 mb-3">Your changes have been undone. If this keeps happening, contact support.</p>
-          <details>
-            <summary className="text-xs text-gray-600 cursor-pointer hover:text-gray-400 select-none">Show details</summary>
-            <pre className="mt-2 text-xs text-gray-500 whitespace-pre-wrap font-mono overflow-auto max-h-48">{debugInfo}</pre>
-          </details>
+          <p className="mt-1 text-xs text-gray-500">{debugInfo}</p>
         </div>
       )}
 
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">
-            Hey, <span className="gradient-text">{profileName || user?.email?.split("@")[0]}</span>
-          </h1>
-          <p className="mt-1 text-sm text-gray-400">Here's your full financial picture.</p>
-        </div>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">
+          Hey, <span className="gradient-text">{profileName || user?.email?.split("@")[0]}</span>
+        </h1>
         <button
           onClick={() => setAddExpenseOpen(true)}
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-bold text-black hover:opacity-90"
+          className="flex shrink-0 items-center gap-2 rounded-xl bg-[#3EA758] px-4 py-2.5 text-sm font-bold text-black hover:opacity-90"
         >
-          <Plus size={15} /> Add Expense
+          <Plus size={14} /> Add Expense
         </button>
       </div>
 
-      {/* ── 1. SAVINGS GOALS (top priority) ────────────────────────────────── */}
+      {/* Balance bar */}
+      <BalanceBar
+        isConnected={isConnected}
+        plaidBalance={plaidBalance}
+        balanceUpdatedAt={balanceUpdatedAt}
+        accountName={accountName}
+        accountMask={accountMask}
+        income={income}
+        spentThisMonth={spentThisMonth}
+        onConnect={handleConnectBank}
+        linkToken={linkToken}
+        plaidReady={plaidReady}
+        detectingIncome={detectingIncome}
+        plaidJustConnected={plaidJustConnected}
+      />
+
+      {/* Savings strip */}
       {user && <SavingsStrip userId={user.id} />}
 
-      {/* ── 2. INCOME & SPENDING ─────────────────────────────────────────────── */}
-      <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-        <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Monthly Budget</div>
+      {/* Two-column body */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
 
-        <div className="mt-3 flex items-start justify-between gap-4 flex-wrap">
-          {/* Income */}
-          <div>
-            <p className="text-xs text-gray-600 mb-1">Take-home income</p>
-            {editingIncome ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-gray-400">$</span>
-                <input
-                  autoFocus
-                  type="number"
-                  value={incomeInput}
-                  onChange={e => setIncomeInput(e.target.value)}
-                  onBlur={() => saveIncome(incomeInput)}
-                  onKeyDown={e => { if (e.key === "Enter") saveIncome(incomeInput); if (e.key === "Escape") setEditingIncome(false); }}
-                  className="w-36 bg-transparent text-2xl font-bold outline-none border-b border-[#3EA758]"
-                />
-              </div>
-            ) : (
-              <button onClick={() => { setEditingIncome(true); setIncomeInput(income ? String(income) : ""); }} className="text-left group">
-                <span className="text-2xl font-black">{income > 0 ? fmt(income) : <span className="text-gray-500 text-lg">Set income</span>}</span>
-                <span className="ml-2 text-xs text-[#3EA758] opacity-0 group-hover:opacity-100 transition">edit</span>
-              </button>
-            )}
-          </div>
-
-          {/* Tracked spend */}
-          <div className="text-center">
-            <p className="text-xs text-gray-600 mb-1">Tracked spending</p>
-            <p className="text-2xl font-black text-white">{fmt(totalSpend)}</p>
-          </div>
-
-          {/* Left over */}
-          {income > 0 && (
-            <div className="text-right">
-              <p className="text-xs text-gray-600 mb-1">{remaining >= 0 ? "Available to save" : "Over budget"}</p>
-              <p className={`text-2xl font-black ${remaining < 0 ? "text-red-400" : "text-[#00C853]"}`}>
-                {remaining < 0 ? "-" : "+"}{fmt(Math.abs(remaining))}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {income > 0 && (
-          <div className="mt-5">
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{
-                  width: `${spendPct}%`,
-                  background: spendPct > 90 ? "#FF3B30" : spendPct > 70 ? "#FFB300" : "#3EA758",
-                }}
-              />
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-gray-500">
-              <span>{spendPct}% of income tracked</span>
-              {remaining > 0 && <span className="text-[#00C853]">Move {fmt(remaining)} to savings →</span>}
-            </div>
-          </div>
+        {/* Left: activity feed */}
+        {isConnected ? (
+          <TxFeedConnected
+            transactions={transactions}
+            items={items}
+            updating={updating}
+            onUpdate={handleUpdate}
+            onLoadMore={loadMoreTx}
+            hasMore={txHasMore}
+          />
+        ) : (
+          <TxFeedFree items={items} onConnectBank={handleConnectBank} />
         )}
 
-        {/* Bank connect row */}
-        <div className="mt-4 border-t border-white/5 pt-4">
-          {detectingIncome ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Loader2 size={14} className="animate-spin text-[#3EA758]" /> Detecting your income...
-            </div>
-          ) : plaidConnected ? (
-            <div className="flex items-center gap-2 text-sm text-[#3EA758]"><Check size={14} /> Bank connected · Income auto-detected</div>
-          ) : linkToken && plaidReady ? (
-            <button onClick={() => openPlaid()} className="flex items-center gap-2 rounded-xl bg-brand-gradient px-4 py-2 text-sm font-bold text-black hover:opacity-90">
-              <Landmark size={14} /> Open Bank Login
-            </button>
-          ) : (
-            <button onClick={createLinkToken} className="flex items-center gap-2 rounded-xl border border-[#3EA758]/30 bg-[#3EA758]/10 px-4 py-2 text-sm font-semibold text-[#3EA758] hover:bg-[#3EA758]/15">
-              <Landmark size={14} /> Auto-detect income from bank
-            </button>
-          )}
+        {/* Right: tracking panel */}
+        <div className="flex flex-col gap-4">
+          <TrackedSpending items={items} monthlyTxTotal={monthlyTxTotal} income={income} />
+          <UpcomingChargesPanel upcoming={upcomingWeek} upcomingMonth={upcomingMonth} />
         </div>
       </div>
 
-      {user && <PriceChangeAlert userId={user.id} />}
-      <UpcomingCharges />
-      <UpgradeBanner />
-
-      {/* ── 3. STAT CARDS ─────────────────────────────────────────────────────── */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard
-          label="Subscriptions" value={fmt(subsTotal)} sub={`${subs.length} active`}
-          color={TYPE_COLORS.subscription}
-          onClick={() => setActiveCard({ label: "Subscriptions", color: TYPE_COLORS.subscription, filterType: "subscription" })}
-        />
-        <StatCard
-          label="Bills" value={fmt(billsTotal)} sub={`${bills.length} tracked`}
-          color={TYPE_COLORS.bill}
-          onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })}
-        />
-        <StatCard
-          label="Expenses" value={fmt(expensesTotal)} sub={monthlyTx.merchantCount > 0 ? `${monthlyTx.merchantCount} merchants this month` : `${expenses.length} logged`}
-          color={TYPE_COLORS.expense}
-          onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, filterType: "expense" as any })}
-        />
-        <StatCard
-          label="Monthly Total" value={fmt(totalSpend)} sub={`${items.length} items`}
-          color="#AF52DE"
-          onClick={() => setActiveCard({ label: "All Items", color: "#AF52DE", filterType: "all" })}
-        />
-      </div>
-
-      {/* ── 4. CREDIT CARD STRIP ──────────────────────────────────────────────── */}
-      {creditCards.length > 0 && (
-        <div
-          className="mb-6 flex items-center justify-between rounded-2xl border border-[#38BDF8]/20 bg-[#38BDF8]/5 px-5 py-4 cursor-pointer hover:bg-[#38BDF8]/10 transition"
-          onClick={() => router.push("/credit")}
-        >
-          <div className="flex items-center gap-3">
-            <CreditCard size={18} className="text-[#38BDF8]" />
-            <div>
-              <p className="text-sm font-bold text-white">Credit Card Debt</p>
-              <p className="text-xs text-gray-400">{creditCards.length} card{creditCards.length !== 1 ? "s" : ""} · {creditMinTotal > 0 ? `${fmt(creditMinTotal)}/mo min payments` : "no min payments set"}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-black text-white">{fmt(creditBalanceTotal)}</p>
-            <p className="text-xs text-[#38BDF8]">View cards</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── 5. SPEND BREAKDOWN + DUE THIS WEEK ───────────────────────────────── */}
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
-
-        {/* Donut */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Spend Breakdown</p>
-          {donutData.length > 0 ? (
-            <div className="flex items-center gap-4">
-              <ResponsiveContainer width={160} height={160}>
-                <PieChart>
-                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
-                    {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v: any) => fmt(v)}
-                    contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-2.5">
-                {donutData.map(row => (
-                  <div key={row.name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: row.color }} />
-                      <span className="text-gray-300">{row.name}</span>
-                    </div>
-                    <span className="font-semibold">{fmt(row.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-32 items-center justify-center">
-              <p className="text-sm text-gray-500">No items yet  -  add from Finances.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Due this week */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Due This Week</p>
-          {upcoming.length === 0 ? (
-            <div className="flex h-32 items-center justify-center">
-              <p className="text-sm text-gray-500">Nothing due in the next 7 days.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {upcoming.map(item => (
-                <div key={item.id} className="flex items-center gap-3">
-                  <MerchantLogo name={item.name} color={item.color || TYPE_COLORS[item.type]} size={32} />
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-semibold">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.due_date}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold">{fmt(item.amount)}</p>
-                    <p className={`text-xs font-semibold ${item.daysUntil === 0 ? "text-red-400" : item.daysUntil <= 2 ? "text-orange-400" : "text-gray-500"}`}>
-                      {item.daysUntil === 0 ? "Today" : item.daysUntil === 1 ? "Tomorrow" : `${item.daysUntil}d`}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── 6. TOP ITEMS BAR CHART ────────────────────────────────────────────── */}
-      {topItems.length > 0 && (
-        <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">Biggest Monthly Charges</p>
-          <p className="mb-4 text-xs text-gray-600">Your top recurring costs at a glance</p>
-          <ResponsiveContainer width="100%" height={topItems.length * 34 + 8}>
-            <BarChart data={topItems} layout="vertical" margin={{ top: 0, right: 56, left: 0, bottom: 0 }}>
-              <XAxis type="number" hide domain={[0, "dataMax"]} />
-              <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                formatter={(v: any) => [fmt(v), "Monthly"]}
-                contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
-              />
-              <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={20}>
-                {topItems.map((entry, i) => <Cell key={i} fill={entry.fill} fillOpacity={0.85} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="mt-3 flex gap-5 text-xs text-gray-500">
-            {([
-              { label: "Subscription", color: TYPE_COLORS.subscription },
-              { label: "Bill", color: TYPE_COLORS.bill },
-              { label: "Expense", color: TYPE_COLORS.expense },
-            ] as const).map(l => (
-              <div key={l.label} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: l.color }} />
-                {l.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── 7. QUICK LINKS ────────────────────────────────────────────────────── */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <button
-          onClick={() => router.push("/save")}
-          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00C853]/10 border border-[#00C853]/20">
-              <PiggyBank size={16} style={{ color: "#00C853" }} />
-            </div>
-            <div>
-              <p className="font-semibold">Savings Goals</p>
-              <p className="text-xs text-gray-500">Track your progress</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-
-        <button
-          onClick={() => router.push("/finances")}
-          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#38BDF8]/10 border border-[#38BDF8]/20">
-              <Repeat size={16} className="text-[#38BDF8]" />
-            </div>
-            <div>
-              <p className="font-semibold">Finances</p>
-              <p className="text-xs text-gray-500">{items.length} items tracked</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-
-        <button
-          onClick={() => router.push("/bank")}
-          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left hover:bg-white/[0.04] transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5E8EFF]/10 border border-[#5E8EFF]/20">
-              <Landmark size={16} className="text-[#5E8EFF]" />
-            </div>
-            <div>
-              <p className="font-semibold">Bank Accounts</p>
-              <p className="text-xs text-gray-500">{isPro ? "Auto-imported" : "Connect to auto-detect"}</p>
-            </div>
-          </div>
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-      </div>
-
-      {/* ── 8. HEALTH SCORE ───────────────────────────────────────────────────── */}
-      {user && <HealthScore userId={user.id} />}
-
-      {/* ── Modals ─────────────────────────────────────────────────────────────── */}
-      {activeCard && (
-        <ItemsModal
-          label={activeCard.label}
-          color={activeCard.color}
-          items={activeCard.filterType === "all" ? items : items.filter(i => i.type === activeCard.filterType)}
-          onClose={() => setActiveCard(null)}
-          onTypeChange={moveItemType}
-          onAdd={activeCard.filterType === "expense" ? () => { setActiveCard(null); setAddExpenseOpen(true); } : undefined}
-        />
-      )}
-
+      {/* Modals */}
       {addExpenseOpen && user && (
         <AddExpenseModal
           userId={user.id}
           onClose={() => setAddExpenseOpen(false)}
-          onSaved={(item) => {
+          onSaved={item => {
             setItems(prev => [item, ...prev]);
-            try { localStorage.setItem("items_version", String(Date.now())); } catch {}
+            setAddExpenseOpen(false);
           }}
         />
       )}

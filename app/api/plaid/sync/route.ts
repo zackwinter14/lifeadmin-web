@@ -160,6 +160,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No bank connected" }, { status: 400 });
   }
 
+  // Step 0: fetch live account balance and store in profiles
+  try {
+    const balanceRes = await plaid.accountsBalanceGet({
+      access_token: profile.plaid_access_token,
+    });
+    const accounts = balanceRes.data.accounts;
+    // Use the first depository/checking/savings account we find, or fall back to accounts[0]
+    const primary =
+      accounts.find(a => a.type === "depository" && a.subtype === "checking") ||
+      accounts.find(a => a.type === "depository") ||
+      accounts[0];
+    if (primary) {
+      const balance = primary.balances.current ?? primary.balances.available ?? null;
+      const mask = primary.mask ?? null;
+      const accountName = primary.official_name || primary.name || null;
+      await supabase
+        .from("profiles")
+        .update({
+          plaid_balance: balance,
+          plaid_balance_updated_at: new Date().toISOString(),
+          plaid_account_name: accountName,
+          plaid_account_mask: mask,
+        })
+        .eq("id", userId);
+    }
+  } catch (e: any) {
+    // Non-fatal — balance display degrades gracefully
+    console.error("accountsBalanceGet skipped:", plaidErrorCode(e) ?? e?.message);
+  }
+
   const endDate = new Date().toISOString().split("T")[0];
   const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
