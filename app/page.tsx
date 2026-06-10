@@ -844,6 +844,42 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Finance guides */}
+      <section className="border-t border-white/5 px-6 py-16 md:py-24">
+        <div className="mx-auto max-w-4xl">
+          <FadeIn className="mb-10 text-center">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand">
+              Free Resource Center
+            </div>
+            <h2 className="text-3xl font-bold md:text-4xl">Personal Finance Guides</h2>
+            <p className="mt-3 text-gray-400">Practical advice on budgeting, saving, subscriptions, and debt — no jargon.</p>
+          </FadeIn>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: "How to Build an Emergency Fund", desc: "Step-by-step guide to building 3 months of expenses, starting with $1,000.", href: "/blog/how-to-build-an-emergency-fund", tag: "Savings" },
+              { title: "Find & Cancel Forgotten Subscriptions", desc: "Most people have 10+ subscriptions and only remember half. Here's how to find them all.", href: "/blog/how-to-find-and-cancel-forgotten-subscriptions", tag: "Subscriptions" },
+              { title: "The 50/30/20 Budget Rule", desc: "The most popular budgeting framework, explained with real numbers.", href: "/blog/50-30-20-budget-rule-explained", tag: "Budgeting" },
+              { title: "Debt Snowball vs Avalanche", desc: "Two proven payoff strategies — which one is right for your situation?", href: "/blog/debt-snowball-vs-avalanche", tag: "Debt" },
+              { title: "How to Track Your Net Worth", desc: "The one metric that tells you whether your financial life is improving.", href: "/blog/how-to-track-net-worth", tag: "Net Worth" },
+              { title: "50 Ways to Cut Monthly Expenses", desc: "A specific, actionable list — organized by category with estimated savings.", href: "/blog/ways-to-lower-monthly-expenses", tag: "Save Money" },
+            ].map((g, i) => (
+              <FadeIn key={g.href} delay={i * 0.06}>
+                <Link href={g.href} className="block rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-brand/30 hover:bg-brand/[0.02]">
+                  <span className="mb-3 inline-block rounded-full border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">{g.tag}</span>
+                  <h3 className="mb-2 font-bold leading-snug">{g.title}</h3>
+                  <p className="text-sm text-gray-400">{g.desc}</p>
+                </Link>
+              </FadeIn>
+            ))}
+          </div>
+          <FadeIn delay={0.2} className="mt-8 text-center">
+            <Link href="/home" className="text-sm font-semibold text-brand hover:underline">
+              View all guides &rarr;
+            </Link>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-3xl text-center">

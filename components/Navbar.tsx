@@ -46,6 +46,7 @@ export default function Navbar() {
   const displayName = profileName || user?.email?.split("@")[0] || null;
 
   const publicLinks = [
+    { href: "/home",     label: "Home"     },
     { href: "/features", label: "Features" },
     { href: "/pricing",  label: "Pricing"  },
     { href: "/blog",     label: "Blog"     },
