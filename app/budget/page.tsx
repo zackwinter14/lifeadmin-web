@@ -67,7 +67,7 @@ export default function BudgetPage() {
         .single();
       if (profile?.emergency_savings) setEmergencySavings(profile.emergency_savings);
 
-      // 1. Try bank transactions first (most accurate — real deposits this month)
+      // 1. Try bank transactions first (most accurate  -  real deposits this month)
       const thisMonthStart = new Date();
       thisMonthStart.setDate(1);
       thisMonthStart.setHours(0, 0, 0, 0);
@@ -200,7 +200,7 @@ export default function BudgetPage() {
   const monthlyExpenses = subsTotal + billsTotal + trialsTotal + creditMinTotal;
   const efMonths = monthlyExpenses > 0 ? emergencySavings / monthlyExpenses : 0;
   const efColor = efMonths >= 6 ? "#00C853" : efMonths >= 3 ? "#FFB300" : "#FF3B30";
-  const efLabel = efMonths >= 6 ? "Solid — 6+ months covered" : efMonths >= 3 ? "Getting there — aim for 6 months" : emergencySavings > 0 ? "Low — build toward 3 months" : "Not started";
+  const efLabel = efMonths >= 6 ? "Solid  -  6+ months covered" : efMonths >= 3 ? "Getting there  -  aim for 6 months" : emergencySavings > 0 ? "Low  -  build toward 3 months" : "Not started";
 
   return (
     <>
@@ -219,9 +219,9 @@ export default function BudgetPage() {
         color="#00C853"
         body={
           <>
-            <p>The bar compares your total fixed spending (bills + subscriptions + credit minimums) against your monthly income. <span className="text-[#00C853] font-semibold">Green</span> means you&apos;re in good shape — under 50% spent. <span className="text-[#FFB300] font-semibold">Yellow</span> is 50–70% — watch it. <span className="text-red-400 font-semibold">Red</span> is over 70% — time to cut something.</p>
+            <p>The bar compares your total fixed spending (bills + subscriptions + credit minimums) against your monthly income. <span className="text-[#00C853] font-semibold">Green</span> means you&apos;re in good shape  -  under 50% spent. <span className="text-[#FFB300] font-semibold">Yellow</span> is 50–70%  -  watch it. <span className="text-red-400 font-semibold">Red</span> is over 70%  -  time to cut something.</p>
             <p className="mt-1">The <span className="text-white font-medium">money left over</span> is what&apos;s available for food, fun, and saving. A healthy rule of thumb: try to keep at least 20% of your income unspoken for savings.</p>
-            <p className="mt-1"><span className="text-white font-medium">Savings goals</span> below show how many months it would take to reach each target using your leftover amount — so you can see exactly when you&apos;d hit your vacation fund, emergency fund, or anything else.</p>
+            <p className="mt-1"><span className="text-white font-medium">Savings goals</span> below show how many months it would take to reach each target using your leftover amount  -  so you can see exactly when you&apos;d hit your vacation fund, emergency fund, or anything else.</p>
           </>
         }
       />

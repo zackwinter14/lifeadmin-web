@@ -16,7 +16,7 @@ export default function ContactPage() {
     e.preventDefault();
     setSending(true);
 
-    // Open email client with pre-filled email — works without backend
+    // Open email client with pre-filled email  -  works without backend
     const body = `Name: ${name}%0D%0AEmail: ${email}%0D%0A%0D%0A${encodeURIComponent(message)}`;
     const subjectLine = encodeURIComponent(subject || "Life Admin support");
     window.location.href = `mailto:lifeadminofficial@gmail.com?subject=${subjectLine}&body=${body}`;

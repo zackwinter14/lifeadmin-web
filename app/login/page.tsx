@@ -56,7 +56,7 @@ export default function Login() {
     setLoading(false);
 
     if (aalData?.nextLevel === "aal2" && aalData?.currentLevel === "aal1" && totpFactor) {
-      // User has MFA enrolled — challenge them
+      // User has MFA enrolled  -  challenge them
       setMfaFactorId(totpFactor.id);
       setMfaStep(true);
       return;

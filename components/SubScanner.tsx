@@ -105,7 +105,7 @@ export default function SubScanner({ userId, trackedNames, onAdded }: Props) {
     }
 
     // ── Source 2: Scan raw transactions for recurring patterns ────────────────
-    // Used as a supplement — catches things Plaid's recurring detector missed
+    // Used as a supplement  -  catches things Plaid's recurring detector missed
     const since = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10);
     const { data: txns } = await supabase
       .from("transactions")
@@ -231,7 +231,7 @@ export default function SubScanner({ userId, trackedNames, onAdded }: Props) {
       <div className="flex items-center gap-2 px-5 py-3">
         <Sparkles size={13} className="text-[#3EA758] shrink-0" />
         <p className="text-xs font-bold text-[#3EA758] uppercase tracking-wider">
-          Found in your bank — {visible.length} possible subscription{visible.length !== 1 ? "s" : ""}
+          Found in your bank  -  {visible.length} possible subscription{visible.length !== 1 ? "s" : ""}
         </p>
       </div>
       <div className="divide-y divide-white/5">

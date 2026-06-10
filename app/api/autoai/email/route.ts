@@ -69,7 +69,7 @@ Format:
 - 2-3 key financial insights or action items based on their data (use plain text, no markdown)
 - One motivational closing sentence
 - Sign off as "AutoAI, your Life Admin assistant"
-Keep it concise — under 200 words total. Be specific to their actual numbers.`,
+Keep it concise  -  under 200 words total. Be specific to their actual numbers.`,
       messages: [{ role: "user", content: `User financial data:\n${context}\n\nWrite the digest email.` }],
     });
 

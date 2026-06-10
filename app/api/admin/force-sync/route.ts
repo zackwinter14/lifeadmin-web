@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   };
 
   if (!profile?.plaid_access_token) {
-    report.diagnosis = "No plaid_access_token — bank was never connected or token save failed";
+    report.diagnosis = "No plaid_access_token  -  bank was never connected or token save failed";
     return NextResponse.json(report);
   }
 
@@ -71,13 +71,13 @@ export async function POST(req: NextRequest) {
 
   // 5. Diagnosis
   if (syncBody?.error_code === "PRODUCT_NOT_READY") {
-    report.diagnosis = "PRODUCT_NOT_READY — Plaid is still processing this bank. Wait 2-5 minutes and try again.";
+    report.diagnosis = "PRODUCT_NOT_READY  -  Plaid is still processing this bank. Wait 2-5 minutes and try again.";
   } else if (syncBody?.error_code === "ITEM_LOGIN_REQUIRED") {
-    report.diagnosis = "ITEM_LOGIN_REQUIRED — user needs to reconnect their bank.";
+    report.diagnosis = "ITEM_LOGIN_REQUIRED  -  user needs to reconnect their bank.";
   } else if (syncBody?.synced === 0 && syncBody?.recurring === 0) {
     report.diagnosis = "Sync ran but Plaid returned 0 transactions and 0 recurring. Bank may be newly connected or empty.";
   } else if ((itemCount2.count ?? 0) === 0 && (recurCount2.count ?? 0) > 0) {
-    report.diagnosis = "recurring_transactions exist but no items were created — check auto-insert step in sync route.";
+    report.diagnosis = "recurring_transactions exist but no items were created  -  check auto-insert step in sync route.";
   } else {
     report.diagnosis = "Sync completed. Check after_sync counts above.";
   }

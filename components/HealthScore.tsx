@@ -104,28 +104,28 @@ export default function HealthScore({ userId }: { userId: string }) {
           score: incomeScore, max: 35,
           label: "Savings Rate",
           detail: income > 0
-            ? `${Math.round(savingsRate * 100)}% of income left after fixed costs${savingsRate >= 0.2 ? " — great" : savingsRate >= 0.1 ? " — aim for 20%+" : " — tight"}`
+            ? `${Math.round(savingsRate * 100)}% of income left after fixed costs${savingsRate >= 0.2 ? "  -  great" : savingsRate >= 0.1 ? "  -  aim for 20%+" : "  -  tight"}`
             : "Set your income in Dashboard to score this",
         },
         subRatio: {
           score: subScore, max: 20,
           label: "Subscription Load",
           detail: income > 0
-            ? `Subscriptions are ${Math.round(subRatioPct * 100)}% of income${subRatioPct < 0.1 ? " — healthy" : " — consider trimming"}`
+            ? `Subscriptions are ${Math.round(subRatioPct * 100)}% of income${subRatioPct < 0.1 ? "  -  healthy" : "  -  consider trimming"}`
             : "Add your income to score this",
         },
         utilization: {
           score: utilScore, max: 25,
           label: "Credit Utilization",
           detail: util < 0
-            ? "No credit cards tracked — add them in Credit Cards"
-            : `${Math.round(util * 100)}% utilized${util < 0.3 ? " — good" : " — pay down to boost score"}`,
+            ? "No credit cards tracked  -  add them in Credit Cards"
+            : `${Math.round(util * 100)}% utilized${util < 0.3 ? "  -  good" : "  -  pay down to boost score"}`,
         },
         emergency: {
           score: emergScore, max: 20,
           label: "Emergency Fund",
           detail: emergencySavings > 0
-            ? `${monthsCovered.toFixed(1)} months covered${monthsCovered >= 3 ? " — solid" : " — aim for 3-6 months"}`
+            ? `${monthsCovered.toFixed(1)} months covered${monthsCovered >= 3 ? "  -  solid" : "  -  aim for 3-6 months"}`
             : "Add your savings in the Emergency Fund tracker",
         },
       });
@@ -149,7 +149,7 @@ export default function HealthScore({ userId }: { userId: string }) {
           <p className="text-2xl font-black text-white">{data.total} <span className="text-lg font-bold" style={{ color }}>{letter}</span></p>
           <p className="text-xs text-gray-500 mt-0.5">
             {data.total >= 80 ? "You're in great shape." :
-             data.total >= 60 ? "Room to improve — tap to see where." :
+             data.total >= 60 ? "Room to improve  -  tap to see where." :
              "A few changes could make a big difference."}
           </p>
         </div>

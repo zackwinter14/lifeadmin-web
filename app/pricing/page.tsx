@@ -52,7 +52,7 @@ export default function Pricing() {
         <div className="mb-8 flex w-full items-center justify-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-6 py-3 text-sm">
             <span className="gradient-text font-bold">Launch Special:</span>
-            <span>Save 40% — pay $49.99/yr instead of $83.88</span>
+            <span>Save 40%  -  pay $49.99/yr instead of $83.88</span>
           </div>
         </div>
 
@@ -66,7 +66,7 @@ export default function Pricing() {
             </div>
             <ul className="mt-6 space-y-3">
               {[
-                "Track manually — unlimited entries",
+                "Track manually  -  unlimited entries",
                 "Subscriptions, bills, trials, expenses",
                 "Net worth tracker",
                 "Bill calendar",
@@ -129,13 +129,13 @@ export default function Pricing() {
               <span className="mb-1 text-sm text-gray-400">/year</span>
             </div>
             <div className="mt-1 text-sm text-gray-500">
-              Only $4.17/month — save $33.89 vs monthly
+              Only $4.17/month  -  save $33.89 vs monthly
             </div>
             <ul className="mt-6 space-y-3">
               {[
                 "Everything in Monthly",
                 "No ads",
-                "Lock in your rate — no price increases",
+                "Lock in your rate  -  no price increases",
                 "Priority support",
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm">

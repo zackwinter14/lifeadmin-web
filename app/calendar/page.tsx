@@ -43,7 +43,7 @@ function parseDayFromDue(due: string, targetMonth: number, targetYear: number): 
   // ISO date
   const iso = new Date(due);
   if (!isNaN(iso.getTime()) && iso.getMonth() === targetMonth && iso.getFullYear() === targetYear) return iso.getDate();
-  // No month specified — show every month
+  // No month specified  -  show every month
   const bare = due.match(/\b(\d{1,2})$/);
   if (bare) return parseInt(bare[1]);
   return null;

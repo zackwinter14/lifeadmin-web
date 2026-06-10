@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Best Personal Finance App Alternatives in 2025 — Life Admin",
+  title: "Best Personal Finance App Alternatives in 2025  -  Life Admin",
   description: "Looking for a Rocket Money, Mint, or YNAB alternative? Life Admin is free, has more features, and never sells your data. Compare and see why thousands are switching.",
   keywords: ["personal finance app alternative", "best budget app 2025", "Rocket Money alternative", "Mint alternative", "YNAB alternative", "free personal finance app", "best subscription tracker app 2025"],
   alternates: { canonical: "https://lifeadminofficial.com/alternatives" },
@@ -81,7 +81,7 @@ export default function Alternatives() {
         <h2 className="mb-2 text-2xl font-bold">Stop paying for apps that do less</h2>
         <p className="mb-6 text-gray-400">Life Admin is free. Connect your bank. Find forgotten subscriptions in 60 seconds.</p>
         <Link href="/signup" className="inline-block rounded-xl bg-brand-gradient px-8 py-4 font-bold text-black hover:opacity-90 transition">
-          Start free — no card needed
+          Start free  -  no card needed
         </Link>
       </div>
     </div>

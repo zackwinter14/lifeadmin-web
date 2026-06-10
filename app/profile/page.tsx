@@ -110,7 +110,7 @@ function ReferPage({ onBack }: { onBack: () => void }) {
   }
 
   function share() {
-    const msg = `I've been saving money with Life Admin — track your bills, subs, and budget. Use my code ${code} for a free first month! Download: https://apps.apple.com/app/id6762589970`;
+    const msg = `I've been saving money with Life Admin  -  track your bills, subs, and budget. Use my code ${code} for a free first month! Download: https://apps.apple.com/app/id6762589970`;
     if (navigator.share) { navigator.share({ title: "Life Admin", text: msg }).catch(() => {}); }
     else { navigator.clipboard?.writeText(msg).catch(() => {}); }
   }
@@ -168,7 +168,7 @@ function ReferPage({ onBack }: { onBack: () => void }) {
         {[
           { step: "1", text: "Share your code with a friend" },
           { step: "2", text: "They download Life Admin and enter your code at signup" },
-          { step: "3", text: "Their first month is free — no credit card hold" },
+          { step: "3", text: "Their first month is free  -  no credit card hold" },
           { step: "4", text: "When they subscribe, you both get 1 free month credited" },
         ].map(s => (
           <div key={s.step} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
@@ -187,10 +187,10 @@ function ReferPage({ onBack }: { onBack: () => void }) {
 function PrivacyPage({ onBack }: { onBack: () => void }) {
   const sections = [
     { title: "What We Collect", items: [
-      { label: "Transaction data", detail: "Merchant name, amount, date — read-only via Plaid. We never see your credentials or full account number." },
+      { label: "Transaction data", detail: "Merchant name, amount, date  -  read-only via Plaid. We never see your credentials or full account number." },
       { label: "Email metadata", detail: "Subject line, sender, date, and key fields only. We never read or store full email bodies." },
       { label: "Structured extracts", detail: "We save only: company name, amount, due date, category. Raw emails and bank statements are never stored." },
-      { label: "Profile info", detail: "Name, email, phone — entered by you. Used only for your account and notifications." },
+      { label: "Profile info", detail: "Name, email, phone  -  entered by you. Used only for your account and notifications." },
     ]},
     { title: "How We Use It", items: [
       { label: "Bill & subscription detection", detail: "Our rules engine classifies recurring charges. AI only runs on ambiguous items." },
@@ -208,10 +208,10 @@ function PrivacyPage({ onBack }: { onBack: () => void }) {
       { label: "Encryption in transit", detail: "All data is encrypted using TLS 1.3." },
       { label: "Encryption at rest", detail: "Stored data is encrypted using AES-256." },
       { label: "OAuth only", detail: "We never store your bank or email passwords. All connections use OAuth 2.0." },
-      { label: "Plaid security", detail: "Bank connections use Plaid — SOC 2 Type II certified." },
+      { label: "Plaid security", detail: "Bank connections use Plaid  -  SOC 2 Type II certified." },
     ]},
     { title: "Purchases & Refunds", items: [
-      { label: "All purchases are final — no refunds", detail: "All subscription payments — monthly ($6.99/mo) or annual ($49.99/yr) — are non-refundable. We offer a 7-day free trial so you can fully evaluate before any charge." },
+      { label: "All purchases are final  -  no refunds", detail: "All subscription payments  -  monthly ($6.99/mo) or annual ($49.99/yr)  -  are non-refundable. We offer a 7-day free trial so you can fully evaluate before any charge." },
       { label: "Cancellation policy", detail: "You may cancel at any time. Cancellation takes effect at the end of the current billing period. You retain Pro access until that date." },
       { label: "7-day free trial", detail: "New Pro subscribers get a 7-day free trial. No charge during the trial. After 7 days, your plan auto-starts at the rate you selected ($6.99/mo or $49.99/yr) unless you cancel before the trial ends." },
       { label: "Referral free month", detail: "Referred users receive 1 free month. After that, their subscription auto-renews at $6.99/mo. The referring user also receives 1 free month credited." },
@@ -459,7 +459,7 @@ function SecuritySection({ onPinSetup, onMfaSetup }: { onPinSetup: () => void; o
           <div>
             <p className="text-sm font-medium">App PIN</p>
             <p className="text-xs text-gray-500">
-              {hasPin ? "PIN is enabled — required on every new session" : "Add a PIN lock after login"}
+              {hasPin ? "PIN is enabled  -  required on every new session" : "Add a PIN lock after login"}
             </p>
           </div>
         </div>

@@ -134,7 +134,7 @@ export default function Signup() {
       <div className="w-full max-w-4xl">
         <div className="grid gap-8 md:grid-cols-2 md:gap-12 items-start">
 
-          {/* Left — stats (always visible) */}
+          {/* Left  -  stats (always visible) */}
           <div>
             <div className="mb-6 rounded-2xl border border-brand/20 bg-brand/5 p-6">
               <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand">The average person thinks</p>
@@ -148,7 +148,7 @@ export default function Signup() {
             </div>
             <div className="space-y-2">
               {[
-                "Free forever — no credit card needed",
+                "Free forever  -  no credit card needed",
                 "No bank connection required to start",
                 "42% of people pay for things they forgot about",
                 "See your real number in under 15 minutes",
@@ -161,7 +161,7 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* Right — multi-step form */}
+          {/* Right  -  multi-step form */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-8">
             {progressDots}
 

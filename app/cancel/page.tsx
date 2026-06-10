@@ -111,7 +111,7 @@ export default function CancelPage() {
         <>
           {active.length > 0 && (
             <div className="mb-8">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">Active — tap to see how to cancel</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">Active  -  tap to see how to cancel</p>
               <div className="space-y-2">
                 {active.map(item => {
                   const link = getCancelLink(item.name);
@@ -153,7 +153,7 @@ export default function CancelPage() {
                           ) : (
                             <div className="flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-2.5">
                               <AlertCircle size={14} className="text-orange-400 shrink-0" />
-                              <p className="text-xs text-gray-400">No direct cancel link found — follow the steps below.</p>
+                              <p className="text-xs text-gray-400">No direct cancel link found  -  follow the steps below.</p>
                             </div>
                           )}
 

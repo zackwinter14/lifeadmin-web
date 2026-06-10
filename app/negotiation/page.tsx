@@ -26,7 +26,7 @@ const SCRIPTS: Script[] = [
     category: "Internet",
     title: "Negotiate Your Internet Bill",
     savingsRange: "$20–$50/mo",
-    intro: "ISPs expect you to negotiate. Loyalty discounts are real — you just have to ask.",
+    intro: "ISPs expect you to negotiate. Loyalty discounts are real  -  you just have to ask.",
     steps: [
       "Find a competitor's current promotional rate in your area (Google '[competitor] internet deals [your city]').",
       "Call your ISP's retention department (say 'I'd like to cancel' to get transferred).",
@@ -35,7 +35,7 @@ const SCRIPTS: Script[] = [
     script: `"Hi, I've been a customer for [X years] and I really like the service. But I'm looking at my bill and it's just too high. I've been seeing [Competitor] offering [speed] for $[price]/month. I'd really like to stay, but I need a better rate. What can you do for me?"`,
     tips: [
       "If they say no, ask to speak with retentions or a supervisor.",
-      "If the first agent won't help, call back — different reps have different authority.",
+      "If the first agent won't help, call back  -  different reps have different authority.",
       "Best day/time: Tuesday–Thursday mornings.",
       "Works even if you've had 'promotional pricing' before.",
     ],
@@ -47,17 +47,17 @@ const SCRIPTS: Script[] = [
     category: "Phone",
     title: "Lower Your Phone Bill",
     savingsRange: "$15–$40/mo",
-    intro: "Phone carriers have major room to negotiate — especially if you've been a customer for years.",
+    intro: "Phone carriers have major room to negotiate  -  especially if you've been a customer for years.",
     steps: [
-      "Check competitor plans (Mint Mobile, Visible, Metro) — they're often 50% cheaper.",
+      "Check competitor plans (Mint Mobile, Visible, Metro)  -  they're often 50% cheaper.",
       "Call your carrier's loyalty/retention line.",
       "Mention you're comparing plans and considering switching.",
     ],
-    script: `"I've been a loyal customer for [X years] and I love your service, but I'm paying $[amount]/month and I've found plans elsewhere for $[lower amount]. I'd really prefer to stay with you — what loyalty discounts or plan adjustments can you offer?"`,
+    script: `"I've been a loyal customer for [X years] and I love your service, but I'm paying $[amount]/month and I've found plans elsewhere for $[lower amount]. I'd really prefer to stay with you  -  what loyalty discounts or plan adjustments can you offer?"`,
     tips: [
       "Ask specifically for 'loyalty credits' or 'account credits'.",
-      "Military/teacher/student discounts are often not advertised — always ask.",
-      "If you have multiple lines, mention that — they'll work harder to keep you.",
+      "Military/teacher/student discounts are often not advertised  -  always ask.",
+      "If you have multiple lines, mention that  -  they'll work harder to keep you.",
       "Consider downgrading data if you mostly use WiFi.",
     ],
   },
@@ -71,14 +71,14 @@ const SCRIPTS: Script[] = [
     intro: "Cable companies have huge retention budgets. Streaming services will often offer pauses or discounts.",
     steps: [
       "List every streaming service you pay for.",
-      "Cancel the ones you haven't used in 30 days — you can always re-subscribe.",
+      "Cancel the ones you haven't used in 30 days  -  you can always re-subscribe.",
       "For cable, call and threaten to cancel to unlock hidden promos.",
     ],
-    script: `"Hi, I'm calling because I need to reduce my expenses and I'm thinking about canceling my service. I've been a customer for [X years] — what's the best promotional rate you can offer to keep me?"`,
+    script: `"Hi, I'm calling because I need to reduce my expenses and I'm thinking about canceling my service. I've been a customer for [X years]  -  what's the best promotional rate you can offer to keep me?"`,
     tips: [
       "Cable companies often have $20–$30/mo 'loyal customer' discounts not listed online.",
       "Ask for a 'rate lock' so it doesn't jump back up in 6 months.",
-      "Streaming tip: Share plans with family — Netflix, Spotify, Apple One all have family tiers.",
+      "Streaming tip: Share plans with family  -  Netflix, Spotify, Apple One all have family tiers.",
       "Rotate services: subscribe for 1–2 months to watch a show, cancel, rotate.",
     ],
   },
@@ -89,7 +89,7 @@ const SCRIPTS: Script[] = [
     category: "Insurance",
     title: "Lower Your Insurance Premiums",
     savingsRange: "$20–$100/mo",
-    intro: "Insurance companies expect annual rate shopping. Loyalty rarely pays — switching does.",
+    intro: "Insurance companies expect annual rate shopping. Loyalty rarely pays  -  switching does.",
     steps: [
       "Get competing quotes online from 2–3 other carriers (takes 10 minutes).",
       "Call your current insurer and tell them you have a better quote.",
@@ -98,9 +98,9 @@ const SCRIPTS: Script[] = [
     script: `"I've been with you for [X years] and I've been happy, but I just got a quote from [Competitor] for $[amount] less per month for the same coverage. Before I switch, I wanted to give you the chance to match it. Can you look at my account and see what discounts I qualify for?"`,
     tips: [
       "Ask about: bundling (auto + home), good driver, paperless, auto-pay, safety device discounts.",
-      "Raise your deductible to lower premiums — only do this if you have emergency savings.",
-      "Shop every 12–24 months — loyalty rarely beats new customer pricing.",
-      "Never let your policy lapse even one day — it raises your rates.",
+      "Raise your deductible to lower premiums  -  only do this if you have emergency savings.",
+      "Shop every 12–24 months  -  loyalty rarely beats new customer pricing.",
+      "Never let your policy lapse even one day  -  it raises your rates.",
     ],
   },
   {
@@ -112,16 +112,16 @@ const SCRIPTS: Script[] = [
     savingsRange: "20–50% off",
     intro: "Medical bills are almost always negotiable. Hospitals have financial assistance programs few people know about.",
     steps: [
-      "Request an itemized bill — errors are common and can be disputed.",
+      "Request an itemized bill  -  errors are common and can be disputed.",
       "Call the billing department (not the front desk).",
       "Ask about financial assistance programs before negotiating the rate.",
     ],
     script: `"I received this bill for $[amount] and I'm not able to pay this in full. I'd like to understand my options. Do you have a financial assistance or charity care program I might qualify for? And if not, what's the lowest settlement amount you can accept for a lump sum payment?"`,
     tips: [
-      "Lump sum payments often get 20–40% off — hospitals prefer certainty.",
+      "Lump sum payments often get 20–40% off  -  hospitals prefer certainty.",
       "Ask for a payment plan with 0% interest if you can't pay in full.",
       "Never pay before checking if insurance processed it correctly.",
-      "Non-profits must offer charity care — always ask, income limits are often generous.",
+      "Non-profits must offer charity care  -  always ask, income limits are often generous.",
     ],
   },
   {
@@ -134,7 +134,7 @@ const SCRIPTS: Script[] = [
     intro: "Gyms hate losing members and will often waive fees or discount rates to keep you.",
     steps: [
       "Look up any current promotions the gym is running for new members.",
-      "Visit in person (works better than calling) — talk to a manager, not a sales rep.",
+      "Visit in person (works better than calling)  -  talk to a manager, not a sales rep.",
       "Tell them you want to stay but need a better rate.",
     ],
     script: `"I love coming here and I've been a member for [X time], but my budget has gotten tighter. I saw you're offering new members [deal]. Is there anything you can do for a loyal member to match that or get close to it?"`,
@@ -142,7 +142,7 @@ const SCRIPTS: Script[] = [
       "Best time: end of month when they're trying to hit membership goals.",
       "Ask to waive the annual fee ($40–$50 is common).",
       "Month-to-month is more expensive but gives you leverage to cancel anytime.",
-      "Check if your employer or health insurance covers gym fees — many do.",
+      "Check if your employer or health insurance covers gym fees  -  many do.",
     ],
   },
   {
@@ -156,14 +156,14 @@ const SCRIPTS: Script[] = [
     steps: [
       "Call your utility company and ask about budget billing, low-income assistance, or levelized plans.",
       "Ask specifically about energy efficiency rebates.",
-      "Audit your usage — small changes add up fast.",
+      "Audit your usage  -  small changes add up fast.",
     ],
     script: `"Hi, I'm a customer at [address] and I'm looking for ways to reduce my monthly bill. What programs do you offer for budget billing or energy assistance? Are there any rebates for energy-efficient appliances or smart thermostats?"`,
     tips: [
-      "LIHEAP: Federal program that helps with heating/cooling costs — many qualify.",
+      "LIHEAP: Federal program that helps with heating/cooling costs  -  many qualify.",
       "Time-of-use plans: Run dishwasher, laundry, EV charging at off-peak hours.",
       "Programmable thermostat: 1% savings per degree you adjust over 8 hours.",
-      "Audit: Seal drafts around doors/windows — massive heat/AC waste.",
+      "Audit: Seal drafts around doors/windows  -  massive heat/AC waste.",
       "LED bulbs pay back in 6 months and last 10+ years.",
     ],
   },
@@ -184,14 +184,14 @@ const SCRIPTS: Script[] = [
     tips: [
       "Credit unions often offer 1–2% lower rates than banks.",
       "Refinancing is free and only takes a small credit inquiry.",
-      "Don't extend the loan term just to lower payments — you'll pay more interest total.",
+      "Don't extend the loan term just to lower payments  -  you'll pay more interest total.",
       "If you have equity, avoid rolling negative equity into a new loan.",
-      "Call your current lender first — they may match the rate to keep your business.",
+      "Call your current lender first  -  they may match the rate to keep your business.",
     ],
   },
 ];
 
-const CUSTOM_TEMPLATE = `"Hi, I've been a loyal [COMPANY] customer for [YEARS] years and I'm currently paying $[AMOUNT]/month. I've been looking at my budget and need to reduce my expenses. I'd really love to stay with [COMPANY], but I need to get this down. Is there anything you can do for me — maybe a loyalty discount, a promotional rate, or a temporary reduction? I'd love to stay if we can make it work."`;
+const CUSTOM_TEMPLATE = `"Hi, I've been a loyal [COMPANY] customer for [YEARS] years and I'm currently paying $[AMOUNT]/month. I've been looking at my budget and need to reduce my expenses. I'd really love to stay with [COMPANY], but I need to get this down. Is there anything you can do for me  -  maybe a loyalty discount, a promotional rate, or a temporary reduction? I'd love to stay if we can make it work."`;
 
 function CustomScriptGenerator() {
   const [company, setCompany] = useState("");
@@ -208,7 +208,7 @@ function CustomScriptGenerator() {
       .replace(/\[AMOUNT\]/g, amount || "?");
     if (ask) {
       script = script.replace(
-        "Is there anything you can do for me — maybe a loyalty discount, a promotional rate, or a temporary reduction?",
+        "Is there anything you can do for me  -  maybe a loyalty discount, a promotional rate, or a temporary reduction?",
         `I'm specifically looking to ${ask}.`
       );
     }
@@ -348,7 +348,7 @@ export default function NegotiationPage() {
       {/* Banner */}
       <div className="mb-6 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4">
         <p className="font-semibold text-orange-300">Most people never ask. Those who do save an average of $500/year.</p>
-        <p className="mt-0.5 text-sm text-gray-500">Use the scripts below — they work for any bill, any company.</p>
+        <p className="mt-0.5 text-sm text-gray-500">Use the scripts below  -  they work for any bill, any company.</p>
       </div>
 
       <CustomScriptGenerator />

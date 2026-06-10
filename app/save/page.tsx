@@ -49,7 +49,7 @@ const QUICK_AMOUNTS = [50, 100, 200, 500];
 
 const MOTIVATIONAL: Record<string, string[]> = {
   house:     ["Your dream home is getting closer.", "Every dollar brings you closer to the keys."],
-  car:       ["Your next ride is within reach.", "Keep going — the open road is waiting."],
+  car:       ["Your next ride is within reach.", "Keep going  -  the open road is waiting."],
   vacation:  ["That trip is closer than you think.", "You're earning every adventure you'll take."],
   emergency: ["Peace of mind, one contribution at a time.", "Financial security is being built right now."],
   education: ["Investing in yourself always pays off.", "Your future self will thank you for this."],
@@ -60,7 +60,7 @@ const MOTIVATIONAL: Record<string, string[]> = {
 
 function getMotivation(category: string, pct: number): string {
   const msgs = MOTIVATIONAL[category] ?? MOTIVATIONAL.custom;
-  if (pct >= 75) return "Almost there — finish strong!";
+  if (pct >= 75) return "Almost there  -  finish strong!";
   if (pct >= 50) return "Halfway there. Keep it up!";
   if (pct >= 25) return msgs[1] ?? msgs[0];
   return msgs[0];
@@ -176,7 +176,7 @@ function NewGoalWizard({
         <div className="mb-5 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-              Step {w.step + 1} of 4 — {STEP_LABELS[w.step]}
+              Step {w.step + 1} of 4  -  {STEP_LABELS[w.step]}
             </p>
             <h2 className="mt-0.5 text-xl font-bold text-white">
               {w.step === 0 && "What are you saving for?"}
@@ -300,7 +300,7 @@ function NewGoalWizard({
               onClick={next}
               className="w-full rounded-xl border border-white/10 py-2.5 text-sm text-gray-500 hover:border-white/20 hover:text-white transition"
             >
-              Skip — I&apos;ll set a date later
+              Skip  -  I&apos;ll set a date later
             </button>
           </div>
         )}
@@ -354,13 +354,13 @@ function NewGoalWizard({
                   <div>
                     <p className="text-xs text-gray-500">Months</p>
                     <p className="text-base font-black text-white">
-                      {months !== null ? months : "—"}
+                      {months !== null ? months : " - "}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Finish by</p>
                     <p className="text-base font-black text-white">
-                      {months !== null ? projectedDate(months) : "—"}
+                      {months !== null ? projectedDate(months) : " - "}
                     </p>
                   </div>
                 </div>
@@ -554,7 +554,7 @@ function GoalCard({
               ? projectedDate(months)
               : goal.targetDate
               ? new Date(goal.targetDate + "-01").toLocaleDateString("en-US", { month: "short", year: "numeric" })
-              : "—"}
+              : " - "}
           </p>
         </div>
         <div className="px-4 py-3 text-center">
@@ -704,10 +704,10 @@ export default function SavePage() {
         )}
       </div>
 
-      {/* Overview card — only show when there are goals */}
+      {/* Overview card  -  only show when there are goals */}
       {goals.length > 1 && (
         <div className="mb-6 mt-5 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Overview — All Goals</p>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Overview  -  All Goals</p>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs text-gray-500">Total Saved</p>
@@ -746,7 +746,7 @@ export default function SavePage() {
             </div>
             <h2 className="mb-2 text-lg font-bold text-white">Set your first savings goal</h2>
             <p className="mb-6 text-sm text-gray-500 max-w-xs mx-auto">
-              Whether it&apos;s a house, car, vacation, or emergency fund — we&apos;ll track your progress and show you when you&apos;ll get there.
+              Whether it&apos;s a house, car, vacation, or emergency fund  -  we&apos;ll track your progress and show you when you&apos;ll get there.
             </p>
             <button
               onClick={() => setShowWizard(true)}
@@ -796,7 +796,7 @@ export default function SavePage() {
             />
           ))}
 
-          {/* Tip card — always shown at bottom when there are goals */}
+          {/* Tip card  -  always shown at bottom when there are goals */}
           <div className="rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
             <p className="text-xs font-semibold text-gray-400 mb-1">Find more money to save</p>
             <p className="text-xs text-gray-600 mb-2">

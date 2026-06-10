@@ -23,7 +23,7 @@ const REDDIT_IDEAS = [
   "I found $127/month in forgotten subscriptions using a finance app",
   "How I finally got my monthly bills under control",
   "PSA: Check your bank statements for recurring charges you forgot about",
-  "I cancelled 6 subscriptions I forgot I had — here's how",
+  "I cancelled 6 subscriptions I forgot I had  -  here's how",
 ];
 
 export default function ContentAdmin() {

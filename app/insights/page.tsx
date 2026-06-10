@@ -204,7 +204,7 @@ export default function InsightsPage() {
       {/* ── Top Merchants ─────────────────────────────────────────────────────── */}
       <section className="mb-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">
-          Top Merchants &mdash; last 90 days
+          Top Merchants  -  last 90 days
         </p>
         {topMerchants.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center">
@@ -269,7 +269,7 @@ export default function InsightsPage() {
                     </span>
                   </div>
                   {charges.length === 0 ? (
-                    <p className="text-xs text-gray-700 py-0.5">—</p>
+                    <p className="text-xs text-gray-700 py-0.5"> - </p>
                   ) : (
                     <div className="flex-1 space-y-1.5">
                       {charges.map(c => (

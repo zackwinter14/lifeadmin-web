@@ -132,7 +132,7 @@ function CardTile({ card, onUpdateBalance, onDelete }: {
       {pct > 30 && (
         <p className="mt-3 text-xs flex items-center gap-1" style={{ color: pct > 70 ? "#FF3B30" : "#FFB300" }}>
           <AlertTriangle size={11} />
-          {pct > 70 ? "High utilization — pay down to boost your score" : "Try to stay under 30% for best credit impact"}
+          {pct > 70 ? "High utilization  -  pay down to boost your score" : "Try to stay under 30% for best credit impact"}
         </p>
       )}
     </div>
@@ -217,7 +217,7 @@ function DebtPayoffPlanner({ cards }: { cards: Card[] }) {
           >
             {m}
             <span className="block text-[10px] font-normal mt-0.5 opacity-60">
-              {m === "avalanche" ? "Highest APR first — saves most interest" : "Lowest balance first — fastest wins"}
+              {m === "avalanche" ? "Highest APR first  -  saves most interest" : "Lowest balance first  -  fastest wins"}
             </span>
           </button>
         ))}
@@ -346,12 +346,12 @@ export default function CreditPage() {
 
       <HelpTip
         storageKey="credit_utilization"
-        title="Credit utilization — the number that matters most"
+        title="Credit utilization  -  the number that matters most"
         color="#38BDF8"
         body={
           <>
-            <p>Utilization is how much of your credit limit you&apos;re using. It makes up about 30% of your credit score — second only to payment history.</p>
-            <p className="mt-1"><span className="text-[#3EA758] font-semibold">Under 10%</span> is excellent. <span className="text-[#FFB300] font-semibold">10–30%</span> is good. Above 30% starts dragging your score down — even if you pay on time every month.</p>
+            <p>Utilization is how much of your credit limit you&apos;re using. It makes up about 30% of your credit score  -  second only to payment history.</p>
+            <p className="mt-1"><span className="text-[#3EA758] font-semibold">Under 10%</span> is excellent. <span className="text-[#FFB300] font-semibold">10–30%</span> is good. Above 30% starts dragging your score down  -  even if you pay on time every month.</p>
             <p className="mt-1">To improve: pay down your highest-utilization card first, or ask your card issuer for a credit limit increase (which lowers your percentage without paying anything).</p>
             <p className="mt-1">Tap any card&apos;s balance to update it after you make a payment.</p>
           </>

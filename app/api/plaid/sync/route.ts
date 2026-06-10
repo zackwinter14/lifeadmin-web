@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
   const endDate = new Date().toISOString().split("T")[0];
   const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  // Step 1: fetch transactions — each error code gets a specific response
+  // Step 1: fetch transactions  -  each error code gets a specific response
   let transactions: any[] = [];
   try {
     const txRes = await plaid.transactionsGet({
@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
       recurringCount = recurringRows.length;
     }
   } catch (e: any) {
-    // Not fatal — recurring detection may not be available for all accounts/environments
+    // Not fatal  -  recurring detection may not be available for all accounts/environments
     console.error("transactionsRecurringGet skipped:", plaidErrorCode(e) ?? e?.message);
   }
 

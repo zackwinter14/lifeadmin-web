@@ -3,12 +3,12 @@ import Link from "next/link";
 import { Check, X } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Life Admin vs Rocket Money — Better Alternative in 2025",
+  title: "Life Admin vs Rocket Money  -  Better Alternative in 2025",
   description: "Life Admin vs Rocket Money: full comparison of features, pricing, and privacy. Life Admin is free, has more features, and doesn't sell your data. See why people are switching.",
   keywords: ["Rocket Money alternative", "Life Admin vs Rocket Money", "better than Rocket Money", "Rocket Money replacement", "Rocket Money free alternative", "cancel Rocket Money"],
   alternates: { canonical: "https://lifeadminofficial.com/vs/rocket-money" },
   openGraph: {
-    title: "Life Admin vs Rocket Money — See Why People Are Switching",
+    title: "Life Admin vs Rocket Money  -  See Why People Are Switching",
     description: "Life Admin has more features, costs less, and doesn't sell your data. Free forever vs Rocket Money's $12/month.",
     url: "https://lifeadminofficial.com/vs/rocket-money",
   },
@@ -46,7 +46,7 @@ export default function VsRocketMoney() {
         The best <span className="gradient-text">Rocket Money alternative</span> in 2025
       </h1>
       <p className="mb-12 max-w-2xl text-lg text-gray-400">
-        Rocket Money charges $12/month, sells your data, and limits most features behind a paywall. Life Admin gives you more — for free. Here's the full comparison.
+        Rocket Money charges $12/month, sells your data, and limits most features behind a paywall. Life Admin gives you more  -  for free. Here's the full comparison.
       </p>
 
       {/* Quick verdict */}
@@ -89,9 +89,9 @@ export default function VsRocketMoney() {
       <h2 className="mb-6 text-2xl font-bold">Why people switch from Rocket Money to Life Admin</h2>
       <div className="mb-12 space-y-4">
         {[
-          { title: "Rocket Money costs $12/month. Life Admin is free.", body: "Life Admin's free tier is a fully working app — not a demo. You get subscription tracking, bill calendar, net worth, and push reminders at no cost. Upgrade to Pro for $6.99/month if you want bank sync and AI features. That's still $5 less per month than Rocket Money's base plan." },
-          { title: "Rocket Money sells your financial data. Life Admin doesn't.", body: "Rocket Money's business model includes selling aggregated financial data to third parties. Life Admin makes money exactly one way: Pro subscriptions. Your data is never sold, shared, or used for ads. That's the entire business model — no asterisks." },
-          { title: "Life Admin has features Rocket Money doesn't offer.", body: "Gas tracker, AI receipt scanning, bill negotiation scripts, and household sharing are all built into Life Admin. Rocket Money has none of these. If you fill up at gas stations, snap receipts, share subscriptions with a partner, or want to negotiate your bills — Rocket Money can't help." },
+          { title: "Rocket Money costs $12/month. Life Admin is free.", body: "Life Admin's free tier is a fully working app  -  not a demo. You get subscription tracking, bill calendar, net worth, and push reminders at no cost. Upgrade to Pro for $6.99/month if you want bank sync and AI features. That's still $5 less per month than Rocket Money's base plan." },
+          { title: "Rocket Money sells your financial data. Life Admin doesn't.", body: "Rocket Money's business model includes selling aggregated financial data to third parties. Life Admin makes money exactly one way: Pro subscriptions. Your data is never sold, shared, or used for ads. That's the entire business model  -  no asterisks." },
+          { title: "Life Admin has features Rocket Money doesn't offer.", body: "Gas tracker, AI receipt scanning, bill negotiation scripts, and household sharing are all built into Life Admin. Rocket Money has none of these. If you fill up at gas stations, snap receipts, share subscriptions with a partner, or want to negotiate your bills  -  Rocket Money can't help." },
           { title: "Life Admin is on iOS and the web. Same account, always in sync.", body: "One subscription covers both the iOS app and the full web app at lifeadminofficial.com. Your data syncs instantly across devices. No extra cost, no separate logins." },
         ].map(item => (
           <div key={item.title} className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -103,7 +103,7 @@ export default function VsRocketMoney() {
 
       {/* CTA */}
       <div className="rounded-2xl border border-brand/20 bg-brand/5 p-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold">Try Life Admin free — no card required</h2>
+        <h2 className="mb-2 text-2xl font-bold">Try Life Admin free  -  no card required</h2>
         <p className="mb-6 text-gray-400">Takes 60 seconds to set up. Find your first forgotten subscription today.</p>
         <Link href="/signup" className="inline-block rounded-xl bg-brand-gradient px-8 py-4 font-bold text-black hover:opacity-90 transition">
           Start free

@@ -147,7 +147,7 @@ export default function VaultPage() {
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">Savings Vault</h1>
-          <p className="mt-1 text-sm text-gray-400">Everything you have saved — accounts, cash, funds.</p>
+          <p className="mt-1 text-sm text-gray-400">Everything you have saved  -  accounts, cash, funds.</p>
         </div>
         <button
           onClick={openAdd}

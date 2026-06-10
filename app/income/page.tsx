@@ -248,7 +248,7 @@ export default function IncomePage() {
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
           <p className="mb-1 text-xs text-gray-500">One-time</p>
-          <p className="font-mono text-lg font-bold">{oneTimeTotal > 0 ? fmt(oneTimeTotal) : "—"}</p>
+          <p className="font-mono text-lg font-bold">{oneTimeTotal > 0 ? fmt(oneTimeTotal) : " - "}</p>
         </div>
       </div>
 

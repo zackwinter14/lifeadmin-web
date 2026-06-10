@@ -37,9 +37,9 @@ export default function PrivacyPage() {
           <h2 className="mb-3 text-xl font-semibold text-white">4. Data Sharing</h2>
           <p>Life Admin Finance Tracker does not sell your personal data. We share data only with trusted third-party services required to operate the app, including:</p>
           <ul className="mt-3 list-disc space-y-2 pl-6">
-            <li><strong className="text-white">Supabase</strong> — secure database and authentication</li>
-            <li><strong className="text-white">Plaid</strong> — bank account connection (Pro users only)</li>
-            <li><strong className="text-white">Apple / RevenueCat</strong> — payment processing for iOS subscriptions</li>
+            <li><strong className="text-white">Supabase</strong>  -  secure database and authentication</li>
+            <li><strong className="text-white">Plaid</strong>  -  bank account connection (Pro users only)</li>
+            <li><strong className="text-white">Apple / RevenueCat</strong>  -  payment processing for iOS subscriptions</li>
           </ul>
         </section>
 

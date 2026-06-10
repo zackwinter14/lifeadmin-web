@@ -86,7 +86,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
         <h2 className="mb-2 font-bold">Take control of your finances with Life Admin</h2>
         <p className="mb-4 text-sm text-gray-400">Free subscription tracker, bill manager, and AI finance assistant.</p>
         <Link href="/signup" className="inline-block rounded-xl bg-brand-gradient px-6 py-3 text-sm font-bold text-black hover:opacity-90 transition">
-          Start free — no card needed
+          Start free  -  no card needed
         </Link>
       </div>
     </div>

@@ -363,7 +363,7 @@ function BudgetPlanner() {
                   ? `You're ${fmt(Math.abs(remaining))} over budget. Something needs to go.`
                   : pct > 70
                   ? `${pct}% of your income is already committed. Most financial experts recommend under 50%.`
-                  : `You have ${fmt(remaining)} left after bills — that's ${100 - pct}% of your income.`}
+                  : `You have ${fmt(remaining)} left after bills  -  that's ${100 - pct}% of your income.`}
               </p>
 
               <Link
@@ -433,7 +433,7 @@ export default function ToolsPage() {
 
       <div className="mb-12 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-300">
-          Free tools — no account required
+          Free tools  -  no account required
         </div>
         <h1 className="text-4xl font-bold md:text-5xl">
           Free money tools
@@ -453,7 +453,7 @@ export default function ToolsPage() {
       <div className="mt-12 rounded-2xl border border-brand/20 bg-brand/5 p-8 text-center">
         <h3 className="text-2xl font-bold mb-2">Want this done automatically?</h3>
         <p className="text-gray-400 mb-6 max-w-md mx-auto">
-          Life Admin connects to your bank and does all of this for you — finding every subscription,
+          Life Admin connects to your bank and does all of this for you  -  finding every subscription,
           calculating your budget, and alerting you before anything hits.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -461,7 +461,7 @@ export default function ToolsPage() {
             href="/signup"
             className="rounded-xl bg-brand-gradient px-8 py-3.5 font-semibold text-black hover:opacity-90"
           >
-            Start free — no card required
+            Start free  -  no card required
           </Link>
           <a
             href="https://apps.apple.com/app/id6762589970"

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const { userId, ...fields } = await req.json();
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 });
 
-    // Try UPDATE — works for all users with an existing profile row.
+    // Try UPDATE  -  works for all users with an existing profile row.
     const { data: updated, error: updateError } = await supabase
       .from("profiles")
       .update(fields)
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    // No row existed — create a minimal profile and apply the fields.
+    // No row existed  -  create a minimal profile and apply the fields.
     if (!updated || updated.length === 0) {
       const { error: insertError } = await supabase
         .from("profiles")

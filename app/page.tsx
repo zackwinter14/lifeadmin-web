@@ -264,7 +264,7 @@ function CalendarMockup() {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#0f0f0f] p-4 shadow-2xl">
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-sm font-semibold text-white">Bill Calendar — May</span>
+        <span className="text-sm font-semibold text-white">Bill Calendar  -  May</span>
         <span className="text-xs text-gray-500">$452.96 upcoming</span>
       </div>
       <div className="space-y-2">
@@ -333,7 +333,7 @@ function ReceiptMockup() {
     <div className="rounded-2xl border border-white/10 bg-[#0f0f0f] p-4 shadow-2xl">
       <div className="mb-4 text-sm font-semibold text-white">AI Receipt Scan</div>
       <div className="mb-3 flex items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] py-6 text-gray-600 text-xs">
-        Receipt scanned — processing...
+        Receipt scanned  -  processing...
       </div>
       {[
         { label: "Merchant", value: "Whole Foods Market" },
@@ -438,16 +438,16 @@ function Row({ label, us, them1, them2 }: { label: string; us: string; them1: st
 }
 
 const features = [
-  { icon: <PiggyBank className="text-brand" />, title: "Savings goals", body: "Set a goal for anything — house, car, vacation, emergency fund. Track progress and see your exact finish date update in real time as you save more." },
+  { icon: <PiggyBank className="text-brand" />, title: "Savings goals", body: "Set a goal for anything  -  house, car, vacation, emergency fund. Track progress and see your exact finish date update in real time as you save more." },
   { icon: <TrendingUp className="text-brand" />, title: "Goal projections", body: "Enter your monthly contribution and Life Admin calculates exactly when you'll hit your target. Adjust anytime and the projection updates instantly." },
-  { icon: <Zap className="text-brand" />, title: "Auto-detect subscriptions", body: "Connect your bank and Life Admin surfaces every recurring charge from 90 days of history — including annual ones and ones you completely forgot about." },
-  { icon: <Bot className="text-brand" />, title: "AI auto-organize", body: "Every charge from your bank is instantly sorted into subscriptions, bills, and expenses. No manual tagging — AI handles the whole thing in seconds." },
+  { icon: <Zap className="text-brand" />, title: "Auto-detect subscriptions", body: "Connect your bank and Life Admin surfaces every recurring charge from 90 days of history  -  including annual ones and ones you completely forgot about." },
+  { icon: <Bot className="text-brand" />, title: "AI auto-organize", body: "Every charge from your bank is instantly sorted into subscriptions, bills, and expenses. No manual tagging  -  AI handles the whole thing in seconds." },
   { icon: <Wallet className="text-brand" />, title: "Income tracking", body: "Every paycheck is detected automatically from your bank. See your real monthly income and exactly how much is going toward savings vs bills." },
   { icon: <Calendar className="text-brand" />, title: "Bill calendar", body: "Every upcoming bill laid out by day. Know exactly how much is safe to move to savings without risking an overdraft." },
   { icon: <Receipt className="text-brand" />, title: "Receipt scanning", body: "Snap a photo of any receipt. AI reads the merchant, amount, and date automatically and logs it. See exactly where your spending is going." },
   { icon: <Bell className="text-brand" />, title: "Bill reminders", body: "Get push notifications before any bill or subscription renews. No more surprise charges wiping out a month of savings progress." },
   { icon: <Users className="text-brand" />, title: "Household sharing", body: "Save together. Create or join a household to see everyone's subscriptions and bills. Stop paying for the same streaming service twice." },
-  { icon: <ShieldCheck className="text-brand" />, title: "Bank-grade security", body: "Read-only Plaid access. Your credentials never touch our servers. We can see your transactions — we can't touch your money." },
+  { icon: <ShieldCheck className="text-brand" />, title: "Bank-grade security", body: "Read-only Plaid access. Your credentials never touch our servers. We can see your transactions  -  we can't touch your money." },
 ];
 
 const testimonials = [
@@ -493,7 +493,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg text-gray-400 md:text-xl"
           >
-            Set a savings goal — house, car, vacation, emergency fund — and Life Admin tracks your progress, shows exactly when you&apos;ll get there, and helps you find the money to get there faster.
+            Set a savings goal  -  house, car, vacation, emergency fund  -  and Life Admin tracks your progress, shows exactly when you&apos;ll get there, and helps you find the money to get there faster.
           </motion.p>
 
           {/* Goal type pills */}
@@ -575,7 +575,7 @@ export default function Home() {
               <span className="gradient-text">Watch it grow.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-gray-400">
-              Track every savings goal alongside your bills and subscriptions. Know exactly when you&apos;ll get there — and find the money to get there faster.
+              Track every savings goal alongside your bills and subscriptions. Know exactly when you&apos;ll get there  -  and find the money to get there faster.
             </p>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
@@ -597,9 +597,9 @@ export default function Home() {
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
             {[
-              { step: "01", icon: <PiggyBank size={22} className="text-brand" />, title: "Pick what you're saving for", body: "Choose a goal — house down payment, new car, emergency fund, vacation. Set your target amount and how much you can put away each month." },
+              { step: "01", icon: <PiggyBank size={22} className="text-brand" />, title: "Pick what you're saving for", body: "Choose a goal  -  house down payment, new car, emergency fund, vacation. Set your target amount and how much you can put away each month." },
               { step: "02", icon: <TrendingDown size={22} className="text-brand" />, title: "Find money you're wasting", body: "We surface every subscription and bill you're paying. Most people find $150-300/month in charges they forgot about. Cancel them. Redirect that money to your goal." },
-              { step: "03", icon: <TrendingUp size={22} className="text-brand" />, title: "Watch your savings grow", body: "Track progress toward every goal in real time. Life Admin tells you exactly when you'll hit your target — and recalculates the moment you add more money." },
+              { step: "03", icon: <TrendingUp size={22} className="text-brand" />, title: "Watch your savings grow", body: "Track progress toward every goal in real time. Life Admin tells you exactly when you'll hit your target  -  and recalculates the moment you add more money." },
             ].map((s, i) => (
               <FadeIn key={s.step} delay={i * 0.15}>
                 <div className="relative h-full rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -618,7 +618,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 1 — Savings Goals */}
+      {/* Spotlight 1  -  Savings Goals */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
@@ -630,12 +630,12 @@ export default function Home() {
                 Set a goal. Know exactly when you&apos;ll hit it.
               </h2>
               <p className="mb-6 text-gray-400">
-                Pick what you&apos;re saving for — a house, car, vacation, emergency fund, or anything else. Tell us your monthly contribution and Life Admin calculates your exact finish date. Add money anytime and watch your progress update instantly.
+                Pick what you&apos;re saving for  -  a house, car, vacation, emergency fund, or anything else. Tell us your monthly contribution and Life Admin calculates your exact finish date. Add money anytime and watch your progress update instantly.
               </p>
               <ul className="space-y-3">
                 {[
                   "House, car, vacation, emergency fund, education, and more",
-                  "Live projection — shows exactly when you'll reach your goal",
+                  "Live projection  -  shows exactly when you'll reach your goal",
                   "Add money in one tap with quick amounts or custom entry",
                   "Track multiple goals at the same time",
                 ].map((f) => (
@@ -651,7 +651,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 2 — Find money to save */}
+      {/* Spotlight 2  -  Find money to save */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
@@ -664,7 +664,7 @@ export default function Home() {
                 Find the money hiding in your bank account
               </h2>
               <p className="mb-6 text-gray-400">
-                The average person pays for 14 subscriptions and thinks they have 8. Life Admin surfaces every recurring charge — including the ones you completely forgot about — so you can cancel the ones draining your savings goals.
+                The average person pays for 14 subscriptions and thinks they have 8. Life Admin surfaces every recurring charge  -  including the ones you completely forgot about  -  so you can cancel the ones draining your savings goals.
               </p>
               <ul className="space-y-3">
                 {[
@@ -684,7 +684,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 3 — Bill Calendar */}
+      {/* Spotlight 3  -  Bill Calendar */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
@@ -717,7 +717,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Spotlight 4 — AI Organize */}
+      {/* Spotlight 4  -  AI Organize */}
       <section className="border-t border-white/5 px-6 py-16 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-16 md:grid-cols-2">
@@ -730,12 +730,12 @@ export default function Home() {
                 Connect your bank. AI finds everything.
               </h2>
               <p className="mb-6 text-gray-400">
-                Tap "AI Organize" and every merchant from your bank is instantly classified as a subscription, bill, or expense. Most people find 3-4 charges they completely forgot about — and cancel them on the spot.
+                Tap "AI Organize" and every merchant from your bank is instantly classified as a subscription, bill, or expense. Most people find 3-4 charges they completely forgot about  -  and cancel them on the spot.
               </p>
               <ul className="space-y-3">
                 {[
                   "90 days of history scanned in seconds",
-                  "Every charge sorted automatically — no manual work",
+                  "Every charge sorted automatically  -  no manual work",
                   "Forgotten subscriptions flagged immediately",
                   "Cancel and redirect savings to your goals",
                 ].map((f) => (
@@ -812,7 +812,7 @@ export default function Home() {
               Free to start. <br />
               <span className="gradient-text">No paywalls hiding the good stuff.</span>
             </h2>
-            <p className="mt-4 text-gray-400">The free tier is a fully working app — not a demo. Upgrade to Pro only if you want bank sync and AI features.</p>
+            <p className="mt-4 text-gray-400">The free tier is a fully working app  -  not a demo. Upgrade to Pro only if you want bank sync and AI features.</p>
           </FadeIn>
 
           <FadeIn delay={0.1} className="mt-12 overflow-x-auto rounded-2xl border border-white/10">
@@ -852,16 +852,16 @@ export default function Home() {
               Free Resource Center
             </div>
             <h2 className="text-3xl font-bold md:text-4xl">Personal Finance Guides</h2>
-            <p className="mt-3 text-gray-400">Practical advice on budgeting, saving, subscriptions, and debt — no jargon.</p>
+            <p className="mt-3 text-gray-400">Practical advice on budgeting, saving, subscriptions, and debt  -  no jargon.</p>
           </FadeIn>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { title: "How to Build an Emergency Fund", desc: "Step-by-step guide to building 3 months of expenses, starting with $1,000.", href: "/blog/how-to-build-an-emergency-fund", tag: "Savings" },
               { title: "Find & Cancel Forgotten Subscriptions", desc: "Most people have 10+ subscriptions and only remember half. Here's how to find them all.", href: "/blog/how-to-find-and-cancel-forgotten-subscriptions", tag: "Subscriptions" },
               { title: "The 50/30/20 Budget Rule", desc: "The most popular budgeting framework, explained with real numbers.", href: "/blog/50-30-20-budget-rule-explained", tag: "Budgeting" },
-              { title: "Debt Snowball vs Avalanche", desc: "Two proven payoff strategies — which one is right for your situation?", href: "/blog/debt-snowball-vs-avalanche", tag: "Debt" },
+              { title: "Debt Snowball vs Avalanche", desc: "Two proven payoff strategies  -  which one is right for your situation?", href: "/blog/debt-snowball-vs-avalanche", tag: "Debt" },
               { title: "How to Track Your Net Worth", desc: "The one metric that tells you whether your financial life is improving.", href: "/blog/how-to-track-net-worth", tag: "Net Worth" },
-              { title: "50 Ways to Cut Monthly Expenses", desc: "A specific, actionable list — organized by category with estimated savings.", href: "/blog/ways-to-lower-monthly-expenses", tag: "Save Money" },
+              { title: "50 Ways to Cut Monthly Expenses", desc: "A specific, actionable list  -  organized by category with estimated savings.", href: "/blog/ways-to-lower-monthly-expenses", tag: "Save Money" },
             ].map((g, i) => (
               <FadeIn key={g.href} delay={i * 0.06}>
                 <Link href={g.href} className="block rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-brand/30 hover:bg-brand/[0.02]">
@@ -888,13 +888,13 @@ export default function Home() {
               What are you saving for?
             </h2>
             <p className="mt-4 text-lg text-gray-400">
-              Set your first goal in under 2 minutes. Free — no bank required.
+              Set your first goal in under 2 minutes. Free  -  no bank required.
             </p>
             <Link
               href="/signup"
               className="mt-8 inline-block rounded-xl bg-brand-gradient px-10 py-5 text-lg font-semibold text-black transition hover:opacity-90"
             >
-              Start saving — it&apos;s free
+              Start saving  -  it&apos;s free
             </Link>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
               <CheckCircle2 size={16} className="text-brand" />

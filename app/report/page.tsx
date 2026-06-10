@@ -147,7 +147,7 @@ export default function ReportPage() {
         </button>
         <div className="text-center">
           <p className="text-lg font-bold text-white">{MONTH_NAMES[month]} {year}</p>
-          {isCurrentMonth && <p className="text-xs text-gray-500">Current month — data may be partial</p>}
+          {isCurrentMonth && <p className="text-xs text-gray-500">Current month  -  data may be partial</p>}
         </div>
         <button
           onClick={nextMonth}
@@ -166,8 +166,8 @@ export default function ReportPage() {
           {[
             { label: "Income", value: fmt(income), color: "#00C853", sub: income === 0 ? "not set" : "/mo" },
             { label: "Fixed Costs", value: fmt(fixedTotal), color: "#FFB300", sub: `${items.length} items` },
-            { label: "Variable", value: txns.length > 0 ? fmt(varSpend) : "—", color: "#38BDF8", sub: `${txns.length} txns` },
-            { label: "Saved", value: income > 0 ? fmt(Math.abs(saved)) : "—", color: rateColor, sub: saved < 0 ? "over budget" : `${savingsRate.toFixed(0)}% rate` },
+            { label: "Variable", value: txns.length > 0 ? fmt(varSpend) : " - ", color: "#38BDF8", sub: `${txns.length} txns` },
+            { label: "Saved", value: income > 0 ? fmt(Math.abs(saved)) : " - ", color: rateColor, sub: saved < 0 ? "over budget" : `${savingsRate.toFixed(0)}% rate` },
           ].map(s => (
             <div key={s.label}>
               <p className="text-xs text-gray-500 mb-0.5">{s.label}</p>

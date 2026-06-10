@@ -58,7 +58,7 @@ function fmt(n: number | null | undefined) {
 }
 
 function fmtDate(d: string | null | undefined) {
-  if (!d) return "—";
+  if (!d) return " - ";
   try {
     const dt = new Date(d);
     return dt.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -229,7 +229,7 @@ export default function RecurringPage() {
         <div>
           <h1 className="text-3xl font-bold">Recurring</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Every charge that comes back — subs, bills, trials. {recurring.length} item{recurring.length === 1 ? "" : "s"}.
+            Every charge that comes back  -  subs, bills, trials. {recurring.length} item{recurring.length === 1 ? "" : "s"}.
           </p>
         </div>
         <Link

@@ -109,7 +109,7 @@ export default function GasPage() {
         setTxns(fillups);
         try { localStorage.setItem(`gas_txns_${user.id}`, JSON.stringify(fillups)); } catch {}
       } else {
-        // Table may not exist yet — fall back to localStorage
+        // Table may not exist yet  -  fall back to localStorage
         try {
           const stored = localStorage.getItem(`gas_txns_${user.id}`) || localStorage.getItem("gas_txns");
           if (stored) setTxns(JSON.parse(stored));
@@ -158,7 +158,7 @@ export default function GasPage() {
         note: inserted.note ?? undefined,
       };
     } else {
-      // Supabase failed (table may not exist) — use local ID
+      // Supabase failed (table may not exist)  -  use local ID
       newTx = {
         id: `g${Date.now()}`,
         merchant: form.merchant,
@@ -249,9 +249,9 @@ export default function GasPage() {
           )}
         </div>
         {[
-          { label: "Avg / gallon", value: avgPpg > 0 ? `$${avgPpg.toFixed(2)}` : "—" },
-          { label: "% of income", value: income > 0 ? `${gasPct.toFixed(1)}%` : "—", color: gasPct > 5 ? "#FF9500" : "#34C759" },
-          { label: "Total gallons", value: totalGal > 0 ? `${totalGal.toFixed(1)} gal` : "—" },
+          { label: "Avg / gallon", value: avgPpg > 0 ? `$${avgPpg.toFixed(2)}` : " - " },
+          { label: "% of income", value: income > 0 ? `${gasPct.toFixed(1)}%` : " - ", color: gasPct > 5 ? "#FF9500" : "#34C759" },
+          { label: "Total gallons", value: totalGal > 0 ? `${totalGal.toFixed(1)} gal` : " - " },
         ].map(s => (
           <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
             <p className="mb-1 text-xs text-gray-500">{s.label}</p>
@@ -343,7 +343,7 @@ export default function GasPage() {
             {/* Price per gallon trend */}
             {ppgData.length >= 2 && (
               <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 md:col-span-2">
-                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">Price Per Gallon — Last {ppgData.length} Fill-ups</p>
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">Price Per Gallon  -  Last {ppgData.length} Fill-ups</p>
                 <p className="mb-4 font-mono text-2xl font-black text-white">
                   ${ppgData[ppgData.length - 1]?.ppg.toFixed(2)}<span className="text-sm font-normal text-gray-500"> most recent</span>
                 </p>

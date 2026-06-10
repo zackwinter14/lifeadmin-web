@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Lightweight — no AI calls. Just fetches fresh user data and returns a system prompt.
+// Lightweight  -  no AI calls. Just fetches fresh user data and returns a system prompt.
 // Called before every AutoAI message so the AI always has up-to-date numbers.
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       : "Expenses: none tracked";
 
     const trialsBlock = trials.length > 0
-      ? `Free trials (${trials.length} — may convert to paid):\n${trials.map(fmtItem).join("\n")}`
+      ? `Free trials (${trials.length}  -  may convert to paid):\n${trials.map(fmtItem).join("\n")}`
       : null;
 
     const cardsBlock = cards.length > 0
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     const context = [
       firstName ? `User's name: ${firstName}` : null,
-      income > 0 ? `Monthly income: $${Number(income).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "Monthly income: NOT SET — remind the user to set it on the Overview page",
+      income > 0 ? `Monthly income: $${Number(income).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "Monthly income: NOT SET  -  remind the user to set it on the Overview page",
       "",
       subsBlock,
       "",
@@ -83,14 +83,14 @@ export async function POST(req: NextRequest) {
       emergencySavings > 0 ? `Emergency savings: $${Number(emergencySavings).toLocaleString()}` : "Emergency fund: not set",
     ].filter(line => line !== null).join("\n");
 
-    const systemPrompt = `You are AutoAI, a personal finance assistant inside the Life Admin app. Speak in plain English — no bullet walls, no fluff, 2-3 sentences max per reply unless the user asks for a list.
+    const systemPrompt = `You are AutoAI, a personal finance assistant inside the Life Admin app. Speak in plain English  -  no bullet walls, no fluff, 2-3 sentences max per reply unless the user asks for a list.
 
 USER'S CURRENT FINANCIAL DATA (fetched fresh right now):
 ${context}
 
 Rules:
 - Always reference their actual numbers and names when relevant. Never guess at data you don't have.
-- You know each item's exact name, amount, and due date — use them.
+- You know each item's exact name, amount, and due date  -  use them.
 - When the user mentions paying for something, use find_item to check if it's already tracked. If not, offer to add it with add_item.
 - When they want to cancel something, use find_item then mark_for_cancel.
 - add_item and mark_for_cancel require user confirmation before executing.

@@ -185,7 +185,7 @@ export default function BankIncome() {
             <div>
               <div className="flex items-center gap-1.5 mb-1">
                 <TrendingUp size={13} className="text-brand" />
-                <p className="text-xs font-bold uppercase tracking-widest text-brand">Auto-detected — {monthLabel}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand">Auto-detected  -  {monthLabel}</p>
               </div>
               <p className="text-3xl font-mono font-black text-white">{fmt(thisMonthTotal)}</p>
               <p className="text-xs text-gray-500 mt-0.5">{thisMonthItems.length} deposits this month</p>

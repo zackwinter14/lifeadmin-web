@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Life Admin — Savings Goals, Bill Tracker & Subscription Manager",
+    default: "Life Admin  -  Savings Goals, Bill Tracker & Subscription Manager",
     template: "%s | Life Admin",
   },
   description:
@@ -130,7 +130,7 @@ export const metadata: Metadata = {
     canonical: "https://lifeadminofficial.com",
   },
   openGraph: {
-    title: "Life Admin — Save for the Things That Actually Matter",
+    title: "Life Admin  -  Save for the Things That Actually Matter",
     description:
       "Set savings goals for a house, car, vacation, or anything else. Life Admin tracks your progress, shows when you'll get there, and helps you find money to save faster.",
     url: "https://lifeadminofficial.com",
@@ -139,7 +139,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Life Admin — Track Bills, Cancel Subscriptions, Save Money",
+    title: "Life Admin  -  Track Bills, Cancel Subscriptions, Save Money",
     description: "Find every recurring charge in your bank. Cancel what you don't use. Save $240+/month.",
   },
   robots: {

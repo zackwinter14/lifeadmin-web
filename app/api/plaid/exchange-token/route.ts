@@ -26,14 +26,14 @@ export async function POST(req: NextRequest) {
     const accessToken = exchangeRes.data.access_token;
     const itemId = exchangeRes.data.item_id;
 
-    // Save access token — use update first, fall back to upsert
+    // Save access token  -  use update first, fall back to upsert
     // Do NOT include plaid_item_id in case that column doesn't exist
     const { error: updateErr } = await supabase
       .from("profiles")
       .update({ plaid_access_token: accessToken })
       .eq("id", userId);
     if (updateErr) {
-      // Row might not exist yet — try upsert with just the essential field
+      // Row might not exist yet  -  try upsert with just the essential field
       await supabase.from("profiles").upsert({ id: userId, plaid_access_token: accessToken });
     }
 

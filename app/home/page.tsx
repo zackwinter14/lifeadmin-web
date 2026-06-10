@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { BookOpen, DollarSign, CreditCard, TrendingUp, Shield, ReceiptText, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Personal Finance Resource Center — Life Admin",
+  title: "Personal Finance Resource Center  -  Life Admin",
   description: "Free personal finance guides, budgeting advice, subscription tracking tips, savings strategies, and debt payoff resources. Practical money advice for real people.",
   keywords: [
     "personal finance guides", "budgeting tips", "how to save money", "cancel subscriptions",
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://lifeadminofficial.com/home" },
   openGraph: {
-    title: "Personal Finance Resource Center — Life Admin",
-    description: "Free practical guides on saving, budgeting, subscriptions, debt, and building wealth — no jargon, no fluff.",
+    title: "Personal Finance Resource Center  -  Life Admin",
+    description: "Free practical guides on saving, budgeting, subscriptions, debt, and building wealth  -  no jargon, no fluff.",
     url: "https://lifeadminofficial.com/home",
     siteName: "Life Admin",
     type: "website",
@@ -38,7 +38,7 @@ const TOPICS = [
   {
     icon: DollarSign,
     label: "Budgeting",
-    desc: "A budget isn't a restriction — it's a record of your priorities. Here's how to build one.",
+    desc: "A budget isn't a restriction  -  it's a record of your priorities. Here's how to build one.",
     href: "/blog/budgeting-for-beginners",
     color: "#FFB300",
   },
@@ -76,11 +76,11 @@ const FAQS = [
   },
   {
     q: "How much should an emergency fund be?",
-    a: "Three months of essential expenses for most people — rent, utilities, groceries, transportation, insurance, and minimum debt payments. Six months if your income is variable or your industry is volatile. For most households this works out to $6,000 to $15,000.",
+    a: "Three months of essential expenses for most people  -  rent, utilities, groceries, transportation, insurance, and minimum debt payments. Six months if your income is variable or your industry is volatile. For most households this works out to $6,000 to $15,000.",
   },
   {
     q: "What's the fastest way to pay off credit card debt?",
-    a: "Target the highest-interest card first (the avalanche method) while making minimum payments on all others. This saves the most money mathematically. If you need quick wins to stay motivated, pay off the smallest balance first (the snowball method) — it's slightly less efficient but more sustainable for many people.",
+    a: "Target the highest-interest card first (the avalanche method) while making minimum payments on all others. This saves the most money mathematically. If you need quick wins to stay motivated, pay off the smallest balance first (the snowball method)  -  it's slightly less efficient but more sustainable for many people.",
   },
   {
     q: "How do I start tracking my net worth?",
@@ -88,7 +88,7 @@ const FAQS = [
   },
   {
     q: "Is the 50/30/20 budget rule realistic?",
-    a: "It's a useful starting framework, not a hard rule. In high cost-of-living areas, keeping needs under 50% is difficult — rent alone can push past that. Use the percentages as directional targets: minimize needs, keep wants honest, protect the savings allocation. The principle matters more than hitting the exact split.",
+    a: "It's a useful starting framework, not a hard rule. In high cost-of-living areas, keeping needs under 50% is difficult  -  rent alone can push past that. Use the percentages as directional targets: minimize needs, keep wants honest, protect the savings allocation. The principle matters more than hitting the exact split.",
   },
 ];
 
@@ -176,12 +176,12 @@ export default async function HomePage() {
         <div className="space-y-4 text-gray-400 leading-relaxed">
           <p>
             Life Admin Finance Tracker was built by Zack, an Army veteran who grew up without much money and
-            learned personal finance the hard way — through trial, error, and the frustration of watching
+            learned personal finance the hard way  -  through trial, error, and the frustration of watching
             existing apps charge $60 to $120 per year just to show you your own bank transactions.
           </p>
           <p>
             The guides on this site are written to answer the questions real people have when they're trying
-            to get their financial life together. Not abstract theory — concrete answers to concrete questions.
+            to get their financial life together. Not abstract theory  -  concrete answers to concrete questions.
             How much emergency fund is enough? Which debt do I pay off first? How do I find out what I'm
             actually paying for? What does a real budget look like?
           </p>
@@ -296,7 +296,7 @@ export default async function HomePage() {
             className="rounded-xl bg-brand px-7 py-3 font-semibold text-black transition hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #3EA758, #00C853)" }}
           >
-            Start free — no card needed
+            Start free  -  no card needed
           </Link>
           <Link href="/blog" className="rounded-xl border border-white/10 bg-white/5 px-7 py-3 font-semibold text-white transition hover:bg-white/10">
             Browse all guides

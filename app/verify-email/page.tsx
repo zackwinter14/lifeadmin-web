@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
     }
     check();
 
-    // Auto-poll every 5 seconds — when they click the email link in another tab,
+    // Auto-poll every 5 seconds  -  when they click the email link in another tab,
     // we'll detect it here and redirect them to the dashboard
     const interval = setInterval(async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -102,7 +102,7 @@ export default function VerifyEmailPage() {
           {resent && (
             <div className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-brand/30 bg-brand/10 p-3 text-sm text-brand">
               <Check size={15} />
-              Email sent — check your inbox.
+              Email sent  -  check your inbox.
             </div>
           )}
 
@@ -123,7 +123,7 @@ export default function VerifyEmailPage() {
                   <RefreshCw size={15} className="animate-spin" /> Checking...
                 </>
               ) : (
-                "I've confirmed — let me in"
+                "I've confirmed  -  let me in"
               )}
             </button>
 

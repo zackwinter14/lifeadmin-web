@@ -38,10 +38,10 @@ const LESSONS: Lesson[] = [
     title: "Build Your Emergency Fund",
     summary: "3–6 months of expenses in a high-yield savings account.",
     body: [
-      "Start small — even $500 covers most single emergencies.",
+      "Start small  -  even $500 covers most single emergencies.",
       "Goal: 3 months of essential expenses (rent + food + utilities + transport).",
       "Stable job? 3 months is fine. Variable income? Aim for 6.",
-      "Keep it in a HYSA (High-Yield Savings Account) — earn 4–5% APY instead of 0.01%.",
+      "Keep it in a HYSA (High-Yield Savings Account)  -  earn 4–5% APY instead of 0.01%.",
       "Don't touch it unless it's a true emergency. Car repair = emergency. Sale at the mall = not.",
     ],
   },
@@ -54,7 +54,7 @@ const LESSONS: Lesson[] = [
     summary: "Two proven strategies to wipe out debt faster.",
     body: [
       "Avalanche: Pay minimums on all debts. Put extra money toward the highest interest rate first. Saves the most money mathematically.",
-      "Snowball: Pay minimums on all debts. Put extra toward the smallest balance first. Wins psychologically — quick wins keep you motivated.",
+      "Snowball: Pay minimums on all debts. Put extra toward the smallest balance first. Wins psychologically  -  quick wins keep you motivated.",
       "Which to use: If you need motivation, do Snowball. If you want to save the most interest, do Avalanche.",
       "Both beat doing nothing. Pick one and stick to it.",
     ],
@@ -67,7 +67,7 @@ const LESSONS: Lesson[] = [
     title: "Slash Your Subscriptions",
     summary: "The average person wastes $300+/month on unused subscriptions.",
     body: [
-      "List every subscription you pay for — check your bank statement for recurring charges.",
+      "List every subscription you pay for  -  check your bank statement for recurring charges.",
       "Ask: Did I use this in the last 30 days? If no, cancel it.",
       "Share plans: Spotify, Netflix, Apple One, YouTube Premium all allow family plans.",
       "Pause instead of cancel: Many services (Hulu, Amazon) let you pause for 1–3 months.",
@@ -81,14 +81,14 @@ const LESSONS: Lesson[] = [
     color: "#AF52DE",
     category: "Credit",
     title: "How Credit Scores Work",
-    summary: "5 factors that determine your score — and how to improve each.",
+    summary: "5 factors that determine your score  -  and how to improve each.",
     body: [
       "Payment History (35%): Never miss a payment. Set autopay for at least the minimum.",
       "Credit Utilization (30%): Keep balances below 30% of your limit. Below 10% is ideal.",
       "Length of History (15%): Keep old cards open, even if you don't use them.",
       "Credit Mix (10%): Having both revolving (credit cards) and installment (loans) helps.",
       "New Inquiries (10%): Don't apply for multiple cards at once. Each hard inquiry drops your score temporarily.",
-      "Quick win: Ask your credit card company to increase your limit — it improves utilization without spending more.",
+      "Quick win: Ask your credit card company to increase your limit  -  it improves utilization without spending more.",
     ],
   },
   {
@@ -100,9 +100,9 @@ const LESSONS: Lesson[] = [
     summary: "Compound interest is the most powerful force in personal finance.",
     body: [
       "If you invest $200/month from age 22 to 32 and stop, you'll have more at 65 than someone who invests $200/month from age 32 to 65.",
-      "That's 10 years of contributions vs 33 years — and the early starter wins. That's compound interest.",
-      "Step 1: Get your full employer 401k match — it's a 50–100% instant return.",
-      "Step 2: Max out a Roth IRA ($7,000/year in 2025) — tax-free growth forever.",
+      "That's 10 years of contributions vs 33 years  -  and the early starter wins. That's compound interest.",
+      "Step 1: Get your full employer 401k match  -  it's a 50–100% instant return.",
+      "Step 2: Max out a Roth IRA ($7,000/year in 2025)  -  tax-free growth forever.",
       "Step 3: Max out your 401k ($23,500/year in 2025).",
       "Index funds (like S&P 500 ETFs) beat most actively managed funds over 20+ year periods.",
     ],
@@ -118,7 +118,7 @@ const LESSONS: Lesson[] = [
       "Call retention/loyalty department (not general customer service).",
       "Say: 'I've been a customer for X years and I'm considering canceling. I found a better rate with [competitor].'",
       "They'll often offer 20–40% off immediately.",
-      "If the first agent says no, hang up and call again — different agents have different authority.",
+      "If the first agent says no, hang up and call again  -  different agents have different authority.",
       "Bills that almost always work: internet, cable, phone, gym, insurance, medical.",
       "Best time to call: weekday mornings when call centers are less busy.",
     ],
@@ -135,7 +135,7 @@ const LESSONS: Lesson[] = [
       "Examples: Car maintenance ($50/mo), Vacation ($100/mo), Holiday gifts ($75/mo), Annual insurance ($60/mo).",
       "Calculate: Annual expense ÷ 12 = monthly amount to save.",
       "Keep each fund in a separate savings account or labeled bucket in your HYSA.",
-      "When the expense hits, the money is already there — no stress, no debt.",
+      "When the expense hits, the money is already there  -  no stress, no debt.",
     ],
   },
 ];
@@ -247,7 +247,7 @@ export default function SchoolPage() {
       <div className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5 text-center">
         <GraduationCap size={24} className="mx-auto mb-2 text-cyan-400" />
         <p className="font-semibold text-cyan-300">Have a finance question?</p>
-        <p className="mt-1 text-sm text-gray-500">Ask AutoAI — your personal finance assistant.</p>
+        <p className="mt-1 text-sm text-gray-500">Ask AutoAI  -  your personal finance assistant.</p>
         <button
           onClick={() => router.push("/autoai")}
           className="mt-3 rounded-xl px-5 py-2 text-sm font-semibold text-black"

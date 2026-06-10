@@ -134,7 +134,7 @@ export default function HistoryPage() {
         color="#38BDF8"
         body={
           <>
-            <p>This shows every transaction pulled from your connected bank account. Merchant names are cleaned up — &ldquo;NFLX*8005714700&rdquo; becomes &ldquo;Netflix&rdquo; — so they&apos;re easier to read at a glance.</p>
+            <p>This shows every transaction pulled from your connected bank account. Merchant names are cleaned up  -  &ldquo;NFLX*8005714700&rdquo; becomes &ldquo;Netflix&rdquo;  -  so they&apos;re easier to read at a glance.</p>
             <p className="mt-1">Tap any row to reveal the original bank description, in case you don&apos;t recognize a simplified name.</p>
             <p className="mt-1">Use the <span className="text-white font-medium">7d / 30d / 90d</span> buttons to zoom out and see patterns over time. The income and expense totals at the top update as you filter.</p>
           </>

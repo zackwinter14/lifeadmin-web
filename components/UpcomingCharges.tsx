@@ -209,7 +209,7 @@ export default function UpcomingCharges() {
         storageKey="upcoming_charges"
         title="How upcoming charges are found"
         color="#3EA758"
-        body="We scan your bank history for recurring patterns — same merchant, similar amount, regular schedule — and predict your next charge date. Credit card payment due dates also appear here. Use + Add to manually track anything we miss."
+        body="We scan your bank history for recurring patterns  -  same merchant, similar amount, regular schedule  -  and predict your next charge date. Credit card payment due dates also appear here. Use + Add to manually track anything we miss."
       />
 
       {items.length === 0 ? (

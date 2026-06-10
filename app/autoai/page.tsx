@@ -77,7 +77,7 @@ export default function AutoAIPage() {
       const today = new Date().toDateString();
       const lastDate = localStorage.getItem(`${INSIGHT_CACHE_KEY}_${user.id}`);
 
-      // Read income directly with user's auth client — reliable regardless of server-side RLS
+      // Read income directly with user's auth client  -  reliable regardless of server-side RLS
       try {
         const { data: prof } = await supabase
           .from("profiles")
@@ -446,7 +446,7 @@ export default function AutoAIPage() {
         </div>
       )}
 
-      {/* Empty state with starters — shown only if insight failed to load */}
+      {/* Empty state with starters  -  shown only if insight failed to load */}
       {!loadingInsight && messages.length === 0 && (
         <div className="flex flex-1 flex-col items-center justify-center pb-10 text-center">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/10 border border-purple-500/20">

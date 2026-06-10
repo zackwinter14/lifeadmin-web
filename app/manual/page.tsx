@@ -368,7 +368,7 @@ export default function ManualPage() {
   const remaining      = income - totalSpend;
   const spendPct       = income > 0 ? Math.min(Math.round((totalSpend / income) * 100), 100) : 0;
 
-  // Setup progress — 4 steps
+  // Setup progress  -  4 steps
   const steps = [
     { label: "Set your monthly income", done: income > 0 },
     { label: "Add your subscriptions",  done: subs.length > 0 },
@@ -438,15 +438,15 @@ export default function ManualPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">My Finances</h1>
-        <p className="mt-1 text-sm text-gray-400">Everything in one place — income, subscriptions, bills, and expenses.</p>
+        <p className="mt-1 text-sm text-gray-400">Everything in one place  -  income, subscriptions, bills, and expenses.</p>
       </div>
 
-      {/* Setup progress banner — hidden once all 4 steps done */}
+      {/* Setup progress banner  -  hidden once all 4 steps done */}
       {!setupComplete && (
         <div className="mb-6 rounded-2xl border border-brand/25 bg-brand/[0.06] p-5">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-bold text-white">
-              {stepsDone === 0 ? "Get started — set up your finances" : `${stepsDone} of 4 steps done`}
+              {stepsDone === 0 ? "Get started  -  set up your finances" : `${stepsDone} of 4 steps done`}
             </p>
             <span className="text-xs text-gray-500">{stepsDone}/4</span>
           </div>
@@ -519,7 +519,7 @@ export default function ManualPage() {
               </button>
             ) : (
               <div className="mt-2">
-                <p className="mb-3 text-sm text-gray-400">Your take-home pay each month — used to show how much is left after all your bills.</p>
+                <p className="mb-3 text-sm text-gray-400">Your take-home pay each month  -  used to show how much is left after all your bills.</p>
                 <button
                   onClick={() => setEditingIncome(true)}
                   className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-black hover:opacity-90 transition"
@@ -698,7 +698,7 @@ export default function ManualPage() {
         })}
       </div>
 
-      {/* Spend breakdown + due this week — only show once user has data */}
+      {/* Spend breakdown + due this week  -  only show once user has data */}
       {items.length > 0 && (
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
@@ -762,7 +762,7 @@ export default function ManualPage() {
         </div>
       )}
 
-      {/* Summary totals — only once user has items and income */}
+      {/* Summary totals  -  only once user has items and income */}
       {items.length > 0 && income > 0 && (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[

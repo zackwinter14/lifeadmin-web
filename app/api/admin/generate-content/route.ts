@@ -42,7 +42,7 @@ For the content:
 - Write 800-1200 words
 - Use proper HTML: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <a href="/signup">
 - Include a natural mention of Life Admin as a tool that helps with the topic
-- Write in a clear, practical voice — not salesy
+- Write in a clear, practical voice  -  not salesy
 - Target people who are frustrated with wasting money
 - Include specific numbers and examples where possible
 - End with a clear action step`,
@@ -67,7 +67,7 @@ For the content:
       max_tokens: 1000,
       system: `You write Reddit posts for r/${sub} about personal finance.
 Write authentic, helpful Reddit posts that don't feel like ads.
-Mention Life Admin naturally if relevant — as a tool you use, not a promotion.
+Mention Life Admin naturally if relevant  -  as a tool you use, not a promotion.
 Reddit voice: conversational, honest, slightly self-deprecating when appropriate.
 Format as JSON: { "title": "post title", "body": "post body in markdown" }
 Keep it under 400 words. Be genuinely helpful first.`,

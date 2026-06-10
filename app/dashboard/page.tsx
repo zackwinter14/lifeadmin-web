@@ -86,7 +86,7 @@ function SavingsStrip({ userId }: { userId: string }) {
           </div>
           <div>
             <p className="text-sm font-bold text-white">Start your first savings goal</p>
-            <p className="text-xs text-gray-500">House, car, vacation, emergency fund — whatever you're working toward</p>
+            <p className="text-xs text-gray-500">House, car, vacation, emergency fund  -  whatever you're working toward</p>
           </div>
         </div>
         <ArrowRight size={16} className="shrink-0 text-[#00C853]" />
@@ -1040,7 +1040,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="flex h-32 items-center justify-center">
-              <p className="text-sm text-gray-500">No items yet — add from Finances.</p>
+              <p className="text-sm text-gray-500">No items yet  -  add from Finances.</p>
             </div>
           )}
         </div>

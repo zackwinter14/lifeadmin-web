@@ -62,16 +62,16 @@ export default function SetupWizard({ userId, onComplete, onDismiss }: Props) {
 
   const [step, setStep] = useState(1);
 
-  // Step 1 — Income
+  // Step 1  -  Income
   const [income, setIncome] = useState("");
 
-  // Step 2 — Subscriptions
+  // Step 2  -  Subscriptions
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [manualSubName, setManualSubName] = useState("");
   const [manualSubAmount, setManualSubAmount] = useState("");
   const [addedSubs, setAddedSubs] = useState<{ name: string; amount: string }[]>([]);
 
-  // Step 3 — Bills
+  // Step 3  -  Bills
   const [selectedBills, setSelectedBills] = useState<Set<string>>(new Set());
   const [manualBillName, setManualBillName] = useState("");
   const [manualBillAmount, setManualBillAmount] = useState("");
@@ -207,7 +207,7 @@ export default function SetupWizard({ userId, onComplete, onDismiss }: Props) {
           />
         </div>
 
-        {/* Step 1 — Income */}
+        {/* Step 1  -  Income */}
         {step === 1 && (
           <div>
             <h2 className="text-xl font-bold text-white mb-1">What's your monthly take-home pay?</h2>
@@ -260,7 +260,7 @@ export default function SetupWizard({ userId, onComplete, onDismiss }: Props) {
           </div>
         )}
 
-        {/* Step 2 — Subscriptions */}
+        {/* Step 2  -  Subscriptions */}
         {step === 2 && (
           <div>
             <h2 className="text-xl font-bold text-white mb-1">Add your subscriptions</h2>
@@ -365,7 +365,7 @@ export default function SetupWizard({ userId, onComplete, onDismiss }: Props) {
           </div>
         )}
 
-        {/* Step 3 — Bills */}
+        {/* Step 3  -  Bills */}
         {step === 3 && (
           <div>
             <h2 className="text-xl font-bold text-white mb-1">Add your bills</h2>
@@ -470,7 +470,7 @@ export default function SetupWizard({ userId, onComplete, onDismiss }: Props) {
           </div>
         )}
 
-        {/* Step 4 — Done */}
+        {/* Step 4  -  Done */}
         {step === 4 && (
           <div className="text-center">
             <div

@@ -222,7 +222,7 @@ export default function BankPage() {
       const maxAttempts = 10;
       const poll = async (): Promise<void> => {
         if (attempts >= maxAttempts) {
-          setSyncMessage("Bank connected. Data is loading — check back in a few minutes.");
+          setSyncMessage("Bank connected. Data is loading  -  check back in a few minutes.");
           return;
         }
         attempts++;
@@ -354,7 +354,7 @@ export default function BankPage() {
                   </p>
                   <p className="text-xs text-gray-500">
                     {needsReconnect
-                      ? "Your bank session expired — reconnect to resume syncing"
+                      ? "Your bank session expired  -  reconnect to resume syncing"
                       : plaidConnected
                         ? lastSynced ? `Last synced ${fmtSyncTime(lastSynced)}` : "Auto-detecting subscriptions and income"
                         : "Link your account to auto-import"}

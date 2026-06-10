@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     "unemployment", "government benefit", "govt benefit",
   ];
 
-  // Skip items that look like income — they should never be reclassified as expense/bill/subscription
+  // Skip items that look like income  -  they should never be reclassified as expense/bill/subscription
   const toClassify = items.filter(i =>
     !INCOME_KEYWORDS.some(kw => i.name.toLowerCase().includes(kw))
   );

@@ -177,7 +177,7 @@ export default function WrappedPage() {
           emoji: "📉",
           label: "Lowest Spend Month",
           headline: label,
-          sub: `You spent only ${fmt(bestMonth[1])} — your best month`,
+          sub: `You spent only ${fmt(bestMonth[1])}  -  your best month`,
           color: "#00C853",
           bg: "rgba(0,200,83,0.08)",
         });
@@ -190,7 +190,7 @@ export default function WrappedPage() {
           emoji: savingsRate >= 20 ? "🏆" : savingsRate >= 10 ? "💪" : "⚠️",
           label: "Savings Rate",
           headline: `${savingsRate}%\nsavings rate`,
-          sub: savingsRate >= 20 ? "Excellent — you're building real wealth." : savingsRate >= 10 ? "Good — room to grow." : "Tight year — small cuts add up.",
+          sub: savingsRate >= 20 ? "Excellent  -  you're building real wealth." : savingsRate >= 10 ? "Good  -  room to grow." : "Tight year  -  small cuts add up.",
           color: rateColor,
           bg: `${rateColor}15`,
         });
@@ -202,7 +202,7 @@ export default function WrappedPage() {
           emoji: "✂️",
           label: "Subscriptions Cancelled",
           headline: `${cancelledCount} cut\nthis year`,
-          sub: `Every cancellation adds up — great work.`,
+          sub: `Every cancellation adds up  -  great work.`,
           color: "#FF6B35",
           bg: "rgba(255,107,53,0.08)",
         });
@@ -215,7 +215,7 @@ export default function WrappedPage() {
           emoji: up ? "📈" : "📉",
           label: "Net Worth",
           headline: `${up ? "+" : "-"}${fmt(Math.abs(nwChange))}\nnet worth change`,
-          sub: up ? "Your wealth grew this year." : "A setback — review your debt payoff plan.",
+          sub: up ? "Your wealth grew this year." : "A setback  -  review your debt payoff plan.",
           color: up ? "#00C853" : "#FF3B30",
           bg: up ? "rgba(0,200,83,0.08)" : "rgba(255,59,48,0.08)",
         });
@@ -228,7 +228,7 @@ export default function WrappedPage() {
           emoji: "🛡️",
           label: "Emergency Fund",
           headline: `${efMonths.toFixed(1)} months\ncovered`,
-          sub: efMonths >= 6 ? "Rock solid emergency fund." : efMonths >= 3 ? "Getting there — aim for 6 months." : "Build this up next year.",
+          sub: efMonths >= 6 ? "Rock solid emergency fund." : efMonths >= 3 ? "Getting there  -  aim for 6 months." : "Build this up next year.",
           color: efColor,
           bg: `${efColor}15`,
         });
@@ -271,7 +271,7 @@ export default function WrappedPage() {
 
   async function share() {
     const slide = slides[idx];
-    const text = `${slide.emoji} ${slide.headline.replace("\n", " ")} — Life Admin ${new Date().getFullYear()} Review`;
+    const text = `${slide.emoji} ${slide.headline.replace("\n", " ")}  -  Life Admin ${new Date().getFullYear()} Review`;
     if (navigator.share) {
       await navigator.share({ text, url: window.location.href });
     } else {

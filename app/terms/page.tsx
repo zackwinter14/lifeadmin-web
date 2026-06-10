@@ -83,7 +83,7 @@ export default function TermsPage() {
 
         <section>
           <h2 className="mb-3 text-xl font-semibold text-white">8. Bank Connection</h2>
-          <p className="text-sm">Pro users may connect their bank accounts via Plaid. By connecting your bank, you authorize Life Admin to retrieve your transaction data to detect recurring payments. We do not store your bank login credentials. Plaid access is read-only — we cannot initiate transfers or payments.</p>
+          <p className="text-sm">Pro users may connect their bank accounts via Plaid. By connecting your bank, you authorize Life Admin to retrieve your transaction data to detect recurring payments. We do not store your bank login credentials. Plaid access is read-only  -  we cannot initiate transfers or payments.</p>
         </section>
 
         <section>

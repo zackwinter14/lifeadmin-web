@@ -209,7 +209,7 @@ export default function HouseholdPage() {
           <h1 className="text-3xl font-bold">Household</h1>
           <p className="mt-1 text-sm text-gray-400">
             {link?.status === "accepted"
-              ? `Linked with ${partnerName} — seeing finances together.`
+              ? `Linked with ${partnerName}  -  seeing finances together.`
               : "Link your partner to see both accounts in one place."}
           </p>
         </div>
@@ -410,7 +410,7 @@ export default function HouseholdPage() {
               </div>
               <div>
                 <p className="font-semibold">Invite your partner</p>
-                <p className="text-xs text-gray-500">Send them a link — when they open it and log in, you&apos;re linked</p>
+                <p className="text-xs text-gray-500">Send them a link  -  when they open it and log in, you&apos;re linked</p>
               </div>
             </div>
             <input

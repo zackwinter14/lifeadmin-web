@@ -59,6 +59,7 @@ export default function Navbar() {
     { href: "/finances",  label: "Finances"  },
     { href: "/calendar",  label: "Calendar"  },
     { href: "/tools",     label: "Tools"     },
+    { href: "/home",      label: "Home"      },
   ];
 
   return (

@@ -31,7 +31,7 @@ export default function BankAutoSync() {
       if (!shouldSync) return;
 
       localStorage.setItem(key, String(Date.now()));
-      // Single reliable sync route — handles transactions, recurring, and auto-creates items
+      // Single reliable sync route  -  handles transactions, recurring, and auto-creates items
       fetch("/api/plaid/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

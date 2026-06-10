@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Features — Life Admin | Everything Your Money Needs in One App",
+  title: "Features  -  Life Admin | Everything Your Money Needs in One App",
   description: "Auto-detect every subscription, track income, scan receipts with AI, monitor net worth, and never get surprised by a charge again. See every Life Admin feature.",
   keywords: ["Life Admin features", "Life Admin finance tracker features", "subscription tracker features", "bill management app", "AI receipt scanner app", "net worth tracker app", "income tracking app", "cancel subscriptions app", "gas tracker app", "budget planner features", "expense tracker features", "household finance app", "bank sync personal finance"],
   openGraph: {
-    title: "Life Admin Features — Track Every Dollar Automatically",
+    title: "Life Admin Features  -  Track Every Dollar Automatically",
     description: "Auto-detect subscriptions, scan receipts with AI, track net worth, manage bills, and cancel forgotten subs. Everything in one app.",
     url: "https://lifeadminofficial.com/features",
     siteName: "Life Admin",
@@ -51,7 +51,7 @@ export default function Features() {
           <Big
             icon={<Zap />}
             title="Subscription auto-detection"
-            body="Connect your bank in 30 seconds via Plaid. Within 30 seconds, AI surfaces every recurring charge — even the annual ones billed once a year that you forgot existed. Strict recurrence checks prevent false positives, so Walmart visits don't become fake bills."
+            body="Connect your bank in 30 seconds via Plaid. Within 30 seconds, AI surfaces every recurring charge  -  even the annual ones billed once a year that you forgot existed. Strict recurrence checks prevent false positives, so Walmart visits don't become fake bills."
           />
           <Big
             icon={<Wallet />}
@@ -66,7 +66,7 @@ export default function Features() {
           <Big
             icon={<Bot />}
             title="AI auto-organize"
-            body="Powered by Claude. After Scan Bank runs, AI classifies every transaction into subscription, bill, gas, or one-time expense. Your organization persists across app restarts — no more redoing the same work every time you reopen the app."
+            body="Powered by Claude. After Scan Bank runs, AI classifies every transaction into subscription, bill, gas, or one-time expense. Your organization persists across app restarts  -  no more redoing the same work every time you reopen the app."
           />
         </Section>
 
@@ -89,20 +89,20 @@ export default function Features() {
           <Big
             icon={<Layers />}
             title="Manual + Bank dual view"
-            body="Track manually for free, or connect your bank. Both views live side by side on your home screen so you always see the full picture — what you typed in and what your bank revealed."
+            body="Track manually for free, or connect your bank. Both views live side by side on your home screen so you always see the full picture  -  what you typed in and what your bank revealed."
           />
         </Section>
 
         <Section title="Save Money Automatically">
           <Big
             icon={<RefreshCw />}
-            title="Recurring tab — every charge that comes back, in one place"
+            title="Recurring tab  -  every charge that comes back, in one place"
             body="Search every subscription, bill, and trial by name or price. Sort by amount or next due date. Tap any row to see what you started with, what you've paid in total, and whether the price has crept up. Stale, new, and price-jumped items get tagged so nothing hides."
           />
           <Big
             icon={<Bot />}
-            title="AutoAI takes action — not just answers"
-            body="AutoAI can do more than chat. Ask it to find a subscription and it pulls it up inline. Ask it to flag something for cancellation and it shows a Confirm card before it runs. Every action requires your tap — AutoAI never moves money or cancels anything on its own."
+            title="AutoAI takes action  -  not just answers"
+            body="AutoAI can do more than chat. Ask it to find a subscription and it pulls it up inline. Ask it to flag something for cancellation and it shows a Confirm card before it runs. Every action requires your tap  -  AutoAI never moves money or cancels anything on its own."
           />
           <Big
             icon={<TrendingDown />}
@@ -130,7 +130,7 @@ export default function Features() {
           <Big
             icon={<RefreshCw />}
             title="Multi-bank support"
-            body="Connect as many banks as you have. Chase, Capital One, Bank of America, credit unions, Apple Card — all in one view. Cross-bank dedup means the same transaction never shows twice."
+            body="Connect as many banks as you have. Chase, Capital One, Bank of America, credit unions, Apple Card  -  all in one view. Cross-bank dedup means the same transaction never shows twice."
           />
           <Big
             icon={<Users />}

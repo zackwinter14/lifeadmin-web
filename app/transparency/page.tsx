@@ -57,7 +57,7 @@ export default function TransparencyPage() {
             <h2 className="text-xl font-bold">Two revenue sources. Both disclosed.</h2>
           </div>
           <p className="text-gray-400 mb-5">
-            Life Admin has two revenue sources. First, display ads shown to free users — standard
+            Life Admin has two revenue sources. First, display ads shown to free users  -  standard
             Google AdSense ads, the same kind you see on any website. Second, Pro subscriptions
             for users who want bank automation and an ad-free experience. That&apos;s it.
             No data selling. No hidden fees. No tricks.
@@ -94,7 +94,7 @@ export default function TransparencyPage() {
             <No text="Share your bank transactions with anyone outside Life Admin's infrastructure" />
             <No text="Use your financial data or spending patterns to target ads at you" />
             <No text="Charge hidden fees or auto-enroll you in paid features" />
-            <No text="Move money from your accounts — our Plaid connection is read-only, always" />
+            <No text="Move money from your accounts  -  our Plaid connection is read-only, always" />
           </ul>
           <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-gray-400">
             <strong className="text-white">Why does this matter?</strong> Rocket Money, Mint (now shut down),
@@ -113,9 +113,9 @@ export default function TransparencyPage() {
             <h2 className="text-xl font-bold">How your data is protected</h2>
           </div>
           <ul className="space-y-3">
-            <Check text="Bank connections use Plaid — the same infrastructure used by Venmo, Robinhood, and Coinbase" />
+            <Check text="Bank connections use Plaid  -  the same infrastructure used by Venmo, Robinhood, and Coinbase" />
             <Check text="Plaid access is read-only. We can see your transactions. We cannot initiate transfers, payments, or withdrawals" />
-            <Check text="Your bank credentials never touch our servers — Plaid handles authentication directly" />
+            <Check text="Your bank credentials never touch our servers  -  Plaid handles authentication directly" />
             <Check text="All data in transit is encrypted with TLS 1.2+. Data at rest is encrypted in Supabase" />
             <Check text="You can delete your account and all associated data at any time from your profile settings" />
             <Check text="We comply with applicable data protection regulations" />
@@ -128,11 +128,11 @@ export default function TransparencyPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
               <Eye size={18} className="text-purple-400" />
             </div>
-            <h2 className="text-xl font-bold">Free vs Pro — what actually changes</h2>
+            <h2 className="text-xl font-bold">Free vs Pro  -  what actually changes</h2>
           </div>
           <p className="text-gray-400 mb-5">
             The free tier is not a crippled demo. It&apos;s a fully functional finance tracker.
-            Pro adds automation — it replaces manual entry with automatic bank data.
+            Pro adds automation  -  it replaces manual entry with automatic bank data.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-white/10 p-4">
@@ -156,7 +156,7 @@ export default function TransparencyPage() {
               </ul>
             </div>
             <div className="rounded-xl border border-brand/20 bg-brand/5 p-4">
-              <p className="text-sm font-bold text-brand mb-3">Pro — adds automation</p>
+              <p className="text-sm font-bold text-brand mb-3">Pro  -  adds automation</p>
               <ul className="space-y-2 text-sm text-gray-300">
                 {[
                   "No ads",
@@ -189,7 +189,7 @@ export default function TransparencyPage() {
           </div>
           <p className="text-gray-400">
             Life Admin is built and operated by ZZW LLC. We&apos;re a focused team building one
-            thing — a finance tracker that respects your data. We use industry-standard
+            thing  -  a finance tracker that respects your data. We use industry-standard
             infrastructure (Plaid for bank connections, Supabase for secure data storage,
             Apple for iOS payments) and we don&apos;t share your information with marketing
             partners or data brokers. Our revenue comes from two sources: display ads shown

@@ -84,14 +84,14 @@ export async function POST(req: NextRequest) {
     ].filter(line => line !== null).join("\n");
 
     // This system prompt is also returned so AutoAI chat can use it for the session
-    const systemPrompt = `You are AutoAI, a personal finance assistant inside the Life Admin app. Speak in plain English — no bullet walls, no fluff, 2-3 sentences max per reply unless the user asks for a list.
+    const systemPrompt = `You are AutoAI, a personal finance assistant inside the Life Admin app. Speak in plain English  -  no bullet walls, no fluff, 2-3 sentences max per reply unless the user asks for a list.
 
 USER'S CURRENT FINANCIAL DATA:
 ${context}
 
 Rules:
 - Always reference their actual numbers and names when relevant. Never guess at data you don't have.
-- You know each item's exact name, amount, and due date — use them.
+- You know each item's exact name, amount, and due date  -  use them.
 - When the user mentions paying for something, use find_item to check if it's already tracked. If not, offer to add it with add_item.
 - When they want to cancel something, use find_item then mark_for_cancel.
 - add_item and mark_for_cancel require user confirmation before executing.
