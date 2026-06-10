@@ -92,6 +92,7 @@ export default function TrackerPage() {
   const [txGroups, setTxGroups] = useState<TxGroup[]>([]);
   const [recurring, setRecurring] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // dragging stores the full prefixed string: "item:<id>" or "tx:<merchant>"
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<ColId | null>(null);
   const [addCol, setAddCol] = useState<typeof COLUMNS[number] | null>(null);
@@ -156,9 +157,9 @@ export default function TrackerPage() {
         }))
         .sort((a, b) => b.totalSpent - a.totalSpent);
 
-      // Don't show a bank transaction card for a merchant that is already a tracked item —
+      // Don't show a bank transaction card for a merchant that is already tracked —
       // that's what causes the "it came back to expenses" confusion.
-      const trackedNames = (allItems).map(i => i.name.toLowerCase().trim());
+      const trackedNames = allItems.map(i => i.name.toLowerCase().trim());
       const groups = allGroups.filter(g => {
         const gLc = g.merchant.toLowerCase().trim();
         return !trackedNames.some(name => {
@@ -175,10 +176,20 @@ export default function TrackerPage() {
   }, []);
 
   // ── Drag handlers ────────────────────────────────────────────────────────────
-  function onDragStart(e: React.DragEvent, id: string) {
-    setDragging(id);
+  // ItemCard drag — prefix "item:" so onDrop can distinguish from tx drags
+  function onItemDragStart(e: React.DragEvent, id: string) {
+    const raw = "item:" + id;
+    setDragging(raw);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.setData("text/plain", raw);
+  }
+
+  // TxGroupCard drag — prefix "tx:"
+  function onTxDragStart(e: React.DragEvent, merchant: string) {
+    const raw = "tx:" + merchant;
+    setDragging(raw);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", raw);
   }
 
   function onDragEnd() {
@@ -188,30 +199,86 @@ export default function TrackerPage() {
 
   async function onDrop(e: React.DragEvent, colId: ColId) {
     e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
+    const raw = e.dataTransfer.getData("text/plain");
     setDragging(null);
     setDragOver(null);
-    if (!id) return;
-    const newType: ItemType = colId;
-    const item = items.find(i => i.id === id);
+    if (!raw) return;
 
-    // Optimistic UI update
-    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType, source: "user_override" } : i));
+    if (raw.startsWith("item:")) {
+      // Reclassify an existing tracked item
+      const id = raw.slice(5);
+      const newType: ItemType = colId;
+      const item = items.find(i => i.id === id);
+      if (!item) return;
 
-    // Mark as user_override so the Plaid sync never re-classifies it
-    await supabase.from("items")
-      .update({ type: newType, source: "user_override" })
-      .eq("id", id);
+      // Optimistic UI update
+      setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType, source: "user_override" } : i));
 
-    // Write to merchant_rules so future auto-detected items for this merchant
-    // get the correct type from day one
-    if (item?.name) {
-      const key = item.name.toLowerCase().trim();
+      // Mark as user_override so Plaid sync never re-classifies it
+      await supabase.from("items")
+        .update({ type: newType, source: "user_override" })
+        .eq("id", id);
+
+      // Write global merchant memory so every future user gets this right
+      if (item.name) {
+        const key = item.name.toLowerCase().trim();
+        await supabase.from("merchant_rules").upsert(
+          {
+            merchant_name: key,
+            correct_type: newType,
+            correct_category: item.category,
+            last_updated: new Date().toISOString(),
+          },
+          { onConflict: "merchant_name" }
+        );
+      }
+    } else if (raw.startsWith("tx:")) {
+      // Promote a bank transaction card to a tracked item
+      const merchant = raw.slice(3);
+      await createItemFromTx(merchant, colId);
+    }
+  }
+
+  // Promote a TxGroup to a tracked item (used by both drag-drop and TrackTxModal)
+  async function createItemFromTx(merchant: string, colId: ColId, overrideAmount?: number, overrideCategory?: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const group = txGroups.find(g => g.merchant === merchant);
+    if (!group) return;
+
+    const col = COLUMNS.find(c => c.id === colId)!;
+    const category = overrideCategory ?? col.categories[0];
+    const amount = overrideAmount ?? parseFloat(group.avgAmount.toFixed(2));
+
+    const { data } = await supabase
+      .from("items")
+      .insert({
+        user_id: user.id,
+        name: merchant,
+        amount,
+        type: colId,
+        category,
+        color: col.color,
+        status: "active",
+        source: "user_override",
+        autopay: false,
+      })
+      .select()
+      .single();
+
+    if (data) {
+      setItems(prev => [...prev, data as Item]);
+      // Remove from txGroups immediately so the card disappears
+      setTxGroups(prev => prev.filter(g => g.merchant !== merchant));
+
+      // Write global merchant memory
+      const key = merchant.toLowerCase().trim();
       await supabase.from("merchant_rules").upsert(
         {
           merchant_name: key,
-          correct_type: newType,
-          correct_category: item.category,
+          correct_type: colId,
+          correct_category: category,
           last_updated: new Date().toISOString(),
         },
         { onConflict: "merchant_name" }
@@ -308,7 +375,13 @@ export default function TrackerPage() {
                 key={col.id}
                 onDragOver={e => { e.preventDefault(); setDragOver(col.id); }}
                 onDrop={e => onDrop(e, col.id)}
-                onDragLeave={() => setDragOver(null)}
+                onDragLeave={e => {
+                  // Only clear dragOver when the cursor actually leaves this column,
+                  // not when it just moves onto a child element inside it.
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOver(null);
+                  }
+                }}
                 className="flex flex-col rounded-2xl border transition-colors duration-100"
                 style={{
                   minHeight: 520,
@@ -368,8 +441,8 @@ export default function TrackerPage() {
                       item={item}
                       rec={getRecurring(item.name)}
                       colColor={col.color}
-                      isDragging={dragging === item.id}
-                      onDragStart={onDragStart}
+                      isDragging={dragging === "item:" + item.id}
+                      onDragStart={onItemDragStart}
                       onDragEnd={onDragEnd}
                     />
                   ))}
@@ -391,6 +464,9 @@ export default function TrackerPage() {
                           key={g.merchant}
                           group={g}
                           colColor={col.color}
+                          isDragging={dragging === "tx:" + g.merchant}
+                          onDragStart={onTxDragStart}
+                          onDragEnd={onDragEnd}
                           onTrack={() => setTrackTx(g)}
                         />
                       ))}
@@ -427,7 +503,12 @@ export default function TrackerPage() {
         <TrackTxModal
           group={trackTx}
           onClose={() => setTrackTx(null)}
-          onAdded={item => { setItems(prev => [...prev, item]); setTrackTx(null); }}
+          onAdded={(item, merchant) => {
+            setItems(prev => [...prev, item]);
+            // Remove the bank card immediately when tracking via modal
+            setTxGroups(prev => prev.filter(g => g.merchant !== merchant));
+            setTrackTx(null);
+          }}
         />
       )}
     </div>
@@ -502,15 +583,27 @@ function ItemCard({ item, rec, colColor, isDragging, onDragStart, onDragEnd }: {
 }
 
 // ── Bank transaction group card ────────────────────────────────────────────────
-function TxGroupCard({ group, colColor, onTrack }: {
+function TxGroupCard({ group, colColor, isDragging, onDragStart, onDragEnd, onTrack }: {
   group: TxGroup;
   colColor: string;
+  isDragging: boolean;
+  onDragStart: (e: React.DragEvent, merchant: string) => void;
+  onDragEnd: () => void;
   onTrack: () => void;
 }) {
   return (
     <div
-      className="rounded-xl border p-3.5"
-      style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+      draggable
+      onDragStart={e => onDragStart(e, group.merchant)}
+      onDragEnd={onDragEnd}
+      className="select-none rounded-xl border p-3.5 transition-all duration-100"
+      style={{
+        cursor: isDragging ? "grabbing" : "grab",
+        borderColor: isDragging ? colColor + "50" : "rgba(255,255,255,0.06)",
+        background: isDragging ? colColor + "10" : "rgba(255,255,255,0.02)",
+        opacity: isDragging ? 0.4 : 1,
+        transform: isDragging ? "scale(0.97)" : "scale(1)",
+      }}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <span className="truncate text-base font-semibold leading-tight">{group.merchant}</span>
@@ -719,7 +812,7 @@ function TrackTxModal({
 }: {
   group: TxGroup;
   onClose: () => void;
-  onAdded: (item: Item) => void;
+  onAdded: (item: Item, merchant: string) => void;
 }) {
   const supabase = createClient();
   const [type, setType] = useState<ColId>("expense");
@@ -734,6 +827,7 @@ function TrackTxModal({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
       const { data } = await supabase
         .from("items")
         .insert({
@@ -744,12 +838,27 @@ function TrackTxModal({
           category,
           color: COL.color,
           status: "active",
-          source: "plaid",
+          source: "user_override",
           autopay: false,
         })
         .select()
         .single();
-      if (data) onAdded(data as Item);
+
+      if (data) {
+        // Write global merchant memory so every future user gets this right
+        const key = group.merchant.toLowerCase().trim();
+        await supabase.from("merchant_rules").upsert(
+          {
+            merchant_name: key,
+            correct_type: type,
+            correct_category: category,
+            last_updated: new Date().toISOString(),
+          },
+          { onConflict: "merchant_name" }
+        );
+
+        onAdded(data as Item, group.merchant);
+      }
     } finally {
       setSaving(false);
     }
