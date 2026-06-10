@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, X, Wallet, CreditCard } from "lucide-react";
+import SaveSubNav from "@/components/SaveSubNav";
 
 interface NWItem {
   id: string;
@@ -143,7 +144,9 @@ export default function NetWorthPage() {
   const pos    = netW >= 0;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <>
+      <SaveSubNav />
+      <div className="mx-auto max-w-3xl px-4 py-10">
 
       {/* Header */}
       <div className="mb-6">
@@ -296,5 +299,6 @@ export default function NetWorthPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, X, Target, CreditCard, Shield, Pencil, Check } from "lucide-react";
 import HelpTip from "@/components/HelpTip";
+import SaveSubNav from "@/components/SaveSubNav";
 
 interface Item {
   id: string;
@@ -202,7 +203,9 @@ export default function BudgetPage() {
   const efLabel = efMonths >= 6 ? "Solid — 6+ months covered" : efMonths >= 3 ? "Getting there — aim for 6 months" : emergencySavings > 0 ? "Low — build toward 3 months" : "Not started";
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <>
+      <SaveSubNav />
+      <div className="mx-auto max-w-3xl px-4 py-10">
 
       {/* Header */}
       <div className="mb-8">
@@ -548,5 +551,6 @@ export default function BudgetPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

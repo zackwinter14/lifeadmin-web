@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { Plus, Pencil, Trash2, X, Check, PiggyBank, TrendingUp, Landmark, Wallet, DollarSign, Home, Shield } from "lucide-react";
+import SaveSubNav from "@/components/SaveSubNav";
 
 interface SavingsEntry {
   id: string;
@@ -138,7 +139,9 @@ export default function VaultPage() {
   const largest = entries.length > 0 ? Math.max(...entries.map(e => e.amount)) : 0;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <>
+      <SaveSubNav />
+      <div className="mx-auto max-w-2xl px-4 py-10">
 
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
@@ -343,5 +346,6 @@ export default function VaultPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
