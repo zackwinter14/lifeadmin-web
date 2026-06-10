@@ -397,7 +397,7 @@ function AddExpenseModal({ userId, onClose, onSaved }: {
 function BalanceBar({
   isConnected, plaidBalance, balanceUpdatedAt, accountName, accountMask,
   income, spentThisMonth, onConnect, linkToken, plaidReady, detectingIncome, plaidJustConnected,
-  updating,
+  updating, syncError, onRetry,
 }: {
   isConnected: boolean;
   plaidBalance: number | null;
@@ -412,6 +412,8 @@ function BalanceBar({
   detectingIncome: boolean;
   plaidJustConnected: boolean;
   updating: boolean;
+  syncError: string | null;
+  onRetry: () => void;
 }) {
   const leftToSave = income > 0 ? income - spentThisMonth : null;
 
@@ -432,7 +434,15 @@ function BalanceBar({
             </span>
           </div>
           <div className="font-mono text-4xl font-black tracking-tight">
-            {plaidBalance != null ? fmt(plaidBalance) : (
+            {plaidBalance != null ? fmt(plaidBalance) : syncError ? (
+              <div>
+                <span className="text-base text-[#f87171]">Could not load balance</span>
+                <button onClick={onRetry}
+                  className="ml-3 rounded-md border border-white/15 bg-white/8 px-2.5 py-1 text-xs font-semibold text-white hover:bg-white/12">
+                  Retry
+                </button>
+              </div>
+            ) : (
               <span className="text-2xl text-gray-500">
                 {updating ? "Loading balance..." : "Fetching balance..."}
               </span>
@@ -440,6 +450,9 @@ function BalanceBar({
           </div>
           {updatedLabel && (
             <p className="mt-1 text-[10px] font-semibold text-[#3EA758]">{updatedLabel}</p>
+          )}
+          {syncError && !updating && (
+            <p className="mt-1 text-[10px] text-[#f87171]">{syncError}</p>
           )}
         </div>
         <div className="flex gap-8">
@@ -881,6 +894,7 @@ export default function Dashboard() {
   const [showWizard, setShowWizard]       = useState(false);
   const [setupDone, setSetupDone]         = useState(false);
   const [debugInfo, setDebugInfo]         = useState<string | null>(null);
+  const [syncError, setSyncError]         = useState<string | null>(null);
   const autoSyncFired = useRef(false);
 
   // ── Load data ───────────────────────────────────────────────────────────────
@@ -960,22 +974,40 @@ export default function Dashboard() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
+  // Shared sync helper — always safe to call, never throws to the caller
+  async function callSync(uid: string): Promise<boolean> {
+    try {
+      const res = await fetch("/api/plaid/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: uid }),
+      });
+      let data: any = {};
+      try { data = await res.json(); } catch { /* empty body — handled below */ }
+      if (!res.ok) {
+        const msg = data?.error || `Sync error (${res.status})`;
+        setSyncError(msg);
+        setDebugInfo(msg);
+        return false;
+      }
+      if (data.income > 0) setIncome(data.income);
+      setSyncError(null);
+      return true;
+    } catch (e: any) {
+      const msg = "Sync failed: " + (e?.message ?? "network error");
+      setSyncError(msg);
+      setDebugInfo(msg);
+      return false;
+    }
+  }
+
   // Auto-sync once on page load when connected but balance hasn't been fetched yet
   useEffect(() => {
     if (!isConnected || plaidBalance !== null || !user || autoSyncFired.current) return;
     autoSyncFired.current = true;
     setUpdating(true);
-    fetch("/api/plaid/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.income > 0) setIncome(data.income);
-        return loadData(user.id);
-      })
-      .catch(() => {})
+    callSync(user.id)
+      .then(ok => { if (ok) return loadData(user.id); })
       .finally(() => setUpdating(false));
   }, [isConnected, plaidBalance, user]);
 
@@ -983,18 +1015,11 @@ export default function Dashboard() {
 
   async function handleUpdate() {
     if (!user || updating) return;
+    setSyncError(null);
     setUpdating(true);
     try {
-      const res = await fetch("/api/plaid/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
-      });
-      const data = await res.json();
-      if (data.income > 0) setIncome(data.income);
-      await loadData(user.id);
-    } catch (e: any) {
-      setDebugInfo("Update failed: " + e?.message);
+      const ok = await callSync(user.id);
+      if (ok) await loadData(user.id);
     } finally {
       setUpdating(false);
     }
@@ -1197,6 +1222,8 @@ export default function Dashboard() {
         detectingIncome={detectingIncome}
         plaidJustConnected={plaidJustConnected}
         updating={updating}
+        syncError={syncError}
+        onRetry={handleUpdate}
       />
 
       {/* Savings strip */}

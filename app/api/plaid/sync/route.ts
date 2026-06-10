@@ -148,8 +148,28 @@ function plaidErrorMessage(e: any): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await req.json();
+  // Top-level guard — always returns JSON so the client never gets an empty body
+  let userId: string | undefined;
+  try {
+    const body = await req.json();
+    userId = body?.userId;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
+  if (!userId) {
+    return NextResponse.json({ error: "userId required" }, { status: 400 });
+  }
+
+  try {
+    return await runSync(userId);
+  } catch (e: any) {
+    console.error("[sync] unhandled error:", e?.message);
+    return NextResponse.json({ error: "Sync failed: " + (e?.message ?? "unknown error") }, { status: 500 });
+  }
+}
+
+async function runSync(userId: string) {
   const { data: profile } = await supabase
     .from("profiles")
     .select("plaid_access_token")
