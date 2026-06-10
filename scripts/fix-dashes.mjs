@@ -17,10 +17,11 @@ const supabase = createClient(
 function stripDashes(str) {
   if (!str) return str;
   return str
-    .replace(/\u2014/g, " - ")   // em dash
-    .replace(/\u2013/g, " - ")   // en dash
-    .replace(/&mdash;/g, " - ")  // HTML em dash entity
-    .replace(/&ndash;/g, " - "); // HTML en dash entity
+    .replace(/\u2014/g, "")   // em dash
+    .replace(/\u2013/g, "")   // en dash
+    .replace(/&mdash;/g, "")  // HTML em dash entity
+    .replace(/&ndash;/g, "")  // HTML en dash entity
+    .replace(/ - /g, " ");    // leftover spaced hyphens from previous run
 }
 
 async function run() {
