@@ -37,7 +37,9 @@ const EXCLUDE_KEYWORDS = [
 
 function isLikelyPayroll(txn: any): boolean {
   const name = (txn.name || txn.merchant_name || "").toLowerCase();
-  const cats: string[] = (txn.personal_finance_category?.detailed || txn.category || [])
+  // personal_finance_category.detailed is a string from Plaid, category can be string or string[]
+  const catRaw = txn.personal_finance_category?.detailed || txn.category;
+  const cats: string[] = (Array.isArray(catRaw) ? catRaw : catRaw ? [catRaw] : [])
     .map((c: string) => c.toLowerCase());
 
   if (EXCLUDE_KEYWORDS.some(kw => name.includes(kw))) return false;
