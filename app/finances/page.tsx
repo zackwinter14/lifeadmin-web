@@ -13,9 +13,17 @@ import {
   Landmark,
   Zap,
   TrendingUp,
+  LayoutGrid,
 } from "lucide-react";
 
 const CARDS = [
+  {
+    href: "/tracker",
+    title: "Expense Tracker",
+    desc: "All bills, subscriptions, and expenses in one view",
+    icon: LayoutGrid,
+    color: "#a78bfa",
+  },
   {
     href: "/income",
     title: "Income",
