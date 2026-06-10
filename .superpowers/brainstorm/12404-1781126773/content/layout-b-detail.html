@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — Option B Detail</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080810; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 0; }
+
+  .page { max-width: 960px; margin: 0 auto; padding: 28px 20px; }
+
+  /* Top nav stub */
+  .topnav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .topnav-name { font-size: 20px; font-weight: 800; }
+  .topnav-name span { background: linear-gradient(90deg, #a78bfa, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .topnav-add { background: linear-gradient(135deg, #a78bfa, #60a5fa); border: none; border-radius: 10px; padding: 8px 16px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+  /* Balance bar */
+  .balance-bar { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .balance-main {}
+  .balance-label { color: #8899bb; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+  .balance-amount { font-size: 36px; font-weight: 900; font-family: ui-monospace, monospace; letter-spacing: -1px; }
+  .balance-live { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 10px; color: #3EA758; font-weight: 600; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #3EA758; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .balance-meta { display: flex; gap: 28px; }
+  .balance-meta-item { text-align: right; }
+  .balance-meta-label { color: #8899bb; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+  .balance-meta-val { font-size: 20px; font-weight: 800; font-family: ui-monospace, monospace; }
+  .balance-meta-val.red { color: #f87171; }
+  .balance-meta-val.green { color: #3EA758; }
+
+  /* Budget bar */
+  .budget-bar-wrap { margin-bottom: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 18px; }
+  .budget-bar-labels { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #888; }
+  .budget-bar-labels strong { color: #fff; }
+  .budget-bar-track { height: 8px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+  .budget-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #3EA758, #f59e0b); width: 71%; }
+
+  /* Two-column body */
+  .body-grid { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+
+  /* Feed column */
+  .feed-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .section-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #666; }
+  .section-badge { font-size: 9px; font-weight: 700; color: #3EA758; display: flex; align-items: center; gap: 4px; }
+
+  /* Transaction rows */
+  .tx-group-label { padding: 8px 16px 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #444; font-weight: 700; }
+  .tx-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.15s; cursor: default; }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-row:hover { background: rgba(255,255,255,0.03); }
+  .tx-icon { width: 34px; height: 34px; border-radius: 9px; background: #1a1a2e; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-meta { font-size: 10px; color: #555; margin-top: 1px; }
+  .tx-cat { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 4px; }
+  .tx-amount { font-size: 13px; font-weight: 700; font-family: ui-monospace, monospace; flex-shrink: 0; }
+  .tx-amount.out { color: #f87171; }
+  .tx-amount.in { color: #3EA758; }
+
+  /* Right column */
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Tracking card */
+  .tracking-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .tracking-row:last-child { border-bottom: none; }
+  .tracking-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tracking-label { font-size: 13px; color: #ccc; }
+  .tracking-count { font-size: 10px; color: #555; margin-top: 1px; }
+  .tracking-amount { font-size: 14px; font-weight: 700; font-family: ui-monospace, monospace; }
+  .tracking-total { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.06); }
+  .tracking-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666; }
+  .tracking-total-val { font-size: 16px; font-weight: 800; font-family: ui-monospace, monospace; }
+
+  /* Upcoming */
+  .upcoming-row { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .upcoming-row:last-child { border-bottom: none; }
+  .upcoming-day { width: 36px; height: 36px; border-radius: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+  .upcoming-day-num { font-size: 14px; font-weight: 800; line-height: 1; }
+  .upcoming-day-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+  .upcoming-info { flex: 1; min-width: 0; }
+  .upcoming-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .upcoming-sub { font-size: 10px; color: #555; margin-top: 1px; }
+  .upcoming-amt { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+  /* Savings strip */
+  .savings-card { background: rgba(0,200,83,0.05); border: 1px solid rgba(0,200,83,0.15); border-radius: 16px; padding: 16px; }
+  .savings-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #3EA758; margin-bottom: 12px; }
+  .savings-goal { margin-bottom: 10px; }
+  .savings-goal:last-child { margin-bottom: 0; }
+  .savings-goal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .savings-goal-name { font-size: 12px; font-weight: 600; }
+  .savings-goal-amt { font-size: 11px; color: #888; }
+  .savings-goal-amt strong { color: #fff; }
+  .savings-bar { height: 5px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+  .savings-bar-fill { height: 100%; border-radius: 99px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Nav -->
+  <div class="topnav">
+    <div class="topnav-name">Hey, <span>Zack</span></div>
+    <button class="topnav-add">+ Add Expense</button>
+  </div>
+
+  <!-- Balance bar -->
+  <div class="balance-bar">
+    <div class="balance-main">
+      <div class="balance-label">Checking · Chase</div>
+      <div class="balance-amount">$4,218.73</div>
+      <div class="balance-live"><span class="live-dot"></span>Live · Updated just now</div>
+    </div>
+    <div class="balance-meta">
+      <div class="balance-meta-item">
+        <div class="balance-meta-label">Spent This Month</div>
+        <div class="balance-meta-val red">-$1,463.22</div>
+      </div>
+      <div class="balance-meta-item">
+        <div class="balance-meta-label">Left to Save</div>
+        <div class="balance-meta-val green">+$936.78</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget bar -->
+  <div class="budget-bar-wrap">
+    <div class="budget-bar-labels">
+      <span><strong>$1,463</strong> spent of <strong>$2,400</strong> income</span>
+      <span style="color:#f59e0b; font-weight:700;">71% of income tracked</span>
+    </div>
+    <div class="budget-bar-track">
+      <div class="budget-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- Two-column body -->
+  <div class="body-grid">
+
+    <!-- LEFT: Live feed -->
+    <div class="feed-col">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Live Activity</span>
+          <span class="section-badge"><span class="live-dot"></span>Updating automatically</span>
+        </div>
+
+        <div class="tx-group-label">Today — Jun 10</div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#1a0f2e; color:#a78bfa;">N</div>
+          <div class="tx-info">
+            <div class="tx-name">Netflix</div>
+            <div class="tx-meta">2:14 PM <span class="tx-cat" style="background:#a78bfa18; color:#a78bfa;">Subscription</span></div>
+          </div>
+          <div class="tx-amount out">-$15.99</div>
+        </div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#0a1a0a; color:#3EA758;">W</div>
+          <div class="tx-info">
+            <div class="tx-name">Walmart</div>
+            <div class="tx-meta">11:02 AM <span class="tx-cat" style="background:#34d39918; color:#34d399;">Groceries</span></div>
+          </div>
+          <div class="tx-amount out">-$63.41</div>
+        </div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#1a150a; color:#f59e0b;">S</div>
+          <div class="tx-info">
+            <div class="tx-name">Starbucks</div>
+            <div class="tx-meta">8:31 AM <span class="tx-cat" style="background:#f59e0b18; color:#f59e0b;">Dining</span></div>
+          </div>
+          <div class="tx-amount out">-$6.75</div>
+        </div>
+
+        <div class="tx-group-label">Yesterday — Jun 9</div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#0f1f2e; color:#60a5fa;">S</div>
+          <div class="tx-info">
+            <div class="tx-name">Shell Gas</div>
+            <div class="tx-meta">5:44 PM <span class="tx-cat" style="background:#60a5fa18; color:#60a5fa;">Transportation</span></div>
+          </div>
+          <div class="tx-amount out">-$54.00</div>
+        </div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#0a1a0a; color:#3EA758;">D</div>
+          <div class="tx-info">
+            <div class="tx-name">Direct Deposit</div>
+            <div class="tx-meta">12:00 AM <span class="tx-cat" style="background:#3EA75818; color:#3EA758;">Income</span></div>
+          </div>
+          <div class="tx-amount in">+$2,400.00</div>
+        </div>
+
+        <div class="tx-group-label">Jun 8</div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#1a0a0a; color:#f87171;">C</div>
+          <div class="tx-info">
+            <div class="tx-name">Comcast</div>
+            <div class="tx-meta">Auto-pay <span class="tx-cat" style="background:#60a5fa18; color:#60a5fa;">Bill</span></div>
+          </div>
+          <div class="tx-amount out">-$89.99</div>
+        </div>
+
+        <div class="tx-row">
+          <div class="tx-icon" style="background:#1a0a0a; color:#f87171;">A</div>
+          <div class="tx-info">
+            <div class="tx-name">Amazon</div>
+            <div class="tx-meta">Purchase <span class="tx-cat" style="background:#34d39918; color:#34d399;">Shopping</span></div>
+          </div>
+          <div class="tx-amount out">-$34.99</div>
+        </div>
+
+        <div style="padding: 12px 16px; text-align:center; border-top: 1px solid rgba(255,255,255,0.04);">
+          <button style="background:none; border:none; color:#555; font-size:11px; font-weight:600; cursor:pointer;">Load more transactions</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Tracking + Upcoming + Savings -->
+    <div class="right-col">
+
+      <!-- Tracked spending -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Tracked Spending</span>
+          <a href="#" style="font-size:10px; color:#555; text-decoration:none;">View all →</a>
+        </div>
+        <div class="tracking-row">
+          <div style="display:flex; align-items:center; gap:10px; flex:1;">
+            <div class="tracking-dot" style="background:#a78bfa;"></div>
+            <div>
+              <div class="tracking-label">Subscriptions</div>
+              <div class="tracking-count">8 active</div>
+            </div>
+          </div>
+          <div class="tracking-amount" style="color:#a78bfa;">$147.00</div>
+        </div>
+        <div class="tracking-row">
+          <div style="display:flex; align-items:center; gap:10px; flex:1;">
+            <div class="tracking-dot" style="background:#60a5fa;"></div>
+            <div>
+              <div class="tracking-label">Bills</div>
+              <div class="tracking-count">5 tracked</div>
+            </div>
+          </div>
+          <div class="tracking-amount" style="color:#60a5fa;">$890.00</div>
+        </div>
+        <div class="tracking-row">
+          <div style="display:flex; align-items:center; gap:10px; flex:1;">
+            <div class="tracking-dot" style="background:#34d399;"></div>
+            <div>
+              <div class="tracking-label">Expenses</div>
+              <div class="tracking-count">From bank this month</div>
+            </div>
+          </div>
+          <div class="tracking-amount" style="color:#34d399;">$426.22</div>
+        </div>
+        <div class="tracking-total">
+          <span class="tracking-total-label">Monthly Total</span>
+          <span class="tracking-total-val">$1,463.22</span>
+        </div>
+      </div>
+
+      <!-- Due this week -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Due This Week</span>
+          <span style="font-size:10px; color:#f59e0b; font-weight:600;">3 upcoming</span>
+        </div>
+
+        <div class="upcoming-row">
+          <div class="upcoming-day" style="background:rgba(239,68,68,0.12);">
+            <div class="upcoming-day-num" style="color:#f87171;">2d</div>
+            <div class="upcoming-day-label" style="color:#f87171;">left</div>
+          </div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">Rent</div>
+            <div class="upcoming-sub">Jun 12 · No autopay</div>
+          </div>
+          <div class="upcoming-amt" style="color:#f87171;">$1,200</div>
+        </div>
+
+        <div class="upcoming-row">
+          <div class="upcoming-day" style="background:rgba(245,158,11,0.12);">
+            <div class="upcoming-day-num" style="color:#f59e0b;">5d</div>
+            <div class="upcoming-day-label" style="color:#f59e0b;">left</div>
+          </div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">Comcast</div>
+            <div class="upcoming-sub">Jun 15 · Autopay on</div>
+          </div>
+          <div class="upcoming-amt" style="color:#ccc;">$89.99</div>
+        </div>
+
+        <div class="upcoming-row">
+          <div class="upcoming-day" style="background:rgba(156,163,175,0.08);">
+            <div class="upcoming-day-num" style="color:#9ca3af;">7d</div>
+            <div class="upcoming-day-label" style="color:#9ca3af;">left</div>
+          </div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">Car Insurance</div>
+            <div class="upcoming-sub">Jun 17 · Autopay on</div>
+          </div>
+          <div class="upcoming-amt" style="color:#ccc;">$142.00</div>
+        </div>
+      </div>
+
+      <!-- Savings goals -->
+      <div class="savings-card">
+        <div class="savings-title">Savings Goals</div>
+        <div class="savings-goal">
+          <div class="savings-goal-top">
+            <span class="savings-goal-name">Emergency Fund</span>
+            <span class="savings-goal-amt"><strong>$3,200</strong> / $10,000</span>
+          </div>
+          <div class="savings-bar">
+            <div class="savings-bar-fill" style="width:32%; background:#3EA758;"></div>
+          </div>
+        </div>
+        <div class="savings-goal">
+          <div class="savings-goal-top">
+            <span class="savings-goal-name">New Car</span>
+            <span class="savings-goal-amt"><strong>$7,500</strong> / $15,000</span>
+          </div>
+          <div class="savings-bar">
+            <div class="savings-bar-fill" style="width:50%; background:#60a5fa;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p style="text-align:center; color:#444; font-size:11px; margin-top:28px; font-style:italic;">Mockup — not real data. Let me know what to change, add, or remove.</p>
+</div>
+</body>
+</html>
