@@ -48,6 +48,7 @@ export default function Navbar() {
   const publicLinks = [
     { href: "/features", label: "Features" },
     { href: "/pricing",  label: "Pricing"  },
+    { href: "/blog",     label: "Blog"     },
     { href: "/about",    label: "About"    },
   ];
 
