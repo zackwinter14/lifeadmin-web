@@ -182,22 +182,33 @@ async function runSync(userId: string) {
     return NextResponse.json({ error: "No bank connected" }, { status: 400 });
   }
 
-  // Step 0: fetch live account balance and store in profiles
+  // Step 0: fetch account balance and store in profiles
+  // Try accountsBalanceGet (real-time) first; fall back to accountsGet (cached)
+  // because accountsBalanceGet can fail if the balance product wasn't requested at link time
+  let balanceError: string | null = null;
   try {
-    const balanceRes = await plaid.accountsBalanceGet({
-      access_token: profile.plaid_access_token,
-    });
-    const accounts = balanceRes.data.accounts;
-    // Use the first depository/checking/savings account we find, or fall back to accounts[0]
+    let accounts: any[] = [];
+    try {
+      const res = await plaid.accountsBalanceGet({ access_token: profile.plaid_access_token });
+      accounts = res.data.accounts;
+    } catch (e: any) {
+      const code = plaidErrorCode(e);
+      console.warn("accountsBalanceGet failed, trying accountsGet:", code ?? e?.message);
+      // Fall back to accountsGet (returns cached balance, works without balance product)
+      const fallback = await plaid.accountsGet({ access_token: profile.plaid_access_token });
+      accounts = fallback.data.accounts;
+    }
+
     const primary =
-      accounts.find(a => a.type === "depository" && a.subtype === "checking") ||
-      accounts.find(a => a.type === "depository") ||
+      accounts.find((a: any) => a.type === "depository" && a.subtype === "checking") ||
+      accounts.find((a: any) => a.type === "depository") ||
       accounts[0];
+
     if (primary) {
       const balance = primary.balances.current ?? primary.balances.available ?? null;
       const mask = primary.mask ?? null;
       const accountName = primary.official_name || primary.name || null;
-      await supabase
+      const { error: dbErr } = await supabase
         .from("profiles")
         .update({
           plaid_balance: balance,
@@ -206,10 +217,14 @@ async function runSync(userId: string) {
           plaid_account_mask: mask,
         })
         .eq("id", userId);
+      if (dbErr) {
+        balanceError = dbErr.message;
+        console.error("balance db update failed:", dbErr.message);
+      }
     }
   } catch (e: any) {
-    // Non-fatal — balance display degrades gracefully
-    console.error("accountsBalanceGet skipped:", plaidErrorCode(e) ?? e?.message);
+    balanceError = plaidErrorMessage(e);
+    console.error("balance fetch failed:", plaidErrorCode(e) ?? e?.message);
   }
 
   const endDate = new Date().toISOString().split("T")[0];
@@ -408,5 +423,6 @@ async function runSync(userId: string) {
     items_created: itemsCreated,
     income,
     synced_at: new Date().toISOString(),
+    ...(balanceError ? { balance_error: balanceError } : {}),
   });
 }

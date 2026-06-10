@@ -991,7 +991,12 @@ export default function Dashboard() {
         return false;
       }
       if (data.income > 0) setIncome(data.income);
-      setSyncError(null);
+      // balance_error means sync succeeded but balance fetch specifically failed
+      if (data.balance_error) {
+        setSyncError("Balance: " + data.balance_error);
+      } else {
+        setSyncError(null);
+      }
       return true;
     } catch (e: any) {
       const msg = "Sync failed: " + (e?.message ?? "network error");
