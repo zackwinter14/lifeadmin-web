@@ -114,7 +114,7 @@ export default function TrackerPage() {
           .select("clean_merchant_name,merchant_name,description,amount,date,category")
           .eq("user_id", user.id)
           .gte("date", since90)
-          .gt("amount", 0)
+          .lt("amount", 0)   // Plaid sync sign-flips amounts; expenses are stored negative
           .order("date", { ascending: false })
           .limit(500),
         supabase
@@ -130,9 +130,12 @@ export default function TrackerPage() {
       setRecurring((recurData as any[]) ?? []);
 
       // Group Plaid transactions by merchant for the Expenses column.
-      // Exclude categories that already have their own column or are income.
-      const SKIP = new Set(["income", "subscription", "bill", "transfer"]);
-      const raw = ((txData as any[]) ?? []).filter(t => !SKIP.has(t.category));
+      // The sync route stores Plaid's personal_finance_category.primary (e.g. "FOOD_AND_DRINK").
+      // Skip income and incoming transfers; everything else is an expense.
+      const raw = ((txData as any[]) ?? []).filter(t => {
+        const cat = (t.category || "").toUpperCase();
+        return !cat.includes("INCOME") && !cat.includes("TRANSFER_IN");
+      });
 
       const grouped: Record<string, { amounts: number[]; dates: string[] }> = {};
       for (const t of raw) {

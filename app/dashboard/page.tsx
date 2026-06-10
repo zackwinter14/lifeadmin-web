@@ -525,6 +525,7 @@ export default function Dashboard() {
   const [recurringUpcoming, setRecurringUpcoming] = useState<{ id: string; name: string; amount: number; color: string; type: ItemType; due_date: string; autopay: boolean; daysUntil: number }[]>([]);
   const [showWizard, setShowWizard] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
+  const [monthlyTx, setMonthlyTx] = useState({ total: 0, merchantCount: 0 });
 
   async function moveItemType(id: string, newType: ItemType) {
     const item = items.find(i => i.id === id);
@@ -596,6 +597,28 @@ export default function Dashboard() {
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
     if (itemsData) setItems(itemsData as Item[]);
+
+    // Pull current-month bank transactions for the Expenses total.
+    // The sync route sign-flips Plaid amounts, so expenses are stored negative.
+    const monthStartStr = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+    const { data: txData } = await supabase
+      .from("transactions")
+      .select("amount,clean_merchant_name,merchant_name,category")
+      .eq("user_id", userId)
+      .lt("amount", 0)
+      .gte("date", monthStartStr)
+      .limit(500);
+    if (txData && txData.length > 0) {
+      const filtered = (txData as any[]).filter(t => {
+        const cat = (t.category || "").toUpperCase();
+        return !cat.includes("INCOME") && !cat.includes("TRANSFER_IN");
+      });
+      const total = filtered.reduce((s: number, t: any) => s + Math.abs(t.amount), 0);
+      const merchants = new Set(
+        filtered.map((t: any) => (t.clean_merchant_name || t.merchant_name || "").toLowerCase().trim()).filter(Boolean)
+      );
+      setMonthlyTx({ total: Math.round(total * 100) / 100, merchantCount: merchants.size });
+    }
 
     const { data: ccData } = await supabase
       .from("credit_cards")
@@ -746,7 +769,7 @@ export default function Dashboard() {
   const expenses = items.filter(i => i.type === "expense");
   const subsTotal      = subs.reduce((a, b) => a + b.amount, 0);
   const billsTotal     = bills.reduce((a, b) => a + b.amount, 0);
-  const expensesTotal  = expenses.reduce((a, b) => a + b.amount, 0);
+  const expensesTotal  = expenses.reduce((a, b) => a + b.amount, 0) + monthlyTx.total;
   const creditMinTotal = creditCards.reduce((s, c) => s + (c.min_payment || 0), 0);
   const creditBalanceTotal = creditCards.reduce((s, c) => s + (c.current_balance || 0), 0);
   const totalSpend  = subsTotal + billsTotal + expensesTotal + creditMinTotal;
@@ -976,7 +999,7 @@ export default function Dashboard() {
           onClick={() => setActiveCard({ label: "Bills", color: TYPE_COLORS.bill, filterType: "bill" })}
         />
         <StatCard
-          label="Expenses" value={fmt(expensesTotal)} sub={`${expenses.length} logged`}
+          label="Expenses" value={fmt(expensesTotal)} sub={monthlyTx.merchantCount > 0 ? `${monthlyTx.merchantCount} merchants this month` : `${expenses.length} logged`}
           color={TYPE_COLORS.expense}
           onClick={() => setActiveCard({ label: "Expenses", color: TYPE_COLORS.expense, filterType: "expense" as any })}
         />
