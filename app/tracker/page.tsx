@@ -145,7 +145,7 @@ export default function TrackerPage() {
         grouped[key].dates.push(t.date);
       }
 
-      const groups: TxGroup[] = Object.entries(grouped)
+      const allGroups: TxGroup[] = Object.entries(grouped)
         .map(([merchant, { amounts, dates }]) => ({
           merchant,
           count: amounts.length,
@@ -155,6 +155,18 @@ export default function TrackerPage() {
           lastDate: dates[0],
         }))
         .sort((a, b) => b.totalSpent - a.totalSpent);
+
+      // Don't show a bank transaction card for a merchant that is already a tracked item —
+      // that's what causes the "it came back to expenses" confusion.
+      const trackedNames = (allItems).map(i => i.name.toLowerCase().trim());
+      const groups = allGroups.filter(g => {
+        const gLc = g.merchant.toLowerCase().trim();
+        return !trackedNames.some(name => {
+          const shorter = name.length < gLc.length ? name : gLc;
+          const longer  = name.length < gLc.length ? gLc  : name;
+          return shorter.length >= 4 && longer.includes(shorter);
+        });
+      });
 
       setTxGroups(groups);
       setLoading(false);
@@ -181,8 +193,30 @@ export default function TrackerPage() {
     setDragOver(null);
     if (!id) return;
     const newType: ItemType = colId;
-    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
-    await supabase.from("items").update({ type: newType }).eq("id", id);
+    const item = items.find(i => i.id === id);
+
+    // Optimistic UI update
+    setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType, source: "user_override" } : i));
+
+    // Mark as user_override so the Plaid sync never re-classifies it
+    await supabase.from("items")
+      .update({ type: newType, source: "user_override" })
+      .eq("id", id);
+
+    // Write to merchant_rules so future auto-detected items for this merchant
+    // get the correct type from day one
+    if (item?.name) {
+      const key = item.name.toLowerCase().trim();
+      await supabase.from("merchant_rules").upsert(
+        {
+          merchant_name: key,
+          correct_type: newType,
+          correct_category: item.category,
+          last_updated: new Date().toISOString(),
+        },
+        { onConflict: "merchant_name" }
+      );
+    }
   }
 
   function getRecurring(name: string) {

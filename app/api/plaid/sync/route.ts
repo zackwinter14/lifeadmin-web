@@ -260,7 +260,7 @@ export async function POST(req: NextRequest) {
   try {
     const { data: existingItems } = await supabase
       .from("items")
-      .select("id, name, type")
+      .select("id, name, type, source")
       .eq("user_id", userId);
     const existingNames = new Set((existingItems || []).map((i: any) => i.name.toLowerCase().trim()));
 
@@ -322,9 +322,10 @@ export async function POST(req: NextRequest) {
         else console.error("items insert error:", insertError.message);
       }
 
-      // Also apply rules to existing items whose type doesn't match the saved rule
-      // (fixes items that were created before the rule existed)
+      // Apply community rules to auto-detected items only.
+      // Never touch items the user manually classified (source = "manual" or "user_override").
       const itemsToFix = (existingItems || []).filter((i: any) => {
+        if (i.source === "manual" || i.source === "user_override") return false;
         const rule = rulesMap[i.name.toLowerCase().trim()];
         return rule && rule.type !== i.type;
       });
