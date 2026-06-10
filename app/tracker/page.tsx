@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, CreditCard, Zap, ShoppingCart, X, DollarSign } from "lucide-react";
+import { Plus, CreditCard, Zap, ShoppingCart, X, DollarSign, ArrowRight } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ItemType = "subscription" | "bill" | "expense" | "trial";
@@ -22,14 +22,13 @@ interface Item {
   source: string | null;
 }
 
-interface RecurringTx {
-  merchant_name: string;
-  clean_merchant_name: string | null;
-  frequency: string | null;
-  last_amount: number | null;
-  average_amount: number | null;
-  next_predicted_date: string | null;
-  category: string | null;
+interface TxGroup {
+  merchant: string;
+  count: number;
+  lastAmount: number;
+  avgAmount: number;
+  totalSpent: number;
+  lastDate: string;
 }
 
 // ── Column config ──────────────────────────────────────────────────────────────
@@ -42,10 +41,7 @@ const COLUMNS = [
     types: ["subscription", "trial"] as ItemType[],
     addLabel: "Add Subscription",
     placeholder: "Netflix",
-    categories: [
-      "Entertainment", "Music", "News", "Software", "Cloud Storage",
-      "Health & Fitness", "Gaming", "Other",
-    ],
+    categories: ["Entertainment", "Music", "News", "Software", "Cloud Storage", "Health & Fitness", "Gaming", "Other"],
   },
   {
     id: "bill" as const,
@@ -55,10 +51,7 @@ const COLUMNS = [
     types: ["bill"] as ItemType[],
     addLabel: "Add Bill",
     placeholder: "Electric bill",
-    categories: [
-      "Mortgage", "Rent", "Utilities", "Internet", "Phone",
-      "Insurance", "Credit Card", "Car Note", "Loan", "Other",
-    ],
+    categories: ["Mortgage", "Rent", "Utilities", "Internet", "Phone", "Insurance", "Credit Card", "Car Note", "Loan", "Other"],
   },
   {
     id: "expense" as const,
@@ -68,10 +61,7 @@ const COLUMNS = [
     types: ["expense"] as ItemType[],
     addLabel: "Add Expense",
     placeholder: "Walmart",
-    categories: [
-      "Groceries", "Dining", "Shopping", "Transportation", "Health",
-      "Entertainment", "Travel", "Personal Care", "Other",
-    ],
+    categories: ["Groceries", "Dining", "Shopping", "Transportation", "Health", "Entertainment", "Travel", "Personal Care", "Other"],
   },
 ] as const;
 
@@ -86,18 +76,12 @@ function fmtDate(d: string | null) {
   if (!d) return null;
   try {
     return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 const FREQ_MAP: Record<string, string> = {
-  weekly: "Weekly",
-  biweekly: "Every 2 wks",
-  monthly: "Monthly",
-  quarterly: "Quarterly",
-  annually: "Yearly",
-  semi_monthly: "Twice/mo",
+  weekly: "Weekly", biweekly: "Every 2 wks", monthly: "Monthly",
+  quarterly: "Quarterly", annually: "Yearly", semi_monthly: "Twice/mo",
 };
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -105,32 +89,71 @@ export default function TrackerPage() {
   const router = useRouter();
   const supabase = createClient();
   const [items, setItems] = useState<Item[]>([]);
-  const [recurring, setRecurring] = useState<RecurringTx[]>([]);
+  const [txGroups, setTxGroups] = useState<TxGroup[]>([]);
+  const [recurring, setRecurring] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<ColId | null>(null);
   const [addCol, setAddCol] = useState<typeof COLUMNS[number] | null>(null);
+  const [trackTx, setTrackTx] = useState<TxGroup | null>(null);
 
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
 
-      const [{ data: itemsData }, { data: recurringData }] = await Promise.all([
+      const since90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+
+      const [{ data: itemsData }, { data: txData }, { data: recurData }] = await Promise.all([
         supabase
           .from("items")
           .select("id,name,amount,type,category,color,due_date,autopay,status,source")
+          .eq("user_id", user.id),
+        supabase
+          .from("transactions")
+          .select("clean_merchant_name,merchant_name,description,amount,date,category")
           .eq("user_id", user.id)
-          .neq("status", "cancelled"),
+          .gte("date", since90)
+          .gt("amount", 0)
+          .order("date", { ascending: false })
+          .limit(500),
         supabase
           .from("recurring_transactions")
-          .select("merchant_name,clean_merchant_name,frequency,last_amount,average_amount,next_predicted_date,category")
+          .select("merchant_name,clean_merchant_name,frequency,last_amount,average_amount,next_predicted_date")
           .eq("user_id", user.id)
           .eq("is_active", true),
       ]);
 
-      setItems((itemsData as Item[]) ?? []);
-      setRecurring((recurringData as RecurringTx[]) ?? []);
+      // Client-side cancel filter avoids the NULL != 'cancelled' bug in PostgREST
+      const allItems = ((itemsData as Item[]) ?? []).filter(i => i.status !== "cancelled");
+      setItems(allItems);
+      setRecurring((recurData as any[]) ?? []);
+
+      // Group Plaid transactions by merchant for the Expenses column.
+      // Exclude categories that already have their own column or are income.
+      const SKIP = new Set(["income", "subscription", "bill", "transfer"]);
+      const raw = ((txData as any[]) ?? []).filter(t => !SKIP.has(t.category));
+
+      const grouped: Record<string, { amounts: number[]; dates: string[] }> = {};
+      for (const t of raw) {
+        const key = (t.clean_merchant_name || t.merchant_name || t.description || "Unknown").trim();
+        if (!grouped[key]) grouped[key] = { amounts: [], dates: [] };
+        grouped[key].amounts.push(Math.abs(t.amount));
+        grouped[key].dates.push(t.date);
+      }
+
+      const groups: TxGroup[] = Object.entries(grouped)
+        .map(([merchant, { amounts, dates }]) => ({
+          merchant,
+          count: amounts.length,
+          lastAmount: amounts[0],
+          avgAmount: amounts.reduce((s, a) => s + a, 0) / amounts.length,
+          totalSpent: amounts.reduce((s, a) => s + a, 0),
+          lastDate: dates[0],
+        }))
+        .sort((a, b) => b.totalSpent - a.totalSpent);
+
+      setTxGroups(groups);
       setLoading(false);
     }
     init();
@@ -148,24 +171,17 @@ export default function TrackerPage() {
     setDragOver(null);
   }
 
-  function onDragOver(e: React.DragEvent, colId: ColId) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOver(colId);
-  }
-
   async function onDrop(e: React.DragEvent, colId: ColId) {
     e.preventDefault();
     const id = e.dataTransfer.getData("text/plain");
     setDragging(null);
     setDragOver(null);
     if (!id) return;
-    const newType: ItemType = colId === "subscription" ? "subscription" : colId;
+    const newType: ItemType = colId;
     setItems(prev => prev.map(i => i.id === id ? { ...i, type: newType } : i));
     await supabase.from("items").update({ type: newType }).eq("id", id);
   }
 
-  // ── Recurring lookup ─────────────────────────────────────────────────────────
   function getRecurring(name: string) {
     const lc = name.toLowerCase();
     return recurring.find(r => {
@@ -182,28 +198,23 @@ export default function TrackerPage() {
     return acc;
   }, {} as Record<ColId, number>);
 
-  const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
+  const grandTotal = totals.subscription + totals.bill + totals.expense;
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       {/* ── Header ─────────────────────────────────────────────────────────────── */}
       <div className="border-b border-white/5 px-6 py-5">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="mb-1.5 flex items-center gap-2 text-sm">
-                <Link href="/finances" className="text-gray-500 transition hover:text-white">
-                  Finances
-                </Link>
+                <Link href="/finances" className="text-gray-500 transition hover:text-white">Finances</Link>
                 <span className="text-gray-700">/</span>
                 <span className="text-gray-300">Tracker</span>
               </div>
@@ -213,7 +224,7 @@ export default function TrackerPage() {
               </p>
             </div>
 
-            {/* Summary bar */}
+            {/* Summary totals */}
             <div className="flex flex-wrap items-center gap-5">
               {COLUMNS.map(col => (
                 <div key={col.id} className="text-right">
@@ -229,7 +240,7 @@ export default function TrackerPage() {
               ))}
               <div className="h-8 w-px bg-white/10" />
               <div className="text-right">
-                <div className="text-xs text-gray-500">Total monthly</div>
+                <div className="text-xs text-gray-500">Total tracked</div>
                 <div className="text-sm font-bold">
                   {fmt$(grandTotal)}
                   <span className="ml-0.5 text-xs font-normal text-gray-600">/mo</span>
@@ -248,11 +259,13 @@ export default function TrackerPage() {
               (col.types as readonly string[]).includes(i.type)
             );
             const isOver = dragOver === col.id;
+            const isExpenses = col.id === "expense";
+            const cardCount = colItems.length + (isExpenses ? txGroups.length : 0);
 
             return (
               <div
                 key={col.id}
-                onDragOver={e => onDragOver(e, col.id)}
+                onDragOver={e => { e.preventDefault(); setDragOver(col.id); }}
                 onDrop={e => onDrop(e, col.id)}
                 onDragLeave={() => setDragOver(null)}
                 className="flex flex-col rounded-2xl border transition-colors duration-100"
@@ -279,7 +292,7 @@ export default function TrackerPage() {
                       className="rounded-full px-2 py-0.5 text-[11px] font-bold"
                       style={{ background: col.color + "18", color: col.color }}
                     >
-                      {colItems.length}
+                      {cardCount}
                     </span>
                   </div>
                   <div className="text-right">
@@ -290,18 +303,24 @@ export default function TrackerPage() {
                   </div>
                 </div>
 
-                {/* Cards */}
+                {/* Cards list */}
                 <div className="flex flex-1 flex-col gap-2.5 p-3">
-                  {colItems.length === 0 && (
+                  {/* Empty state */}
+                  {cardCount === 0 && (
                     <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
                       <div className="mb-2 opacity-20" style={{ color: col.color }}>
                         <col.icon size={30} />
                       </div>
                       <p className="text-xs text-gray-600">No {col.label.toLowerCase()} yet</p>
-                      <p className="mt-0.5 text-xs text-gray-700">Drag items here or add below</p>
+                      <p className="mt-0.5 text-xs text-gray-700">
+                        {isExpenses
+                          ? "Connect your bank to see purchases here"
+                          : "Drag items here or add one below"}
+                      </p>
                     </div>
                   )}
 
+                  {/* Tracked items (draggable) */}
                   {colItems.map(item => (
                     <ItemCard
                       key={item.id}
@@ -313,6 +332,29 @@ export default function TrackerPage() {
                       onDragEnd={onDragEnd}
                     />
                   ))}
+
+                  {/* Bank transactions in the expenses column */}
+                  {isExpenses && txGroups.length > 0 && (
+                    <>
+                      {colItems.length > 0 && (
+                        <div className="flex items-center gap-2 py-1">
+                          <div className="h-px flex-1 bg-white/5" />
+                          <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+                            From bank
+                          </span>
+                          <div className="h-px flex-1 bg-white/5" />
+                        </div>
+                      )}
+                      {txGroups.map(g => (
+                        <TxGroupCard
+                          key={g.merchant}
+                          group={g}
+                          colColor={col.color}
+                          onTrack={() => setTrackTx(g)}
+                        />
+                      ))}
+                    </>
+                  )}
                 </div>
 
                 {/* Add button */}
@@ -332,59 +374,41 @@ export default function TrackerPage() {
         </div>
       </div>
 
-      {/* ── Add modal ──────────────────────────────────────────────────────────── */}
       {addCol && (
         <AddModal
           col={addCol}
           onClose={() => setAddCol(null)}
-          onAdded={newItem => {
-            setItems(prev => [...prev, newItem]);
-            setAddCol(null);
-          }}
+          onAdded={item => { setItems(prev => [...prev, item]); setAddCol(null); }}
+        />
+      )}
+
+      {trackTx && (
+        <TrackTxModal
+          group={trackTx}
+          onClose={() => setTrackTx(null)}
+          onAdded={item => { setItems(prev => [...prev, item]); setTrackTx(null); }}
         />
       )}
     </div>
   );
 }
 
-// ── Item Card ──────────────────────────────────────────────────────────────────
-function ItemCard({
-  item,
-  rec,
-  colColor,
-  isDragging,
-  onDragStart,
-  onDragEnd,
-}: {
+// ── Draggable item card ────────────────────────────────────────────────────────
+function ItemCard({ item, rec, colColor, isDragging, onDragStart, onDragEnd }: {
   item: Item;
-  rec: RecurringTx | undefined;
+  rec: any;
   colColor: string;
   isDragging: boolean;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
 }) {
-  const dotColor = item.color ?? colColor;
-
-  // Build info chips
   const chips: { label: string; value: string }[] = [];
   if (item.category) chips.push({ label: "Category", value: item.category });
   if (item.due_date) chips.push({ label: "Due", value: fmtDate(item.due_date) ?? item.due_date });
-  if (rec?.frequency) {
-    const freqLabel = FREQ_MAP[rec.frequency.toLowerCase()] ?? rec.frequency;
-    chips.push({ label: "Frequency", value: freqLabel });
-  }
-  if (rec?.next_predicted_date) {
-    chips.push({ label: "Next charge", value: fmtDate(rec.next_predicted_date) ?? rec.next_predicted_date });
-  }
+  if (rec?.frequency) chips.push({ label: "Frequency", value: FREQ_MAP[rec.frequency.toLowerCase()] ?? rec.frequency });
+  if (rec?.next_predicted_date) chips.push({ label: "Next charge", value: fmtDate(rec.next_predicted_date) ?? rec.next_predicted_date });
   if (rec?.last_amount != null && Math.abs(rec.last_amount - (item.amount ?? 0)) > 0.5) {
     chips.push({ label: "Last charged", value: fmt$(rec.last_amount) });
-  }
-  if (
-    rec?.average_amount != null &&
-    rec.last_amount != null &&
-    Math.abs(rec.average_amount - rec.last_amount) > 0.5
-  ) {
-    chips.push({ label: "Avg charge", value: fmt$(rec.average_amount) });
   }
 
   return (
@@ -401,12 +425,11 @@ function ItemCard({
         transform: isDragging ? "scale(0.97)" : "scale(1)",
       }}
     >
-      {/* Name + amount */}
       <div className="mb-2.5 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <div
             className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full"
-            style={{ background: dotColor }}
+            style={{ background: item.color ?? colColor }}
           />
           <span className="truncate text-sm font-semibold leading-tight">{item.name}</span>
         </div>
@@ -415,7 +438,6 @@ function ItemCard({
         </span>
       </div>
 
-      {/* Info grid */}
       {chips.length > 0 && (
         <div className="mb-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
           {chips.map(chip => (
@@ -429,16 +451,72 @@ function ItemCard({
         </div>
       )}
 
-      {/* Badges */}
       <div className="flex flex-wrap gap-1.5">
         {item.autopay && <Chip label="Autopay" color="#34d399" />}
-        {item.source === "plaid" && <Chip label="Bank detected" color="#60a5fa" />}
+        {item.source === "plaid" && <Chip label="Bank" color="#60a5fa" />}
         {item.type === "trial" && <Chip label="Trial" color="#f59e0b" />}
       </div>
     </div>
   );
 }
 
+// ── Bank transaction group card ────────────────────────────────────────────────
+function TxGroupCard({ group, colColor, onTrack }: {
+  group: TxGroup;
+  colColor: string;
+  onTrack: () => void;
+}) {
+  return (
+    <div
+      className="rounded-xl border p-3.5"
+      style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <span className="truncate text-sm font-semibold leading-tight">{group.merchant}</span>
+        <span className="flex-shrink-0 text-sm font-bold tabular-nums">
+          {fmt$(group.avgAmount)}
+          <span className="ml-0.5 text-[10px] font-normal text-gray-600">/avg</span>
+        </span>
+      </div>
+
+      <div className="mb-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+            Times seen
+          </div>
+          <div className="text-xs font-medium text-gray-300">{group.count}x in 90 days</div>
+        </div>
+        <div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+            Last charge
+          </div>
+          <div className="text-xs font-medium text-gray-300">
+            {fmtDate(group.lastDate) ?? group.lastDate} &middot; {fmt$(group.lastAmount)}
+          </div>
+        </div>
+        <div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+            90-day total
+          </div>
+          <div className="text-xs font-medium text-gray-300">{fmt$(group.totalSpent)}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Chip label="From bank" color="#60a5fa" />
+        <button
+          onClick={onTrack}
+          className="flex items-center gap-1 text-[11px] font-semibold transition hover:opacity-70"
+          style={{ color: colColor }}
+        >
+          Track this <ArrowRight size={11} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Shared chip ────────────────────────────────────────────────────────────────
 function Chip({ label, color }: { label: string; color: string }) {
   return (
     <span
@@ -450,7 +528,7 @@ function Chip({ label, color }: { label: string; color: string }) {
   );
 }
 
-// ── Add Modal ──────────────────────────────────────────────────────────────────
+// ── Add tracked item modal ─────────────────────────────────────────────────────
 function AddModal({
   col,
   onClose,
@@ -508,13 +586,9 @@ function AddModal({
         onClick={e => e.stopPropagation()}
         className="w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-white/10 bg-[#0A0A0F] p-5 sm:max-w-md sm:rounded-2xl"
       >
-        {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg"
-              style={{ background: col.color + "20" }}
-            >
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: col.color + "20" }}>
               <col.icon size={14} style={{ color: col.color }} />
             </div>
             <h2 className="text-base font-bold">{col.addLabel}</h2>
@@ -524,10 +598,7 @@ function AddModal({
           </button>
         </div>
 
-        {/* Name */}
-        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
-          Name
-        </label>
+        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">Name</label>
         <input
           autoFocus
           value={name}
@@ -537,10 +608,7 @@ function AddModal({
           className="mb-3 w-full rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-sm text-white outline-none focus:border-white/20"
         />
 
-        {/* Amount */}
-        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
-          Monthly Amount
-        </label>
+        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">Monthly Amount</label>
         <div className="relative mb-3">
           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
           <input
@@ -554,10 +622,7 @@ function AddModal({
           />
         </div>
 
-        {/* Category */}
-        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
-          Category
-        </label>
+        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">Category</label>
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
@@ -566,12 +631,9 @@ function AddModal({
           {col.categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
 
-        {/* Due date (subscriptions + bills only) */}
         {col.id !== "expense" && (
           <>
-            <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
-              Due Date
-            </label>
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">Due Date</label>
             <input
               type="date"
               value={dueDate}
@@ -581,7 +643,6 @@ function AddModal({
           </>
         )}
 
-        {/* Autopay */}
         <label className="mb-5 flex cursor-pointer items-center gap-2.5">
           <input
             type="checkbox"
@@ -603,6 +664,127 @@ function AddModal({
           style={{ background: col.color }}
         >
           {saving ? "Adding..." : `Add ${col.label.slice(0, -1)}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Promote a bank transaction into a tracked item ─────────────────────────────
+function TrackTxModal({
+  group,
+  onClose,
+  onAdded,
+}: {
+  group: TxGroup;
+  onClose: () => void;
+  onAdded: (item: Item) => void;
+}) {
+  const supabase = createClient();
+  const [type, setType] = useState<ColId>("expense");
+  const [amount, setAmount] = useState(group.avgAmount.toFixed(2));
+  const [saving, setSaving] = useState(false);
+
+  const COL = COLUMNS.find(c => c.id === type)!;
+  const [category, setCategory] = useState<string>(COL.categories[0]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("items")
+        .insert({
+          user_id: user.id,
+          name: group.merchant,
+          amount: parseFloat(amount),
+          type,
+          category,
+          color: COL.color,
+          status: "active",
+          source: "plaid",
+          autopay: false,
+        })
+        .select()
+        .single();
+      if (data) onAdded(data as Item);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-white/10 bg-[#0A0A0F] p-5 sm:max-w-md sm:rounded-2xl"
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-bold">Track this charge</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="mb-4 text-xs text-gray-500">
+          {group.merchant} &middot; seen {group.count}x in 90 days &middot; avg {fmt$(group.avgAmount)}
+        </p>
+
+        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
+          Classify as
+        </label>
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          {COLUMNS.map(col => (
+            <button
+              key={col.id}
+              onClick={() => { setType(col.id); setCategory(col.categories[0]); }}
+              className="rounded-xl border py-2 text-xs font-bold transition"
+              style={{
+                borderColor: type === col.id ? col.color : "rgba(255,255,255,0.1)",
+                background: type === col.id ? col.color + "20" : "transparent",
+                color: type === col.id ? col.color : "#9ca3af",
+              }}
+            >
+              {col.label.replace(/s$/, "")}
+            </button>
+          ))}
+        </div>
+
+        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
+          Monthly Amount
+        </label>
+        <div className="relative mb-3">
+          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+          <input
+            type="number"
+            step="0.01"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-white/[0.02] py-2.5 pl-8 pr-3 text-sm text-white outline-none focus:border-white/20"
+          />
+        </div>
+
+        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
+          Category
+        </label>
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          className="mb-5 w-full rounded-xl border border-white/10 bg-[#0A0A0F] px-3 py-2.5 text-sm text-white outline-none focus:border-white/20"
+        >
+          {COL.categories.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+
+        <button
+          onClick={save}
+          disabled={saving}
+          className="w-full rounded-xl py-3 text-sm font-bold text-black transition disabled:opacity-40 hover:opacity-90"
+          style={{ background: COL.color }}
+        >
+          {saving ? "Adding..." : "Start Tracking"}
         </button>
       </div>
     </div>
