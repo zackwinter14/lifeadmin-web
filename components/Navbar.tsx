@@ -46,7 +46,6 @@ export default function Navbar() {
   const displayName = profileName || user?.email?.split("@")[0] || null;
 
   const publicLinks = [
-    { href: "/home",     label: "Home"     },
     { href: "/features", label: "Features" },
     { href: "/pricing",  label: "Pricing"  },
     { href: "/blog",     label: "Blog"     },
@@ -59,18 +58,22 @@ export default function Navbar() {
     { href: "/finances",  label: "Finances"  },
     { href: "/calendar",  label: "Calendar"  },
     { href: "/tools",     label: "Tools"     },
-    { href: "/home",      label: "Home"      },
   ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-black/70 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <img src="/logo-white.png" alt="Life Admin" className="h-9 w-9 object-contain" />
-          <span className="text-lg font-semibold">Life Admin</span>
-        </Link>
+        {/* Logo + Home */}
+        <div className="flex items-center gap-5 shrink-0">
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/logo-white.png" alt="Life Admin" className="h-9 w-9 object-contain" />
+            <span className="text-lg font-semibold">Life Admin</span>
+          </Link>
+          <Link href="/home" className="hidden md:block text-sm text-gray-300 transition hover:text-white">
+            Home
+          </Link>
+        </div>
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 md:flex">
