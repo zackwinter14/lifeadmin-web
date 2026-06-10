@@ -93,18 +93,33 @@ function fmtDate(d: string | null) {
   catch { return null; }
 }
 
+// Local-time date string (YYYY-MM-DD) to avoid UTC offset flipping "today" to "tomorrow"
+function localDateStr(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function fmtDayLabel(dateStr: string): string {
-  const today = new Date().toISOString().slice(0, 10);
-  const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const label = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const today = localDateStr();
+  const yest  = localDateStr(new Date(Date.now() - 86400000));
+  const label = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   if (dateStr === today) return `Today — ${label}`;
-  if (dateStr === yest) return `Yesterday — ${label}`;
+  if (dateStr === yest)  return `Yesterday — ${label}`;
   return label;
 }
 
 function isIncomeTx(t: any): boolean {
   const cat = (t.category || "").toUpperCase();
   return cat.includes("INCOME") || cat.includes("TRANSFER_IN");
+}
+
+// Transactions to show in the expense feed — excludes income, account transfers, and P2P
+function isExpenseFeedTx(t: any): boolean {
+  if (t.amount >= 0) return false; // positive = income/refund, not an expense
+  const cat = (t.category || "").toUpperCase();
+  if (cat.includes("INCOME"))       return false;
+  if (cat.includes("TRANSFER_IN"))  return false;
+  if (cat.includes("TRANSFER_OUT")) return false; // account-to-account and P2P transfers
+  return true;
 }
 
 function txCatColor(t: any): string {
@@ -562,19 +577,18 @@ function TxFeedConnected({ transactions, items, updating, onUpdate, onLoadMore, 
   onLoadMore: () => void;
   hasMore: boolean;
 }) {
-  // Group by date
-  const groups: { date: string; txs: any[]; dayTotal: number }[] = [];
-  for (const tx of transactions) {
+  // Only show real expenses — exclude income, account transfers, P2P
+  const feedTxs = transactions.filter(isExpenseFeedTx);
+
+  // Group by date (transactions are already sorted date desc)
+  const groups: { date: string; txs: any[]; daySpend: number }[] = [];
+  for (const tx of feedTxs) {
     const last = groups[groups.length - 1];
     if (last && last.date === tx.date) {
       last.txs.push(tx);
-      last.dayTotal += isIncomeTx(tx) ? Math.abs(tx.amount) : -Math.abs(tx.amount);
+      last.daySpend += Math.abs(tx.amount);
     } else {
-      groups.push({
-        date: tx.date,
-        txs: [tx],
-        dayTotal: isIncomeTx(tx) ? Math.abs(tx.amount) : -Math.abs(tx.amount),
-      });
+      groups.push({ date: tx.date, txs: [tx], daySpend: Math.abs(tx.amount) });
     }
   }
 
@@ -605,6 +619,11 @@ function TxFeedConnected({ transactions, items, updating, onUpdate, onLoadMore, 
           <p className="text-sm text-gray-500">No transactions yet</p>
           <p className="mt-1 text-xs text-gray-600">Click Update to pull from your bank</p>
         </div>
+      ) : feedTxs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-sm text-gray-500">No expense transactions in range</p>
+          <p className="mt-1 text-xs text-gray-600">Income and transfers are filtered out</p>
+        </div>
       ) : (
         <>
           {groups.map(group => (
@@ -613,8 +632,8 @@ function TxFeedConnected({ transactions, items, updating, onUpdate, onLoadMore, 
                 <span className="text-[9px] font-bold uppercase tracking-widest text-gray-700">
                   {fmtDayLabel(group.date)}
                 </span>
-                <span className={`text-[9px] font-bold tabular-nums ${group.dayTotal >= 0 ? "text-[#3EA758]" : "text-gray-700"}`}>
-                  {group.dayTotal >= 0 ? "+" : ""}{fmt(Math.abs(group.dayTotal))}
+                <span className="text-[9px] font-bold tabular-nums text-gray-600">
+                  -{fmt(group.daySpend)}
                 </span>
               </div>
               {group.txs.map((tx, i) => <TxRow key={tx.id || tx.plaid_transaction_id || i} tx={tx} items={items} />)}
@@ -909,7 +928,7 @@ export default function Dashboard() {
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("items").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
       supabase.from("transactions").select("*").eq("user_id", userId)
-        .gte("date", since90).order("date", { ascending: false }).limit(500),
+        .gte("date", since90).order("date", { ascending: false }).order("created_at", { ascending: false }).limit(500),
       supabase.from("credit_cards").select("*").eq("user_id", userId),
       supabase.from("recurring_transactions").select("*").eq("user_id", userId)
         .eq("is_active", true).not("next_predicted_date", "is", null)
@@ -966,7 +985,7 @@ export default function Dashboard() {
       channel = supabase.channel("dash-live-" + user.id)
         .on("postgres_changes", { event: "*", schema: "public", table: "items", filter: `user_id=eq.${user.id}` },
           () => loadData(user.id))
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
+        .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
           () => loadData(user.id))
         .subscribe();
     }
