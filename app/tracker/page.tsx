@@ -201,6 +201,10 @@ export default function TrackerPage() {
     return acc;
   }, {} as Record<ColId, number>);
 
+  // Add bank transaction averages to the expenses column total
+  const txTotal = txGroups.reduce((s, g) => s + g.avgAmount, 0);
+  totals.expense += txTotal;
+
   const grandTotal = totals.subscription + totals.bill + totals.expense;
 
   if (loading) return (
@@ -232,10 +236,10 @@ export default function TrackerPage() {
               {COLUMNS.map(col => (
                 <div key={col.id} className="text-right">
                   <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full" style={{ background: col.color }} />
-                    <span className="text-xs text-gray-500">{col.label}</span>
+                    <div className="h-2 w-2 rounded-full" style={{ background: col.color }} />
+                    <span className="text-sm text-gray-400">{col.label}</span>
                   </div>
-                  <div className="text-sm font-bold">
+                  <div className="text-base font-bold">
                     {fmt$(totals[col.id] ?? 0)}
                     <span className="ml-0.5 text-xs font-normal text-gray-600">/mo</span>
                   </div>
@@ -243,8 +247,8 @@ export default function TrackerPage() {
               ))}
               <div className="h-8 w-px bg-white/10" />
               <div className="text-right">
-                <div className="text-xs text-gray-500">Total tracked</div>
-                <div className="text-sm font-bold">
+                <div className="text-sm text-gray-400">Total tracked</div>
+                <div className="text-base font-bold">
                   {fmt$(grandTotal)}
                   <span className="ml-0.5 text-xs font-normal text-gray-600">/mo</span>
                 </div>
@@ -285,24 +289,24 @@ export default function TrackerPage() {
                 >
                   <div className="flex items-center gap-2">
                     <div
-                      className="flex h-7 w-7 items-center justify-center rounded-lg"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg"
                       style={{ background: col.color + "18" }}
                     >
-                      <col.icon size={14} style={{ color: col.color }} />
+                      <col.icon size={16} style={{ color: col.color }} />
                     </div>
-                    <span className="text-sm font-semibold">{col.label}</span>
+                    <span className="text-base font-semibold">{col.label}</span>
                     <span
-                      className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                      className="rounded-full px-2 py-0.5 text-xs font-bold"
                       style={{ background: col.color + "18", color: col.color }}
                     >
                       {cardCount}
                     </span>
                   </div>
                   <div className="text-right">
-                    <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+                    <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-600">
                       monthly
                     </div>
-                    <div className="text-sm font-bold">{fmt$(totals[col.id] ?? 0)}</div>
+                    <div className="text-base font-bold">{fmt$(totals[col.id] ?? 0)}</div>
                   </div>
                 </div>
 
@@ -428,27 +432,27 @@ function ItemCard({ item, rec, colColor, isDragging, onDragStart, onDragEnd }: {
         transform: isDragging ? "scale(0.97)" : "scale(1)",
       }}
     >
-      <div className="mb-2.5 flex items-start justify-between gap-2">
+      <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <div
-            className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full"
+            className="mt-0.5 h-2.5 w-2.5 flex-shrink-0 rounded-full"
             style={{ background: item.color ?? colColor }}
           />
-          <span className="truncate text-sm font-semibold leading-tight">{item.name}</span>
+          <span className="truncate text-base font-semibold leading-tight">{item.name}</span>
         </div>
-        <span className="flex-shrink-0 text-sm font-bold tabular-nums">
+        <span className="flex-shrink-0 text-base font-bold tabular-nums">
           {fmt$(item.amount ?? 0)}
         </span>
       </div>
 
       {chips.length > 0 && (
-        <div className="mb-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
           {chips.map(chip => (
             <div key={chip.label}>
-              <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
                 {chip.label}
               </div>
-              <div className="truncate text-xs font-medium text-gray-300">{chip.value}</div>
+              <div className="truncate text-sm font-medium text-gray-200">{chip.value}</div>
             </div>
           ))}
         </div>
@@ -474,34 +478,34 @@ function TxGroupCard({ group, colColor, onTrack }: {
       className="rounded-xl border p-3.5"
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
     >
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <span className="truncate text-sm font-semibold leading-tight">{group.merchant}</span>
-        <span className="flex-shrink-0 text-sm font-bold tabular-nums">
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <span className="truncate text-base font-semibold leading-tight">{group.merchant}</span>
+        <span className="flex-shrink-0 text-base font-bold tabular-nums">
           {fmt$(group.avgAmount)}
-          <span className="ml-0.5 text-[10px] font-normal text-gray-600">/avg</span>
+          <span className="ml-0.5 text-xs font-normal text-gray-500">/avg</span>
         </span>
       </div>
 
-      <div className="mb-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+      <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
         <div>
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
             Times seen
           </div>
-          <div className="text-xs font-medium text-gray-300">{group.count}x in 90 days</div>
+          <div className="text-sm font-medium text-gray-200">{group.count}x in 90 days</div>
         </div>
         <div>
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
             Last charge
           </div>
-          <div className="text-xs font-medium text-gray-300">
+          <div className="text-sm font-medium text-gray-200">
             {fmtDate(group.lastDate) ?? group.lastDate} &middot; {fmt$(group.lastAmount)}
           </div>
         </div>
         <div>
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-gray-600">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
             90-day total
           </div>
-          <div className="text-xs font-medium text-gray-300">{fmt$(group.totalSpent)}</div>
+          <div className="text-sm font-medium text-gray-200">{fmt$(group.totalSpent)}</div>
         </div>
       </div>
 
@@ -509,10 +513,10 @@ function TxGroupCard({ group, colColor, onTrack }: {
         <Chip label="From bank" color="#60a5fa" />
         <button
           onClick={onTrack}
-          className="flex items-center gap-1 text-[11px] font-semibold transition hover:opacity-70"
+          className="flex items-center gap-1 text-xs font-semibold transition hover:opacity-70"
           style={{ color: colColor }}
         >
-          Track this <ArrowRight size={11} />
+          Track this <ArrowRight size={12} />
         </button>
       </div>
     </div>
@@ -523,7 +527,7 @@ function TxGroupCard({ group, colColor, onTrack }: {
 function Chip({ label, color }: { label: string; color: string }) {
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+      className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide"
       style={{ background: color + "18", color }}
     >
       {label}
