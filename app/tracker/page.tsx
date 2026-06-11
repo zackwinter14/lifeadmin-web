@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, CreditCard, Zap, ShoppingCart, X, DollarSign, ArrowRight } from "lucide-react";
+import MerchantLogo from "@/components/MerchantLogo";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ItemType = "subscription" | "bill" | "expense" | "trial";
@@ -548,14 +549,11 @@ function ItemCard({ item, rec, colColor, isDragging, onDragStart, onDragEnd }: {
       }}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <div
-            className="mt-0.5 h-2.5 w-2.5 flex-shrink-0 rounded-full"
-            style={{ background: item.color ?? colColor }}
-          />
-          <span className="truncate text-base font-semibold leading-tight">{item.name}</span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <MerchantLogo name={item.name} color={item.color ?? colColor} size={32} />
+          <span className="truncate text-sm font-semibold leading-tight">{item.name}</span>
         </div>
-        <span className="flex-shrink-0 text-base font-bold tabular-nums">
+        <span className="flex-shrink-0 text-sm font-bold tabular-nums">
           {fmt$(item.amount ?? 0)}
         </span>
       </div>
@@ -606,8 +604,11 @@ function TxGroupCard({ group, colColor, isDragging, onDragStart, onDragEnd, onTr
       }}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
-        <span className="truncate text-base font-semibold leading-tight">{group.merchant}</span>
-        <span className="flex-shrink-0 text-base font-bold tabular-nums">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <MerchantLogo name={group.merchant} color={colColor} size={32} />
+          <span className="truncate text-sm font-semibold leading-tight">{group.merchant}</span>
+        </div>
+        <span className="flex-shrink-0 text-sm font-bold tabular-nums">
           {fmt$(group.avgAmount)}
           <span className="ml-0.5 text-xs font-normal text-gray-500">/avg</span>
         </span>

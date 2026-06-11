@@ -535,12 +535,7 @@ function TxRow({ tx, items }: { tx: any; items: Item[] }) {
 
   return (
     <div className="flex items-center gap-3 border-b border-white/[0.025] px-4 py-2.5 transition hover:bg-white/[0.025] last:border-0">
-      <div
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] text-xs font-black"
-        style={{ background: catColor + "18", color: catColor }}
-      >
-        {txInitials(name)}
-      </div>
+      <MerchantLogo name={name} color={catColor} size={36} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold leading-tight">{name}</p>
         <div className="mt-0.5 flex items-center gap-1.5">
@@ -695,12 +690,7 @@ function TxFeedFree({ items, onConnectBank }: { items: Item[]; onConnectBank: ()
           </div>
           {manualItems.map(item => (
             <div key={item.id} className="flex items-center gap-3 border-b border-white/[0.025] px-4 py-2.5 last:border-0">
-              <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] text-xs font-black"
-                style={{ background: (TYPE_COLORS[item.type] || "#888") + "18", color: TYPE_COLORS[item.type] || "#888" }}
-              >
-                {txInitials(item.name)}
-              </div>
+              <MerchantLogo name={item.name} color={TYPE_COLORS[item.type] || "#888"} size={36} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{item.name}</p>
                 <span
