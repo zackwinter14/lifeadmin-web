@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { Bot, X, ChevronRight } from "lucide-react";
 
 const CACHE_MS = 24 * 60 * 60 * 1000;
-const BLOCKED = ["/autoai", "/login", "/signup", "/", "/features", "/pricing", "/tools", "/transparency"];
+const BLOCKED = new Set(["/autoai", "/login", "/signup", "/", "/features", "/pricing", "/tools", "/transparency"]);
 
 export default function AutoAINotification() {
   const supabase = createClient();
@@ -16,21 +16,29 @@ export default function AutoAINotification() {
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-  const isBlocked = BLOCKED.some(p => pathname === p || pathname?.startsWith(p + "/"));
-
+  // Run once on mount only — not on every navigation.
+  // The notification is session-scoped anyway (cached 24h in localStorage).
   useEffect(() => {
-    if (isBlocked) return;
+    // Don't show on blocked pages
+    if (BLOCKED.has(pathname) || BLOCKED.has(pathname?.split("/")[1] ? "/" + pathname.split("/")[1] : "")) return;
 
     async function maybeShow() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
+      // Try localStorage cached uid before hitting Supabase
+      let uid = localStorage.getItem("auth_user_id");
+      if (!uid) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        uid = user.id;
+        try { localStorage.setItem("auth_user_id", uid); } catch {}
+      }
+      setUserId(uid);
 
-      const dismissKey = `autoai_notif_dismissed_${user.id}`;
-      const cacheKey = `autoai_notif_cache_${user.id}`;
+      const dismissKey = `autoai_notif_dismissed_${uid}`;
+      const cacheKey = `autoai_notif_cache_${uid}`;
       const dismissed = parseInt(localStorage.getItem(dismissKey) || "0", 10);
       if (Date.now() - dismissed < CACHE_MS) return;
 
+      // Show from cache first — no API call needed
       try {
         const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
         if (cached.ts && Date.now() - cached.ts < CACHE_MS && cached.message) {
@@ -40,16 +48,17 @@ export default function AutoAINotification() {
         }
       } catch {}
 
+      // Only call the AI endpoint once per 24h when cache is stale
       try {
         const res = await fetch("/api/autoai/insight", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id }),
+          body: JSON.stringify({ userId: uid }),
         });
         const data = await res.json();
         if (data.message) {
           localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), message: data.message }));
-          localStorage.setItem(`autoai_unread_${user.id}`, "true");
+          localStorage.setItem(`autoai_unread_${uid}`, "true");
           setMessage(data.message);
           setVisible(true);
         }
@@ -57,7 +66,13 @@ export default function AutoAINotification() {
     }
 
     maybeShow();
-  }, [pathname, isBlocked]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount only — notification is per-session, not per-navigation
+
+  // Dismiss visibility when user navigates to a blocked page
+  useEffect(() => {
+    if (BLOCKED.has(pathname)) setVisible(false);
+  }, [pathname]);
 
   function dismiss() {
     setVisible(false);

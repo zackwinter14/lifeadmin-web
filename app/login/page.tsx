@@ -87,6 +87,7 @@ export default function Login() {
 
   async function cancelMfa() {
     await supabase.auth.signOut();
+    try { localStorage.removeItem("auth_user_id"); } catch {}
     setMfaStep(false);
     setMfaFactorId(null);
     setMfaCode("");

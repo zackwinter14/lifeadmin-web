@@ -92,9 +92,22 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function check() {
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setState("open"); return; }
+        // Fast path: use cached uid from localStorage to avoid a Supabase round-trip
+        // on every page load. The uid is written by BankAutoSync / AutoAINotification
+        // on first login and cleared on sign-out.
+        let isLoggedIn = !!localStorage.getItem("auth_user_id");
+
+        if (!isLoggedIn) {
+          // Fall back to Supabase if no cached uid (first ever load or after cache clear)
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          isLoggedIn = !!user;
+          if (user) {
+            try { localStorage.setItem("auth_user_id", user.id); } catch {}
+          }
+        }
+
+        if (!isLoggedIn) { setState("open"); return; }
 
         const pinSet = !!getPinHash();
         const sessionOk = !!sessionStorage.getItem("pin_verified");
@@ -115,6 +128,7 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
       }
     }
     check();
+  // pathname dep retained so PIN re-locks when navigating if session expires
   }, [pathname]);
 
   function dismissPrompt() {

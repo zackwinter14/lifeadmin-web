@@ -866,6 +866,7 @@ export default function ProfilePage() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
+    try { localStorage.removeItem("auth_user_id"); } catch {}
     router.push("/");
   }
 

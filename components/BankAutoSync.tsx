@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 
+// Only attempt a full Plaid sync once every 15 minutes per browser session.
 const THROTTLE_MS = 15 * 60 * 1000;
 
 export default function BankAutoSync() {
@@ -10,34 +11,53 @@ export default function BankAutoSync() {
 
   useEffect(() => {
     async function maybeSync() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Fast localStorage check first — avoid the Supabase round-trips entirely
+      // when this user is known to have no bank linked.
+      const uid = localStorage.getItem("auth_user_id");
+      if (!uid) {
+        // Fall back to auth check if no cached uid yet
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        try { localStorage.setItem("auth_user_id", user.id); } catch {}
+      }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plaid_access_token, monthly_income")
-        .eq("id", user.id)
-        .single();
+      const userId = uid || localStorage.getItem("auth_user_id");
+      if (!userId) return;
 
-      if (!profile?.plaid_access_token) return;
+      // Bail out fast if we know there's no bank linked (cached in localStorage)
+      const noBankKey = `plaid_no_bank_${userId}`;
+      if (localStorage.getItem(noBankKey) === "1") return;
 
-      const key = `plaid_auto_sync_last_${user.id}`;
+      const key = `plaid_auto_sync_last_${userId}`;
       const last = parseInt(localStorage.getItem(key) || "0", 10);
       const shouldSync = Date.now() - last >= THROTTLE_MS;
 
-      // Always detect income from existing transactions on every page load
-      await detectAndSaveIncome(user.id, profile.monthly_income || 0);
-
       if (!shouldSync) return;
 
+      // Only now do we make the Supabase profile query
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plaid_access_token, monthly_income")
+        .eq("id", userId)
+        .single();
+
+      if (!profile?.plaid_access_token) {
+        // Cache so we skip the profile query on future page loads
+        try { localStorage.setItem(noBankKey, "1"); } catch {}
+        return;
+      }
+
+      // Mark sync time before firing so concurrent page loads don't double-sync
       localStorage.setItem(key, String(Date.now()));
-      // Single reliable sync route  -  handles transactions, recurring, and auto-creates items
+
       fetch("/api/plaid/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
-      }).then(async () => {
-        await detectAndSaveIncome(user.id, profile.monthly_income || 0);
+        body: JSON.stringify({ userId }),
+      }).then(async (res) => {
+        if (!res.ok) return;
+        // Income detection runs only after a successful sync, not on every page load
+        await detectAndSaveIncome(userId, profile.monthly_income || 0);
       }).catch(() => {});
     }
 
@@ -61,7 +81,6 @@ export default function BankAutoSync() {
         if (detected <= 0) return;
 
         // Only update if detected income differs from current by more than $50
-        // to avoid overwriting a manually-set income with noise
         if (Math.abs(detected - currentIncome) > 50) {
           await supabase
             .from("profiles")
@@ -72,6 +91,8 @@ export default function BankAutoSync() {
     }
 
     maybeSync();
+  // Intentionally empty deps — run once on mount only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;
