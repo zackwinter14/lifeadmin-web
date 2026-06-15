@@ -498,7 +498,7 @@ export default function Home() {
             <span className="text-gray-300">
               {appRating ? (
                 <>
-                  <span className="text-yellow-400">{"★".repeat(Math.round(appRating))}</span>
+                  Live{" "}<span className="text-yellow-400">{"★".repeat(Math.round(appRating))}</span>
                   {" "}{appRating.toFixed(1)} on the App Store
                   {reviewLabel && <span className="text-gray-500"> · {reviewLabel}</span>}
                 </>
