@@ -430,16 +430,13 @@ function BalanceBar({
   syncError: string | null;
   onRetry: () => void;
 }) {
-  const leftToSave = income > 0 ? income - spentThisMonth : null;
-
   if (isConnected) {
     const updatedLabel = balanceUpdatedAt
       ? "Updated " + new Date(balanceUpdatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
       : null;
 
     return (
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#a78bfa]/15 px-6 py-5"
-        style={{ background: "linear-gradient(135deg, #0f0c29, #1a1040, #0c1a2e)" }}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-white/7 bg-white/[0.025] px-6 py-5">
         <div>
           <div className="mb-1.5 flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#3EA758]" />
@@ -475,14 +472,6 @@ function BalanceBar({
             <div className="text-right">
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#445566]">Spent This Month</p>
               <p className="font-mono text-xl font-black text-[#f87171]">-{fmt(spentThisMonth)}</p>
-            </div>
-          )}
-          {leftToSave !== null && (
-            <div className="text-right">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#445566]">Left to Save</p>
-              <p className={`font-mono text-xl font-black ${leftToSave < 0 ? "text-[#f87171]" : "text-[#3EA758]"}`}>
-                {leftToSave < 0 ? "-" : "+"}{fmt(Math.abs(leftToSave))}
-              </p>
             </div>
           )}
         </div>
