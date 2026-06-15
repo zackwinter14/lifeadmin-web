@@ -462,6 +462,27 @@ const testimonials = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const [appRating, setAppRating] = useState<number | null>(null);
+  const [appReviews, setAppReviews] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/appstore")
+      .then(r => r.json())
+      .then(d => {
+        if (d.rating) setAppRating(d.rating);
+        if (d.count)  setAppReviews(d.count);
+      })
+      .catch(() => {});
+  }, []);
+
+  const ratingLabel = appRating
+    ? `${appRating.toFixed(1)} star rating on the App Store`
+    : "Live on the App Store";
+
+  const reviewLabel = appReviews
+    ? `${appReviews.toLocaleString()} ratings`
+    : null;
+
   return (
     <div className="relative">
       {/* Hero */}
@@ -474,7 +495,15 @@ export default function Home() {
             className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs"
           >
             <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
-            <span className="text-gray-300">Live on the App Store · 4.8 star rating</span>
+            <span className="text-gray-300">
+              {appRating ? (
+                <>
+                  <span className="text-yellow-400">{"★".repeat(Math.round(appRating))}</span>
+                  {" "}{appRating.toFixed(1)} on the App Store
+                  {reviewLabel && <span className="text-gray-500"> · {reviewLabel}</span>}
+                </>
+              ) : "Live on the App Store"}
+            </span>
           </motion.div>
 
           <motion.h1

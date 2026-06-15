@@ -6,6 +6,19 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image() {
+  let ratingLabel = "4.8 stars";
+  try {
+    const res = await fetch("https://itunes.apple.com/lookup?id=6762589970&country=us");
+    if (res.ok) {
+      const data = await res.json();
+      const app = data?.results?.[0];
+      if (app?.averageUserRating) {
+        const r = Math.round(app.averageUserRating * 10) / 10;
+        ratingLabel = `${r} stars`;
+      }
+    }
+  } catch {}
+
   return new ImageResponse(
     <div
       style={{
@@ -72,7 +85,7 @@ export default async function Image() {
       {/* Stat pills */}
       <div style={{ display: "flex", gap: 14 }}>
         {[
-          { label: "4.8 stars", sub: "App Store" },
+          { label: ratingLabel, sub: "App Store" },
           { label: "$240+/mo", sub: "average saved" },
           { label: "Free forever", sub: "no card needed" },
         ].map(item => (

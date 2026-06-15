@@ -148,11 +148,32 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+async function fetchAppStoreRating() {
+  try {
+    const res = await fetch(
+      "https://itunes.apple.com/lookup?id=6762589970&country=us",
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) return { ratingValue: "4.8", ratingCount: "500" };
+    const data = await res.json();
+    const app = data?.results?.[0];
+    if (!app) return { ratingValue: "4.8", ratingCount: "500" };
+    return {
+      ratingValue: String(Math.round(app.averageUserRating * 10) / 10),
+      ratingCount: String(app.userRatingCount ?? 500),
+    };
+  } catch {
+    return { ratingValue: "4.8", ratingCount: "500" };
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { ratingValue, ratingCount } = await fetchAppStoreRating();
+
   return (
     <html lang="en">
       <head>
@@ -176,8 +197,8 @@ export default function RootLayout({
                 ],
                 "aggregateRating": {
                   "@type": "AggregateRating",
-                  "ratingValue": "4.8",
-                  "ratingCount": "500",
+                  "ratingValue": ratingValue,
+                  "ratingCount": ratingCount,
                   "bestRating": "5"
                 },
                 "screenshot": "https://lifeadminofficial.com/opengraph-image",
