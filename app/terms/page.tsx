@@ -1,3 +1,17 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms of Service | Life Admin",
+  description:
+    "Life Admin's terms of service. Read the rules and guidelines for using the Life Admin personal finance app.",
+  alternates: { canonical: "https://lifeadminofficial.com/terms" },
+  openGraph: {
+    title: "Terms of Service | Life Admin",
+    description: "Terms of service for Life Admin personal finance app.",
+    url: "https://lifeadminofficial.com/terms",
+  },
+};
+
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">

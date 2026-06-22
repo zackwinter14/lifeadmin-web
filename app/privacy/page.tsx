@@ -1,3 +1,17 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | Life Admin",
+  description:
+    "Life Admin's privacy policy. We don't sell your data. Read how we collect, store, and protect your financial information.",
+  alternates: { canonical: "https://lifeadminofficial.com/privacy" },
+  openGraph: {
+    title: "Privacy Policy | Life Admin",
+    description: "Life Admin's privacy policy. We don't sell your data.",
+    url: "https://lifeadminofficial.com/privacy",
+  },
+};
+
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">

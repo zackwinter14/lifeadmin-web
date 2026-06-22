@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
+import { useState } from "react";
+import Link from "next/link";
 import { GraduationCap, ChevronDown, ChevronUp, BookOpen, TrendingUp, Shield, CreditCard, PiggyBank, DollarSign } from "lucide-react";
 
 interface Lesson {
@@ -141,25 +140,11 @@ const LESSONS: Lesson[] = [
 ];
 
 export default function SchoolPage() {
-  const router = useRouter();
-  const supabase = createClient();
-  const [authed, setAuthed] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [filter, setFilter] = useState("All");
 
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      setAuthed(true);
-    }
-    init();
-  }, []);
-
   const categories = ["All", ...Array.from(new Set(LESSONS.map(l => l.category)))];
   const filtered = filter === "All" ? LESSONS : LESSONS.filter(l => l.category === filter);
-
-  if (!authed) return <div className="flex min-h-screen items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -248,13 +233,13 @@ export default function SchoolPage() {
         <GraduationCap size={24} className="mx-auto mb-2 text-cyan-400" />
         <p className="font-semibold text-cyan-300">Have a finance question?</p>
         <p className="mt-1 text-sm text-gray-500">Ask AutoAI  -  your personal finance assistant.</p>
-        <button
-          onClick={() => router.push("/autoai")}
-          className="mt-3 rounded-xl px-5 py-2 text-sm font-semibold text-black"
+        <Link
+          href="/signup"
+          className="mt-3 inline-block rounded-xl px-5 py-2 text-sm font-semibold text-black"
           style={{ background: "linear-gradient(135deg,#38BDF8,#0ea5e9)" }}
         >
-          Open AutoAI
-        </button>
+          Try Life Admin Free
+        </Link>
       </div>
     </div>
   );
